@@ -398,6 +398,68 @@ body:not(.em-jogo) #cena{display:none}
 [data-mundo="3"] .estrelas-grandes,[data-mundo="4"] .estrelas-grandes{color:var(--espuma)}
 [data-mundo="3"] .regra,[data-mundo="4"] .regra,[data-mundo="3"] .cartao p.dica-bloq,[data-mundo="4"] .cartao p.dica-bloq{background:rgba(107,255,224,.07)}
 
+
+/* ── poderes, moedas e loja ─────────────────────────────────── */
+.barra-poderes{flex:0 0 auto;padding:2px 12px 6px;position:relative;z-index:2}
+.dica-poder{margin:0 0 6px;text-align:center;font-size:13px;font-weight:800;color:#BFF5EE;text-shadow:0 1px 3px rgba(0,20,40,.5)}
+.poderes{display:flex;gap:9px;justify-content:center}
+.poder{
+  position:relative;width:62px;height:56px;border:0;border-radius:16px;padding:0;cursor:pointer;color:var(--espuma);
+  display:grid;place-items:center;align-content:center;gap:1px;
+  background:var(--vidro);box-shadow:inset 0 0 0 1px var(--vidro-borda);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
+}
+.poder svg{width:26px;height:26px;fill:none;stroke:currentColor;stroke-width:6.5;stroke-linecap:round;stroke-linejoin:round}
+.poder .nome{font-size:9px;font-weight:900;letter-spacing:.01em;opacity:.8}
+.poder .qtd{
+  position:absolute;right:-5px;top:-7px;min-width:21px;height:21px;padding:0 5px;border-radius:999px;
+  background:var(--boia);color:#fff;font-family:var(--display);font-weight:800;font-size:12px;
+  display:grid;place-items:center;box-shadow:0 2px 6px rgba(0,20,40,.4);
+}
+.poder:active{transform:translateY(2px)}
+.poder.vazio{opacity:.5}
+.poder.vazio .qtd{background:rgba(243,251,255,.3)}
+.poder.armado{background:linear-gradient(180deg,#FF8A5C,var(--boia));color:#fff;box-shadow:0 0 0 3px rgba(255,211,92,.85)}
+.mirando #mesa{box-shadow:0 0 0 3px rgba(255,211,92,.9),0 18px 34px rgba(0,30,50,.4)}
+.moedas{
+  display:flex;align-items:center;gap:6px;font-family:var(--display);font-weight:800;font-size:18px;
+  background:rgba(243,251,255,.1);box-shadow:inset 0 0 0 2px rgba(255,211,92,.35);padding:6px 14px 7px;border-radius:999px;
+}
+.moedas svg{width:18px;height:18px}
+.topo .moedas{flex:1;justify-content:center}
+.item-loja{display:flex;align-items:center;gap:11px;text-align:left;background:rgba(10,108,122,.08);border-radius:16px;padding:10px 12px;margin:9px 0}
+.item-loja > svg{width:36px;height:36px;flex:0 0 auto;fill:none;stroke:#0A6C7A;stroke-width:6.5;stroke-linecap:round;stroke-linejoin:round}
+.item-loja .txt{flex:1;min-width:0}
+.item-loja b{display:block;font-family:var(--display);font-weight:800;font-size:16px;color:var(--tinta)}
+.item-loja small{display:block;font-size:12.5px;font-weight:700;line-height:1.35;color:#2E5E6C}
+.item-loja .tem{font-size:12px;font-weight:900;color:#0A6C7A}
+.bt-compra{
+  flex:0 0 auto;display:flex;align-items:center;gap:5px;border:0;cursor:pointer;border-radius:999px;padding:9px 14px 10px;
+  font-family:var(--display);font-weight:800;font-size:15px;color:#fff;background:linear-gradient(180deg,#FF8A5C,var(--boia));
+  box-shadow:0 3px 0 var(--boia-2);
+}
+.bt-compra svg{width:15px;height:15px}
+.bt-compra:active{transform:translateY(2px);box-shadow:0 1px 0 var(--boia-2)}
+.bt-compra[disabled]{opacity:.45;box-shadow:none;background:#8FA9B2}
+.saldo{display:flex;align-items:center;justify-content:center;gap:6px;font-family:var(--display);font-weight:800;font-size:20px;color:var(--tinta) !important}
+.saldo svg{width:20px;height:20px}
+.ganho-moedas{display:flex;align-items:center;justify-content:center;gap:6px;font-family:var(--display);font-weight:800;font-size:19px;color:#C9891A !important;margin-top:6px !important}
+.ganho-moedas svg{width:20px;height:20px}
+.bau-premio{display:flex;align-items:center;justify-content:center;gap:8px;font-family:var(--display);font-weight:800;font-size:34px;color:var(--tinta) !important;margin:10px 0 !important}
+.bau-premio svg{width:34px;height:34px}
+[data-mundo="3"] .item-loja > svg,[data-mundo="4"] .item-loja > svg{stroke:var(--biolum)}
+[data-mundo="3"] .item-loja b,[data-mundo="4"] .item-loja b,[data-mundo="3"] .saldo,[data-mundo="4"] .saldo,
+[data-mundo="3"] .bau-premio,[data-mundo="4"] .bau-premio{color:var(--espuma) !important}
+[data-mundo="3"] .item-loja small,[data-mundo="4"] .item-loja small{color:rgba(243,251,255,.78)}
+[data-mundo="3"] .item-loja,[data-mundo="4"] .item-loja{background:rgba(107,255,224,.07)}
+[data-mundo="3"] .item-loja .tem,[data-mundo="4"] .item-loja .tem,
+[data-mundo="3"] .ganho-moedas,[data-mundo="4"] .ganho-moedas{color:var(--biolum) !important}
+.subir{
+  display:block;width:calc(100% - 44px);margin:12px 22px;border:0;cursor:pointer;border-radius:14px;padding:11px;
+  font-family:var(--display);font-weight:800;font-size:15px;color:var(--espuma);
+  background:rgba(243,251,255,.12);box-shadow:inset 0 0 0 1px rgba(243,251,255,.22);
+}
+.cab-exped{position:relative;z-index:2;text-align:center;font-family:var(--display);font-weight:800;font-size:15px;color:#0B3A55;padding:6px 0 0}
+
 @media (prefers-reduced-motion: reduce){
   *{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.05s !important}
   .bolha-amb,.neve,.faisca-bio{display:none}
@@ -415,6 +477,27 @@ body:not(.em-jogo) #cena{display:none}
   </symbol>
   <symbol id="i-estrela-off" viewBox="0 0 100 100">
     <path d="M50 7L62.6 34.2 92 37.6 70.2 57.8 76.2 87 50 72.4 23.8 87 29.8 57.8 8 37.6 37.4 34.2Z" fill="currentColor" fill-opacity=".2" stroke="currentColor" stroke-opacity=".45" stroke-width="4.5" stroke-linejoin="round"/>
+  </symbol>
+  <symbol id="p-arpao" viewBox="0 0 100 100">
+    <path d="M18 84L62 40M62 40l-8-16 30 6 6 30-16-8-12-12ZM44 40l-12 2M60 24l2-12"/>
+  </symbol>
+  <symbol id="p-troca" viewBox="0 0 100 100">
+    <path d="M22 38h50M60 26l12 12-12 12M78 62H28M40 50 28 62l12 12"/>
+  </symbol>
+  <symbol id="p-giro" viewBox="0 0 100 100">
+    <path d="M74 44a26 26 0 1 1-12-18M74 20v24H50"/>
+  </symbol>
+  <symbol id="p-folego" viewBox="0 0 100 100">
+    <path d="M50 16a34 34 0 1 1-.1 0ZM50 34v32M34 50h32"/>
+  </symbol>
+  <symbol id="i-moeda" viewBox="0 0 100 100">
+    <circle cx="50" cy="50" r="42" fill="url(#est-g)" stroke="#B7790F" stroke-width="5"/>
+    <circle cx="50" cy="50" r="30" fill="none" stroke="#B7790F" stroke-width="3" stroke-opacity=".55"/>
+    <path d="M36 56q7-9 14 0t14 0" fill="none" stroke="#B7790F" stroke-width="5" stroke-linecap="round"/>
+    <path d="M38 40q6-7 12 0t12 0" fill="none" stroke="#B7790F" stroke-width="4" stroke-linecap="round" stroke-opacity=".7"/>
+  </symbol>
+  <symbol id="i-loja" viewBox="0 0 24 24">
+    <path d="M4 8h16l-1.4 12H5.4Z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/>
   </symbol>
 </svg>
 <svg id="defs-pecas" width="0" height="0" style="position:absolute" aria-hidden="true"></svg>
@@ -463,15 +546,15 @@ body:not(.em-jogo) #cena{display:none}
         <button class="bt vidro" id="bt-ajuda">Como jogar</button>
       </div>
     </div>
-    <p class="rodape">Sem anúncio, sem cadastro.</p>
   </section>
 
   <!-- ══ MAPA: a coluna d'água ═════════════════════════════════ -->
   <section class="tela" id="tela-mapa">
     <div class="topo">
       <button class="ico-bt" id="bt-mapa-volta" aria-label="Voltar ao início"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>
-      <h2>Fases</h2>
+      <div class="moedas"><svg viewBox="0 0 100 100"><use href="#i-moeda"/></svg><span class="n-moedas">0</span></div>
       <div class="placar-estrelas"><svg viewBox="0 0 100 100"><use href="#i-estrela"/></svg><span id="total-estrelas">0</span></div>
+      <button class="ico-bt" id="bt-loja" aria-label="Loja"><svg viewBox="0 0 24 24"><use href="#i-loja"/></svg></button>
     </div>
     <div class="trilha" id="trilha"><div id="coluna"></div></div>
   </section>
@@ -511,6 +594,10 @@ body:not(.em-jogo) #cena{display:none}
         <div id="faiscas"></div>
         <div class="faixa" id="faixa"></div>
       </div>
+    </div>
+    <div class="barra-poderes">
+      <p class="dica-poder" id="dica-poder" hidden></p>
+      <div class="poderes" id="poderes"></div>
     </div>
   </section>
 
@@ -564,7 +651,7 @@ const MUNDOS = [
              'coletar'  juntar N de cada peça da lista
              'papel'    limpar tudo que cobre o fundo (areia, alga, rede, lodo, breu)
    marcas: pontuação de 1, 2 e 3 estrelas (medidas por simulação) */
-const FASES = [
+const BASE = [
   { m:0, prof:2,    nome:'Primeiro fôlego',    mov:20, obj:{tipo:'pontos'},                                        marcas:[6600,12600,18600] },
   { m:0, prof:4,    nome:'Pé na areia',        mov:22, obj:{tipo:'coletar', itens:[[0,14]]},                       marcas:[4900,8300,11600] },
   { m:0, prof:6,    nome:'Maré baixa',         mov:24, obj:{tipo:'papel', padrao:'bandeja', camadas:1},            marcas:[5500,9400,13100] },
@@ -601,6 +688,73 @@ const FASES = [
   { m:4, prof:4000, nome:'O fundo',            mov:42, obj:{tipo:'papel', padrao:'bandejao', camadas:2},           marcas:[11200,19200,26700] }
 ];
 const POR_MUNDO = 6;
+const CICLO = 30;   /* uma expedição inteira: do raso ao fundo */
+
+/* ── daqui pra frente o mar não acaba ──────────────────────────
+   Passada a fase 30, cada bloco de 30 é uma nova expedição: começa
+   de novo no raso, mais apertada, com zonas de nomes próprios. As
+   fases são geradas por semente, então a fase 4.812 é sempre igual
+   pra todo mundo e nada disso precisa ficar guardado.            */
+const ZONAS = [
+  ['Banco de areia','Laje rasa','Poça funda','Canal claro','Prainha','Coroa de areia','Baixio','Beira de pedra','Enseada','Marola'],
+  ['Jardim de fogo','Coral rachado','Fenda do recife','Cabeço','Recife morno','Parede viva','Toca funda','Bico de coral','Laje florida','Canal do recife'],
+  ['Casco velho','Proa quebrada','Porão fundo','Caldeira','Convés aberto','Âncora presa','Mastro caído','Rede solta','Casco rachado','Fundo de ferro'],
+  ['Água parada','Correnteza fria','Lamaçal','Banco de lodo','Fosso raso','Sombra longa','Neve funda','Poço azul','Véu escuro','Silêncio'],
+  ['Fossa','Chaminé','Planície funda','Buraco negro','Pedra quente','Boca da terra','Vale cego','Lodo de pedra','Bolsão','Última pedra']
+];
+const PADROES_GER = [['bandeja',24],['xadrez',26],['faixas',26],['colunas',30],['moldura',28],['losango',24],['cruz',22],['ondas',23],['alvo',26],['bandejao',34]];
+
+function semente(i) { let t = (i * 1103515245 + 12345) >>> 0; return () => { t = (t * 1664525 + 1013904223) >>> 0; return t / 4294967296; }; }
+const geradas = {};
+const r100 = x => Math.round(x / 100) * 100;
+
+function fase(i) {
+  if (i < BASE.length) return BASE[i];
+  if (geradas[i]) return geradas[i];
+  const r = semente(i);
+  const pos = i % CICLO, m = Math.floor(pos / 6), base = BASE[pos];
+  const dif = Math.min(1, (i - CICLO) / 260);          /* aperta ao longo de umas 260 fases e para */
+  const nome = ZONAS[m][(i * 7 + Math.floor(r() * 3)) % ZONAS[m].length];  /* nomes seguidos nunca repetem */
+  const tipo = r() < .45 ? base.obj.tipo : ['pontos','coletar','papel'][Math.floor(r() * 3)];
+  let mov, obj;
+  if (tipo === 'pontos') {
+    mov = Math.max(18, Math.round(base.mov - dif * 2 + r() * 3));
+    obj = { tipo:'pontos' };
+  } else if (tipo === 'coletar') {
+    const n = 1 + Math.floor(r() * 4);
+    mov = Math.max(18, Math.round(22 + r() * 5 - dif * 2));
+    const alvo = Math.max(8, Math.round(mov * [.86,.60,.56,.60][n-1] * (.92 + .2 * dif)));
+    const cores = [0,1,2,3,4,5];
+    for (let k = cores.length - 1; k > 0; k--) { const j = Math.floor(r() * (k + 1)); const t = cores[k]; cores[k] = cores[j]; cores[j] = t; }
+    obj = { tipo:'coletar', itens: cores.slice(0, n).sort((a,b)=>a-b).map(c => [c, alvo]) };
+  } else {
+    const pd = PADROES_GER[Math.floor(r() * PADROES_GER.length)];
+    const camadas = r() < .28 + .34 * dif ? 2 : 1;
+    mov = Math.max(18, Math.round(pd[1] * (camadas === 2 ? 1.3 : 1) * (1.04 - .14 * dif)));
+    obj = { tipo:'papel', padrao: pd[0], camadas: camadas };
+  }
+  /* pontos por jogada medidos com o bot: sobem junto com o aperto da fase */
+  const p50 = Math.round(mov * (tipo === 'pontos' ? 880 + 120 * dif : 545 + 115 * dif));
+  let marcas;
+  if (tipo === 'pontos') { const m0 = r100(p50 * (.50 + .06 * dif)); marcas = [m0, r100((m0 + p50) / 2), r100(p50)]; }
+  else marcas = [r100(p50 * .42), r100(p50 * .72), r100(p50)];
+  return (geradas[i] = { m, prof: base.prof, nome, mov, obj, marcas, exped: Math.floor(i / CICLO) + 1 });
+}
+const expedicao = i => Math.floor(i / CICLO) + 1;
+
+/* ── poderes e moedas ──────────────────────────────────────────
+   Nada de vidas com relógio: isso existe pra vender recarga, e
+   aqui não se vende nada. O que segura o jogador é o poder que
+   ele junta jogando.                                            */
+const PODERES = [
+  { id:'arpao',  nome:'Arpão',       texto:'Tira do tabuleiro a peça que você tocar.',        preco:60 },
+  { id:'troca',  nome:'Troca livre', texto:'Troca duas peças de lugar, mesmo longe uma da outra.', preco:90 },
+  { id:'giro',   nome:'Redemoinho',  texto:'Embaralha o tabuleiro inteiro sem gastar jogada.', preco:50 },
+  { id:'folego', nome:'Fôlego',      texto:'Mais 5 jogadas, e dá pra usar depois que acabaram.', preco:110 }
+];
+const moedasDaFase = (estrelas, primeira) => 12 + 14 * estrelas + (primeira ? 20 : 0);
+const hoje = () => new Date().toISOString().slice(0, 10);
+
 
 /* ── o que cobre o fundo: padrões dentro da zona que o jogo limpa
    de verdade (linhas 0–6, colunas 1–5; as quinas quase nunca estouram) */
@@ -632,11 +786,12 @@ function casasCobertas(g) { let n = 0; for (let r = 0; r < H; r++) for (let c = 
 
 /* ── guardar o progresso ───────────────────────────────────── */
 const CHAVE = 'mergulho-v1';
-let prog = { estrelas: {}, max: 0, som: true, vistos: {} };
+let prog = { estrelas: {}, max: 0, som: true, vistos: {}, moedas: 120,
+             poderes: { arpao: 1, troca: 1, giro: 1, folego: 1 }, dia: '' };
 function carregaProg() {
   try {
     const cru = localStorage.getItem(CHAVE);
-    if (cru) { const p = JSON.parse(cru); prog = Object.assign(prog, p); prog.vistos = prog.vistos || {}; }
+    if (cru) { const p = JSON.parse(cru); prog = Object.assign(prog, p); prog.vistos = prog.vistos || {}; prog.poderes = Object.assign({ arpao:0, troca:0, giro:0, folego:0 }, prog.poderes); }
   } catch (e) { /* sem armazenamento: joga do mesmo jeito, só não guarda */ }
 }
 function salvaProg() { try { localStorage.setItem(CHAVE, JSON.stringify(prog)); } catch (e) {} }
@@ -1788,6 +1943,7 @@ function aoPressionar(e) {
   Som.liga();
   const cel = celulaDe(e.clientX, e.clientY);
   if (!cel) return;
+  if (poderAtivo) { usaPoderNaCelula(cel); return; }
   arrasto = { x: e.clientX, y: e.clientY, cel: cel, usado: false };
   mesa.setPointerCapture && mesa.setPointerCapture(e.pointerId);
 }
@@ -1856,6 +2012,74 @@ async function tentaTroca(a, b) {
   reiniciaDica();
 }
 
+
+/* ═══ PODERES NO TABULEIRO ══════════════════════════════════════
+   O arpão tira uma peça e a troca livre junta duas que estão longe.
+   Nenhum dos dois gasta jogada: o preço deles é o próprio poder.  */
+let poderAtivo = null, poderAlvo = null;
+
+async function usaPoderNaCelula(cel) {
+  if (J.ocupado || J.fim) return;
+  const p = grid[cel.r][cel.c];
+  if (!p) return;
+
+  if (poderAtivo === 'arpao') {
+    gastaPoder('arpao');
+    desligaPoder();
+    J.ocupado = true;
+    const el = els.get(p.id);
+    if (el) el.classList.add('some');
+    Som.liga(); Som.especial(); vibra(20);
+    await limpar(new Set([chave(cel.r, cel.c)]), null);
+    await resolver(null, null);
+    J.ocupado = false;
+    await confere();
+    reiniciaDica();
+    return;
+  }
+
+  if (poderAtivo === 'troca') {
+    if (!poderAlvo) { poderAlvo = cel; marca(cel); Som.troca(); return; }
+    if (poderAlvo.r === cel.r && poderAlvo.c === cel.c) { limpaMarca(); poderAlvo = null; return; }
+    const a = poderAlvo; poderAlvo = null; limpaMarca();
+    gastaPoder('troca');
+    desligaPoder();
+    J.ocupado = true;
+    const pa = grid[a.r][a.c], pb = grid[cel.r][cel.c];
+    grid[a.r][a.c] = pb; grid[cel.r][cel.c] = pa;
+    posiciona(els.get(pa.id), cel.r, cel.c); posiciona(els.get(pb.id), a.r, a.c);
+    Som.liga(); Som.troca();
+    await espera(230);
+    let conj = null;
+    if ((pa.sp === ARCO || pb.sp === ARCO) || (pa.sp && pb.sp)) {
+      conj = comboTroca(cel.r, cel.c, a.r, a.c);
+      for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) if (grid[r][c]) atualizaEl(grid[r][c]);
+      faixaTexto('Combinação!');
+      vibra(40);
+    }
+    await resolver(conj, [chave(cel.r, cel.c), chave(a.r, a.c)]);
+    J.ocupado = false;
+    await confere();
+    reiniciaDica();
+  }
+}
+
+/* redemoinho: embaralha sem gastar jogada */
+async function giroAgora() {
+  J.ocupado = true;
+  desligaPoder();
+  Som.liga(); Som.especial(); vibra(30);
+  faixaTexto('Redemoinho!');
+  embaralhaModelo();
+  for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) if (grid[r][c]) atualizaEl(grid[r][c]);
+  sincroniza('nasce');
+  await espera(420);
+  await resolver(null, null);
+  J.ocupado = false;
+  await confere();
+  reiniciaDica();
+}
+
 /* ═══ DICA ══════════════════════════════════════════════════════ */
 let dicaTimer = null, dicaAtiva = [];
 function reiniciaDica() {
@@ -1889,7 +2113,7 @@ function gastaJogada() {
 }
 
 function faltaObjetivo() {
-  const f = FASES[J.fase];
+  const f = fase(J.fase);
   if (f.obj.tipo === 'pontos') return Math.max(0, f.marcas[0] - J.pontos);
   if (f.obj.tipo === 'coletar') return f.obj.itens.reduce((a, it) => a + Math.max(0, it[1] - J.coletado[it[0]]), 0);
   return Math.max(0, J.papelTotal - J.papelFeito);
@@ -1898,7 +2122,7 @@ function objetivoFeito() { return faltaObjetivo() === 0; }
 function nomeBloq(f, n) { const b = MUNDOS[f.m].bloq; return n + ' ' + (n === 1 ? b.um : b.varios); }
 
 function atualizaHud() {
-  const f = FASES[J.fase];
+  const f = fase(J.fase);
   document.getElementById('mov-n').textContent = J.mov;
   document.getElementById('mov-lb').textContent = J.mov === 1 ? 'jogada' : 'jogadas';
   document.getElementById('movimentos').classList.toggle('aperto', J.mov <= 5);
@@ -1935,7 +2159,7 @@ function atualizaHud() {
 /* ═══ FIM DE FASE ═══════════════════════════════════════════════ */
 async function confere() {
   if (J.fim) return;
-  const porPontos = FASES[J.fase].obj.tipo === 'pontos';
+  const porPontos = fase(J.fase).obj.tipo === 'pontos';
   const fecha = f => { J.fim = true; apagaDica(); clearTimeout(dicaTimer); return f(); };
   /* fase de pontuação joga até a última jogada: é lá que moram a 2ª e a 3ª estrela */
   if (porPontos) {
@@ -1962,30 +2186,34 @@ async function venceu() {
     }
     await espera(280);
   }
-  const f = FASES[J.fase];
+  const f = fase(J.fase);
   let e = 1;
   if (J.pontos >= f.marcas[1]) e = 2;
   if (J.pontos >= f.marcas[2]) e = 3;
+  const primeira = !prog.estrelas[J.fase];
   prog.estrelas[J.fase] = Math.max(prog.estrelas[J.fase] || 0, e);
-  if (J.fase + 1 > prog.max) prog.max = Math.min(J.fase + 1, FASES.length - 1);
+  if (J.fase + 1 > prog.max) prog.max = J.fase + 1;
+  const ganho = moedasDaFase(e, primeira);
+  prog.moedas += ganho;
   salvaProg();
+  pintaMoedas();
 
   const frases = ['Passou, mas no último fôlego.', 'Mergulho bonito.', 'Impecável. Nem levantou areia.'];
-  const ultima = J.fase >= FASES.length - 1;
-  const prox = FASES[J.fase + 1];
-  const muda = !ultima && prox.m !== f.m;
+  const fimExp = (J.fase + 1) % CICLO === 0;
+  const prox = fase(J.fase + 1);
+  const muda = !fimExp && prox.m !== f.m;
   cartao(
-    '<h3>' + (ultima ? 'Você chegou ao fundo' : 'Fase concluída!') + '</h3>' +
+    '<h3>' + (fimExp ? 'Você chegou ao fundo' : 'Fase concluída!') + '</h3>' +
     '<div class="estrelas-grandes">' +
       [0, 1, 2].map(i => '<div class="e' + (i < e ? ' on' : '') + '" style="animation-delay:' + (i * .22) + 's"><svg viewBox="0 0 100 100"><use href="#' + (i < e ? 'i-estrela' : 'i-estrela-off') + '"/></svg></div>').join('') +
     '</div>' +
     '<p class="placar-final">' + nf(J.pontos) + '<small>pontos</small></p>' +
-    '<p>' + (ultima ? 'Foram 4.000 metros. Dá para voltar e buscar as estrelas que faltam.'
+    '<p class="ganho-moedas"><svg viewBox="0 0 100 100"><use href="#i-moeda"/></svg>+' + ganho + '</p>' +
+    '<p>' + (fimExp ? 'Foram 4.000 metros. A Expedição ' + expedicao(J.fase + 1) + ' começa de novo no raso, mais apertada.'
              : muda ? frases[e - 1] + ' Daqui pra baixo começa o ' + MUNDOS[prox.m].nome + '.' : frases[e - 1]) + '</p>' +
     '<div class="bts">' +
       '<button class="bt vidro" data-ac="mapa">Mapa</button>' +
-      (ultima ? '<button class="bt" data-ac="mapa">Ver estrelas</button>'
-              : '<button class="bt" data-ac="proxima">' + (muda ? 'Descer para o ' + MUNDOS[prox.m].nome : 'Próxima fase') + '</button>') +
+      '<button class="bt" data-ac="proxima">' + (fimExp ? 'Nova expedição' : muda ? 'Descer para o ' + MUNDOS[prox.m].nome : 'Próxima fase') + '</button>' +
     '</div>'
   );
   Som.liga(); Som.vitoria();
@@ -1996,7 +2224,7 @@ async function venceu() {
 async function perdeu() {
   J.ocupado = true;
   Som.liga(); Som.derrota();
-  const f = FASES[J.fase];
+  const f = fase(J.fase);
   let falta;
   if (f.obj.tipo === 'pontos') falta = 'Faltaram ' + nf(f.marcas[0] - J.pontos) + ' pontos.';
   else if (f.obj.tipo === 'coletar') { const n = faltaObjetivo(); falta = 'Faltou juntar ' + n + (n === 1 ? ' peça.' : ' peças.'); }
@@ -2008,7 +2236,9 @@ async function perdeu() {
     '<p class="placar-final">' + nf(J.pontos) + '<small>pontos</small></p>' +
     '<div class="bts">' +
       '<button class="bt vidro" data-ac="mapa">Mapa</button>' +
-      '<button class="bt" data-ac="denovo">Tentar de novo</button>' +
+      (prog.poderes.folego > 0
+        ? '<button class="bt" data-ac="folego">Fôlego: +5 jogadas</button><button class="bt vidro" data-ac="denovo">Tentar de novo</button>'
+        : '<button class="bt" data-ac="denovo">Tentar de novo</button>') +
     '</div>'
   );
 }
@@ -2070,6 +2300,103 @@ function mostraMundo(m) {
   );
 }
 
+
+/* ═══ PODERES, MOEDAS E LOJA ════════════════════════════════════ */
+function pintaMoedas() {
+  document.querySelectorAll('.n-moedas').forEach(e => e.textContent = nf(prog.moedas));
+}
+function pintaPoderes() {
+  const bar = document.getElementById('poderes');
+  if (!bar) return;
+  bar.innerHTML = PODERES.map(p => {
+    const n = prog.poderes[p.id] || 0;
+    return '<button class="poder' + (n ? '' : ' vazio') + (poderAtivo === p.id ? ' armado' : '') + '" data-p="' + p.id + '" ' +
+      'aria-label="' + p.nome + ', ' + n + ' em estoque">' +
+      '<svg viewBox="0 0 100 100"><use href="#p-' + p.id + '"/></svg>' +
+      '<span class="nome">' + p.nome.split(' ')[0] + '</span><span class="qtd">' + n + '</span></button>';
+  }).join('');
+}
+function gastaPoder(id) {
+  prog.poderes[id] = Math.max(0, (prog.poderes[id] || 0) - 1);
+  salvaProg();
+  pintaPoderes();
+}
+function desligaPoder() {
+  poderAtivo = null; poderAlvo = null;
+  limpaMarca();
+  document.body.classList.remove('mirando');
+  const d = document.getElementById('dica-poder');
+  if (d) d.hidden = true;
+  pintaPoderes();
+}
+function clicaPoder(id) {
+  const n = prog.poderes[id] || 0;
+  Som.liga();
+  if (!n) { Som.nao(); mostraLoja(); return; }
+  if (J.ocupado || J.fim) return;
+  if (poderAtivo === id) { desligaPoder(); return; }
+  desligaPoder();
+  if (id === 'giro') { gastaPoder('giro'); giroAgora(); return; }
+  if (id === 'folego') { gastaPoder('folego'); J.mov += 5; atualizaHud(); Som.pop(5); faixaTexto('+5 jogadas'); return; }
+  poderAtivo = id;
+  document.body.classList.add('mirando');
+  const d = document.getElementById('dica-poder');
+  d.hidden = false;
+  d.textContent = id === 'arpao' ? 'Toque na peça que vai sair' : 'Toque nas duas peças que vão trocar de lugar';
+  pintaPoderes();
+}
+function usaFolegoNoCartao() {
+  if ((prog.poderes.folego || 0) <= 0) return;
+  gastaPoder('folego');
+  fechaCartao();
+  J.fim = false; J.ocupado = false; J.mov += 5;
+  atualizaHud(); reiniciaDica();
+  Som.liga(); Som.pop(5);
+  faixaTexto('+5 jogadas');
+}
+const moedaSvg = '<svg viewBox="0 0 100 100"><use href="#i-moeda"/></svg>';
+function mostraLoja() {
+  cartao(
+    '<h3>Loja</h3>' +
+    '<p class="saldo">' + moedaSvg + '<span class="n-moedas">' + nf(prog.moedas) + '</span></p>' +
+    '<p>Moeda vem de fase concluída e do baú do dia.</p>' +
+    PODERES.map(p => {
+      const tem = prog.poderes[p.id] || 0, pode = prog.moedas >= p.preco;
+      return '<div class="item-loja"><svg viewBox="0 0 100 100"><use href="#p-' + p.id + '"/></svg>' +
+        '<div class="txt"><b>' + p.nome + '</b><small>' + p.texto + '</small><span class="tem">você tem ' + tem + '</span></div>' +
+        '<button class="bt-compra" data-ac="compra" data-id="' + p.id + '"' + (pode ? '' : ' disabled') + '>' + moedaSvg + p.preco + '</button></div>';
+    }).join('') +
+    '<div class="bts"><button class="bt" data-ac="fecha">Fechar</button></div>'
+  );
+}
+function compra(id) {
+  const p = PODERES.find(x => x.id === id);
+  if (!p || prog.moedas < p.preco) { Som.nao(); return; }
+  prog.moedas -= p.preco;
+  prog.poderes[id] = (prog.poderes[id] || 0) + 1;
+  salvaProg();
+  Som.pop(6);
+  pintaMoedas(); pintaPoderes();
+  mostraLoja();
+}
+/* baú do dia: uma vez por dia, sem relógio nem conta */
+function mostraBau() {
+  cartao(
+    '<h3>Baú do dia</h3>' +
+    '<p class="bau-premio">' + moedaSvg + '+60</p>' +
+    '<p>Volte amanhã que tem outro.</p>' +
+    '<div class="bts"><button class="bt" data-ac="bau">Pegar</button></div>'
+  );
+}
+function pegaBau() {
+  prog.moedas += 60;
+  prog.dia = hoje();
+  salvaProg();
+  pintaMoedas();
+  Som.liga(); Som.vitoria();
+  fechaCartao();
+}
+
 /* ═══ TELAS ═════════════════════════════════════════════════════ */
 function tela(id) {
   ['tela-inicio', 'tela-mapa', 'tela-jogo'].forEach(t =>
@@ -2081,31 +2408,50 @@ function tela(id) {
 /* ═══ MAPA: a coluna d'água, da superfície ao fundo ═════════════ */
 const CADEADO = '<svg viewBox="0 0 24 24" class="cadeado"><rect x="5" y="11" width="14" height="10" rx="2.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
 
-function montaMapa() {
-  const col = document.getElementById('coluna');
-  let h = '<svg class="trilha-svg" id="trilha-bolhas" aria-hidden="true"></svg>' +
-    '<div class="superficie" aria-hidden="true"><div class="sol"></div>' +
-      '<svg class="barco" viewBox="0 0 120 60"><path d="M8 38h96l-12 16H22Z" fill="#0B3A55"/><path d="M34 38V22h30v16" fill="#13506F"/>' +
-      '<path d="M70 38V6" stroke="#0B3A55" stroke-width="3"/><path d="M71 7h26v16H71Z" fill="#E8412C"/><path d="M71 23L97 7" stroke="#fff" stroke-width="4"/></svg>' +
-      '<div class="onda-mapa"></div></div>';
-  let i = 0;
-  MUNDOS.forEach((mu, w) => {
-    h += '<section class="faixa-mundo" data-m="' + w + '"><header class="cab-mundo"><h3>' + mu.nome + '</h3><p>' + metros(mu.de) + ' a ' + metros(mu.ate) + '</p></header>';
-    for (let k = 0; k < POR_MUNDO; k++, i++) {
-      const f = FASES[i], desloc = Math.sin(i * 0.82) * 70, travada = i > prog.max, est = prog.estrelas[i] || 0;
-      const trio = (!travada && est) ? '<span class="trio">' + [0, 1, 2].map(q => '<svg viewBox="0 0 100 100"><use href="#' + (q < est ? 'i-estrela' : 'i-estrela-off') + '"/></svg>').join('') + '</span>' : '';
-      const lado = desloc < 0 ? 'left:calc(50% + ' + (desloc + 52).toFixed(1) + 'px);text-align:left' : 'right:calc(50% - ' + (desloc - 52).toFixed(1) + 'px);text-align:right';
-      h += '<div class="no-linha">' +
-        '<button class="no' + (travada ? ' travada' : '') + (i === prog.max && !travada ? ' atual' : '') + '" data-i="' + i + '" style="transform:translateX(' + desloc.toFixed(1) + 'px)" aria-label="Fase ' + (i + 1) + ': ' + f.nome + (travada ? ', ainda fechada' : '') + '">' +
-          '<span class="disco"></span><span class="num">' + (travada ? CADEADO : (i + 1)) + '</span>' + trio + '</button>' +
-        '<span class="no-rotulo' + (travada ? ' apagado' : '') + '" style="' + lado + '"><b>' + f.nome + '</b><small>' + metros(f.prof) + '</small></span>' +
-      '</div>';
-    }
+let mapaIni = 0;
+
+function superficieMapa(exp) {
+  return '<div class="superficie" aria-hidden="true"><div class="sol"></div>' +
+    '<svg class="barco" viewBox="0 0 120 60"><path d="M8 38h96l-12 16H22Z" fill="#0B3A55"/><path d="M34 38V22h30v16" fill="#13506F"/>' +
+    '<path d="M70 38V6" stroke="#0B3A55" stroke-width="3"/><path d="M71 7h26v16H71Z" fill="#E8412C"/><path d="M71 23L97 7" stroke="#fff" stroke-width="4"/></svg>' +
+    '<div class="onda-mapa"></div></div>' +
+    (exp > 1 ? '<p class="cab-exped">Expedição ' + exp + '</p>' : '');
+}
+function leitoMapa() {
+  return '<div class="leito" aria-hidden="true"><svg viewBox="0 0 400 120" preserveAspectRatio="xMidYMax slice"><path d="M0 70Q60 50 120 64T240 58T400 60V120H0Z" fill="#05060F"/>' +
+    '<circle cx="90" cy="52" r="3" fill="#6BFFE0"/><circle cx="90" cy="52" r="9" fill="#6BFFE0" opacity=".2"/><circle cx="300" cy="46" r="2.6" fill="#9A5CFF"/><circle cx="300" cy="46" r="8" fill="#9A5CFF" opacity=".2"/></svg>' +
+    '<p>O fundo, 4.000 m</p></div>';
+}
+function noDoMapa(i) {
+  const f = fase(i), desloc = Math.sin(i * 0.82) * 70, travada = i > prog.max, est = prog.estrelas[i] || 0;
+  const trio = (!travada && est) ? '<span class="trio">' + [0, 1, 2].map(q => '<svg viewBox="0 0 100 100"><use href="#' + (q < est ? 'i-estrela' : 'i-estrela-off') + '"/></svg>').join('') + '</span>' : '';
+  const lado = desloc < 0 ? 'left:calc(50% + ' + (desloc + 52).toFixed(1) + 'px);text-align:left'
+                          : 'right:calc(50% - ' + (desloc - 52).toFixed(1) + 'px);text-align:right';
+  return '<div class="no-linha">' +
+    '<button class="no' + (travada ? ' travada' : '') + (i === prog.max && !travada ? ' atual' : '') + '" data-i="' + i + '" style="transform:translateX(' + desloc.toFixed(1) + 'px)" aria-label="Fase ' + (i + 1) + ': ' + f.nome + (travada ? ', ainda fechada' : '') + '">' +
+      '<span class="disco"></span><span class="num">' + (travada ? CADEADO : (i + 1)) + '</span>' + trio + '</button>' +
+    '<span class="no-rotulo' + (travada ? ' apagado' : '') + '" style="' + lado + '"><b>' + f.nome + '</b><small>' + metros(f.prof) + '</small></span>' +
+  '</div>';
+}
+
+/* o mapa mostra uma janela de fases: com dez mil nós na tela o
+   celular não aguentaria, então desenha em volta de onde você está */
+function montaMapa(mantem) {
+  const col = document.getElementById('coluna'), trilha = document.getElementById('trilha');
+  const altaAntes = col.scrollHeight;
+  if (!mantem) mapaIni = Math.max(0, prog.max - 17);
+  const fim = prog.max + 6;
+  let h = '<svg class="trilha-svg" id="trilha-bolhas" aria-hidden="true"></svg>';
+  if (mapaIni > 0) h += '<button class="subir" id="bt-subir">Subir para as fases anteriores</button>';
+  for (let b = Math.floor(mapaIni / 6); b <= Math.floor(fim / 6); b++) {
+    const i0 = b * 6, mundo = Math.floor((i0 % CICLO) / 6), mu = MUNDOS[mundo];
+    if (i0 % CICLO === 0 && i0 >= mapaIni) h += superficieMapa(expedicao(i0));
+    h += '<section class="faixa-mundo" data-m="' + mundo + '">' +
+         '<header class="cab-mundo"><h3>' + mu.nome + '</h3><p>' + metros(mu.de) + ' a ' + metros(mu.ate) + '</p></header>';
+    for (let i = Math.max(i0, mapaIni); i <= Math.min(i0 + 5, fim); i++) h += noDoMapa(i);
     h += '</section>';
-  });
-  h += '<div class="leito" aria-hidden="true"><svg viewBox="0 0 400 120" preserveAspectRatio="xMidYMax slice"><path d="M0 70Q60 50 120 64T240 58T400 60V120H0Z" fill="#05060F"/>' +
-       '<circle cx="90" cy="52" r="3" fill="#6BFFE0"/><circle cx="90" cy="52" r="9" fill="#6BFFE0" opacity=".2"/><circle cx="300" cy="46" r="2.6" fill="#9A5CFF"/><circle cx="300" cy="46" r="8" fill="#9A5CFF" opacity=".2"/></svg>' +
-       '<p>O fundo, 4.000 m</p></div>';
+    if ((i0 + 5) % CICLO === CICLO - 1 && i0 + 5 <= fim) h += leitoMapa();
+  }
   col.innerHTML = h;
   col.querySelectorAll('.no').forEach(b => b.onclick = () => {
     const n = +b.dataset.i;
@@ -2113,8 +2459,17 @@ function montaMapa() {
     if (n > prog.max) { b.animate([{ transform: b.style.transform }, { transform: b.style.transform + ' translateX(-7px)' }, { transform: b.style.transform + ' translateX(7px)' }, { transform: b.style.transform }], 260); Som.nao(); return; }
     abreFase(n);
   });
+  const subir = document.getElementById('bt-subir');
+  if (subir) subir.onclick = () => {
+    Som.liga();
+    const antes = col.scrollHeight;
+    mapaIni = Math.max(0, mapaIni - 18);
+    montaMapa(true);
+    requestAnimationFrame(() => { trilha.scrollTop += col.scrollHeight - antes; });
+  };
   document.getElementById('total-estrelas').textContent = totalEstrelas();
-  requestAnimationFrame(() => { desenhaTrilha(); rolaAteAtual(); });
+  pintaMoedas();
+  requestAnimationFrame(() => { desenhaTrilha(); if (!mantem) rolaAteAtual(); });
 }
 
 function desenhaTrilha() {
@@ -2126,14 +2481,14 @@ function desenhaTrilha() {
   svg.setAttribute('viewBox', '0 0 ' + w + ' ' + h);
   svg.style.height = h + 'px';
   const pts = nos.map(b => { const r = b.getBoundingClientRect(); return [r.left - base.left + r.width / 2, r.top - base.top + r.height / 2]; });
-  let d = 'M' + (w / 2).toFixed(1) + ' 150 L' + pts[0][0].toFixed(1) + ' ' + pts[0][1].toFixed(1);
+  let d = 'M' + pts[0][0].toFixed(1) + ' ' + Math.max(0, pts[0][1] - 110).toFixed(1) + ' L' + pts[0][0].toFixed(1) + ' ' + pts[0][1].toFixed(1);
   for (let i = 1; i < pts.length; i++) {
     const a = pts[i - 1], b = pts[i], my = (a[1] + b[1]) / 2;
     d += ' C' + a[0].toFixed(1) + ' ' + my.toFixed(1) + ' ' + b[0].toFixed(1) + ' ' + my.toFixed(1) + ' ' + b[0].toFixed(1) + ' ' + b[1].toFixed(1);
   }
   /* até onde você já desceu a trilha fica acesa */
-  const ate = Math.min(prog.max, pts.length - 1);
-  let dFeito = 'M' + (w / 2).toFixed(1) + ' 150 L' + pts[0][0].toFixed(1) + ' ' + pts[0][1].toFixed(1);
+  const ate = Math.min(prog.max - mapaIni, pts.length - 1);
+  let dFeito = ate < 0 ? '' : 'M' + pts[0][0].toFixed(1) + ' ' + Math.max(0, pts[0][1] - 110).toFixed(1) + ' L' + pts[0][0].toFixed(1) + ' ' + pts[0][1].toFixed(1);
   for (let i = 1; i <= ate; i++) {
     const a = pts[i - 1], b = pts[i], my = (a[1] + b[1]) / 2;
     dFeito += ' C' + a[0].toFixed(1) + ' ' + my.toFixed(1) + ' ' + b[0].toFixed(1) + ' ' + my.toFixed(1) + ' ' + b[0].toFixed(1) + ' ' + b[1].toFixed(1);
@@ -2154,7 +2509,7 @@ function rolaAteAtual() {
 
 /* ═══ ABRIR UMA FASE ════════════════════════════════════════════ */
 function abreFase(i) {
-  const f = FASES[i];
+  const f = fase(i);
   instalaMundo(f.m);
   J = { fase: i, mov: f.mov, pontos: 0, coletado: [0, 0, 0, 0, 0, 0],
         papelTotal: 0, papelFeito: 0, ocupado: true, fim: false, cascata: 1 };
@@ -2169,6 +2524,7 @@ function abreFase(i) {
     dimensiona();
     montaPecas();
     atualizaHud();
+    desligaPoder();
     if (!prog.vistos[f.m]) { prog.vistos[f.m] = true; salvaProg(); mostraMundo(f.m); }
     else comecaFase();
   });
@@ -2176,7 +2532,7 @@ function abreFase(i) {
 function comecaFase() {
   J.ocupado = false;
   reiniciaDica();
-  faixaTexto(metros(FASES[J.fase].prof));
+  faixaTexto(metros(fase(J.fase).prof));
 }
 
 /* ═══ SOM: BOTÃO ════════════════════════════════════════════════ */
@@ -2197,13 +2553,20 @@ function iniciar() {
 
   carregaProg();
   pintaBotaoSom();
-  instalaMundo(FASES[prog.max].m);
+  pintaMoedas();
+  pintaPoderes();
+  instalaMundo(fase(prog.max).m);
   tela('tela-inicio');
 
   document.getElementById('bt-jogar').onclick = () => { Som.liga(); montaMapa(); tela('tela-mapa'); };
   document.getElementById('bt-ajuda').onclick = () => { Som.liga(); mostraAjuda(); };
-  document.getElementById('bt-mapa-volta').onclick = () => { instalaMundo(FASES[prog.max].m); tela('tela-inicio'); };
+  document.getElementById('bt-mapa-volta').onclick = () => { instalaMundo(fase(prog.max).m); tela('tela-inicio'); };
   document.getElementById('bt-jogo-volta').onclick = () => { fechaCartao(); montaMapa(); tela('tela-mapa'); };
+  document.getElementById('bt-loja').onclick = () => { Som.liga(); mostraLoja(); };
+  document.getElementById('poderes').addEventListener('click', e => {
+    const b = e.target.closest('[data-p]');
+    if (b) clicaPoder(b.dataset.p);
+  });
   document.getElementById('bt-som').onclick = () => { prog.som = !prog.som; salvaProg(); pintaBotaoSom(); if (prog.som) { Som.liga(); Som.pop(3); } };
 
   document.getElementById('veu').addEventListener('click', e => {
@@ -2212,10 +2575,13 @@ function iniciar() {
     const ac = b.dataset.ac;
     Som.liga();
     if (ac === 'fecha') fechaCartao();
+    else if (ac === 'compra') compra(b.dataset.id);
+    else if (ac === 'bau') pegaBau();
+    else if (ac === 'folego') usaFolegoNoCartao();
     else if (ac === 'comeca') { fechaCartao(); comecaFase(); }
     else if (ac === 'mapa') { fechaCartao(); montaMapa(); tela('tela-mapa'); }
     else if (ac === 'denovo') abreFase(J.fase);
-    else if (ac === 'proxima') abreFase(Math.min(J.fase + 1, FASES.length - 1));
+    else if (ac === 'proxima') abreFase(J.fase + 1);
   });
 
   mesa.addEventListener('pointerdown', aoPressionar);
@@ -2235,6 +2601,8 @@ function iniciar() {
 
   papel = Array.from({ length: H }, () => Array(W).fill(0));
   grid = Array.from({ length: H }, () => Array(W).fill(null));
+
+  if (prog.dia !== hoje()) setTimeout(mostraBau, 700);
 }
 
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', iniciar);
