@@ -218,11 +218,16 @@ body:not(.em-jogo) #cena{display:none}
 .hud-topo{display:flex;align-items:center;margin-bottom:8px}
 .hud-topo > * + *{margin-left:10px}
 .fase-titulo{
-  flex:1;min-width:0;height:42px;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:0 14px;
+  flex:1;min-width:0;height:42px;display:flex;align-items:center;padding:0 10px 0 8px;
   border-radius:14px;background:var(--vidro);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);box-shadow:inset 0 0 0 1px var(--vidro-borda);
 }
-.fase-titulo b{font-family:var(--display);font-weight:800;font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.fase-titulo span{font-size:13px;font-weight:900;color:#BFF5EE;white-space:nowrap}
+.fase-titulo .num-fase{
+  flex:0 0 auto;min-width:30px;height:26px;padding:0 8px;border-radius:999px;display:grid;place-items:center;
+  font-family:var(--display);font-weight:800;font-size:15px;color:#07435A;
+  background:radial-gradient(circle at 34% 28%,#fff,#CFF6F7 50%,#7FCEDC 100%);box-shadow:0 2px 5px rgba(0,20,40,.3);margin-right:9px}
+.fase-titulo b{flex:1;min-width:0;font-family:var(--display);font-weight:800;font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#fase-prof{margin-left:8px}
+.fase-titulo > span:last-child{font-size:13px;font-weight:900;color:#BFF5EE;white-space:nowrap}
 .painel{
   border-radius:20px;padding:10px 12px 12px;background:var(--vidro);
   -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);box-shadow:inset 0 0 0 1px var(--vidro-borda);

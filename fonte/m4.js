@@ -47,6 +47,7 @@ function atualizaHud() {
     m.dataset.on = tem ? '1' : '0';
   });
   document.getElementById('meta-texto').textContent = J.pontos >= teto ? 'três estrelas!' : nf(teto) + ' para 3 estrelas';
+  document.getElementById('fase-num').textContent = f.desafio ? '★' : (J.fase + 1);
   document.getElementById('fase-nome').textContent = f.nome;
   document.getElementById('fase-prof').textContent = f.desafio ? f.semana : metros(f.prof);
 

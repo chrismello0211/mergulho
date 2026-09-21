@@ -315,7 +315,7 @@ async function limpar(conj, novos) {
     const r = linha(k), c = coluna(k), p = grid[r][c];
     if (p.sp) temEsp = true;
     J.coletado[p.t]++;
-    ganho += 60 * Math.min(J.cascata, 8);
+    ganho += 60 * Math.min(J.cascata, 10);
     sr += r; sc += c;
     const el = els.get(p.id);
     if (el) el.classList.add('some');
@@ -326,12 +326,17 @@ async function limpar(conj, novos) {
     }
   }
   if (vivas.length >= 6) ganho += (vivas.length - 5) * 90;
+  if (novos) for (const n of novos) ganho += VALOR_NASCE[n.sp] || 0;   /* criar especial já paga */
+  const bonus = bonusEspeciais;
+  bonusEspeciais = 0;
+  ganho += bonus;
   J.pontos += ganho;
 
   Som.liga();
   /* cada especial que disparou desenha o próprio estrago */
   let peso = vivas.length >= 8 ? 2 : 1;
   for (const e of efeitosPendentes) {
+    if (e.vale) faisca(e.r, e.c, '+' + e.vale, '#FFE7A3', e.vale >= 900);
     if (e.sp === LH) { raioLinha(e.r, e.c, true); Som.raio(); peso = Math.max(peso, 2); }
     else if (e.sp === LV) { raioLinha(e.r, e.c, false); Som.raio(); peso = Math.max(peso, 2); }
     else if (e.sp === BOMBA) { ondaChoque(e.r, e.c, e.tam || 5.4, '#FFE7A3'); Som.bomba(); clarao('rgba(255,231,163,.45)'); peso = 3; }

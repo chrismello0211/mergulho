@@ -20,7 +20,9 @@ function resolvePts(conjInicial,pref){
     const novos=[];for(const g of gs){const sp=especialDoGrupo(g);if(sp)novos.push({k:posEspecial(g,pref||[]),sp});}
     for(const n of novos)conj.delete(n.k);
     const vivas=[...conj].filter(k=>{const p=grid[linha(k)][coluna(k)];return p&&!p.bau;});let ganho=0;
-    for(const k of vivas){const r=linha(k),c=coluna(k),p=grid[r][c];J.coletado[p.t]++;ganho+=60*Math.min(J.cascata,8);
+    for(const n of novos)ganho+=VALOR_NASCE[n.sp]||0;
+    ganho+=bonusEspeciais;bonusEspeciais=0;
+    for(const k of vivas){const r=linha(k),c=coluna(k),p=grid[r][c];J.coletado[p.t]++;ganho+=60*Math.min(J.cascata,10);
       if(papel[r][c]>0){papel[r][c]--;J.papelFeito++;}grid[r][c]=null;}
     if(vivas.length>=6)ganho+=(vivas.length-5)*90;J.pontos+=ganho;
     for(const n of novos){const p=grid[linha(n.k)][coluna(n.k)];if(p)p.sp=n.sp;}

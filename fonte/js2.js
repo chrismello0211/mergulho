@@ -1,5 +1,10 @@
 
 let efeitosPendentes = [];
+/* ponto extra por disparar especial e por juntar dois deles:
+   é o que faz valer a pena montar a jogada em vez de só combinar 3 */
+let bonusEspeciais = 0;
+const VALOR_ESP = { 1: 300, 2: 300, 3: 600, 4: 900 };     /* correnteza, correnteza em pé, bolha, pérola */
+const VALOR_NASCE = { 1: 150, 2: 150, 3: 250, 4: 400 };   /* por criar cada um deles */
 
 /* ═══ ESTADO ════════════════════════════════════════════════════ */
 let grid = [], papel = [], uid = 0;
@@ -150,7 +155,9 @@ function expandir(conj, corAlvo) {
     const r = linha(k), c = coluna(k), p = grid[r][c];
     if (!p || !p.sp) continue;
     const area = areaEspecial(r, c, p, corAlvo);
-    efeitosPendentes.push({ r: r, c: c, sp: p.sp, alvos: p.sp === ARCO ? area.slice() : null });
+    const vale = VALOR_ESP[p.sp] || 0;
+    bonusEspeciais += vale;
+    efeitosPendentes.push({ r: r, c: c, sp: p.sp, vale: vale, alvos: p.sp === ARCO ? area.slice() : null });
     for (const a of area) {
       if (!conj.has(a)) conj.add(a);
       if (!feitos.has(a)) fila.push(a);
@@ -169,9 +176,9 @@ function comboTroca(ra, ca, rb, cb) {
 
   /* a camada de efeitos precisa saber o que estourou, porque aqui
      os especiais são desarmados antes do expandir passar          */
-  const tudo = () => { for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) conj.add(chave(y, x)); efeitosPendentes.push({ r: rb, c: cb, sp: 'tudo' }); };
-  const linhaToda = r => { for (let x = 0; x < W; x++) conj.add(chave(r, x)); efeitosPendentes.push({ r: r, c: cb, sp: LH }); };
-  const colunaToda = c => { for (let y = 0; y < H; y++) conj.add(chave(y, c)); efeitosPendentes.push({ r: rb, c: c, sp: LV }); };
+  const tudo = () => { for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) conj.add(chave(y, x)); efeitosPendentes.push({ r: rb, c: cb, sp: 'tudo', vale: 4000 }); bonusEspeciais += 4000; };
+  const linhaToda = r => { for (let x = 0; x < W; x++) conj.add(chave(r, x)); efeitosPendentes.push({ r: r, c: cb, sp: LH, vale: 400 }); bonusEspeciais += 400; };
+  const colunaToda = c => { for (let y = 0; y < H; y++) conj.add(chave(y, c)); efeitosPendentes.push({ r: rb, c: c, sp: LV, vale: 400 }); bonusEspeciais += 400; };
 
   if (sa === ARCO && sb === ARCO) {
     a.sp = b.sp = NADA; tudo();
@@ -182,6 +189,7 @@ function comboTroca(ra, ca, rb, cb) {
     arco.sp = NADA;
     conj.add(kArco); conj.add(kOutro);
     if (outro.sp === LH || outro.sp === LV || outro.sp === BOMBA) {
+      bonusEspeciais += 2500;
       const alvo = outro.sp;
       for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
         const p = grid[y][x];
@@ -191,7 +199,8 @@ function comboTroca(ra, ca, rb, cb) {
       corAlvo = outro.t;
       const alvos = [];
       for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (grid[y][x] && grid[y][x].t === outro.t) { conj.add(chave(y, x)); alvos.push(chave(y, x)); }
-      efeitosPendentes.push({ r: rb, c: cb, sp: ARCO, alvos: alvos });
+      efeitosPendentes.push({ r: rb, c: cb, sp: ARCO, vale: 1600, alvos: alvos });
+      bonusEspeciais += 1600;
     }
   } else if ((sa === LH || sa === LV) && (sb === LH || sb === LV)) {
     a.sp = b.sp = NADA;
@@ -202,7 +211,8 @@ function comboTroca(ra, ca, rb, cb) {
     conj.add(ka);
   } else if (sa === BOMBA && sb === BOMBA) {
     a.sp = b.sp = NADA;
-    efeitosPendentes.push({ r: rb, c: cb, sp: BOMBA, tam: 8 });
+    efeitosPendentes.push({ r: rb, c: cb, sp: BOMBA, tam: 8, vale: 2200 });
+    bonusEspeciais += 2200;
     for (let dr = -3; dr <= 3; dr++) for (let dc = -3; dc <= 3; dc++)
       if (Math.abs(dr) + Math.abs(dc) <= 3 && dentro(rb + dr, cb + dc)) conj.add(chave(rb + dr, cb + dc));
     conj.add(ka);
