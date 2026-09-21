@@ -121,6 +121,7 @@ async function venceu() {
   if (J.pontos >= f.marcas[1]) e = 2;
   if (J.pontos >= f.marcas[2]) e = 3;
   const primeira = !prog.estrelas[J.fase];
+  limpaPartida();
   prog.estrelas[J.fase] = Math.max(prog.estrelas[J.fase] || 0, e);
   if (J.fase + 1 > prog.max) prog.max = J.fase + 1;
   const ganho = moedasDaFase(e, primeira);
@@ -156,6 +157,7 @@ async function venceu() {
 
 async function perdeu() {
   J.ocupado = true;
+  limpaPartida();
   document.body.classList.remove('aperto');
   Musica.tensao(false, 0);
   Som.liga(); Som.derrota(); vibra(TREMIDA.derrota);
@@ -386,6 +388,7 @@ function abreDesafio() {
         bauFeito: 0, bauNaTela: 0, bauPendentes: 0, contaCresce: 0, alvoCresce: null };
   papel = Array.from({ length: H }, () => Array(W).fill(0));
   J.papelBase = papel.map(l => l.slice());
+  pontosNaTela = 0;
   montaTabuleiro();
   fechaCartao();
   tela('tela-jogo');
@@ -419,6 +422,69 @@ async function compartilhaDesafio(botao) {
   const txt = 'Fiz ' + nf(prog.desafio.melhor) + ' pontos no desafio da semana do Mergulho (' + desafioAtual.semana + '). Bora bater?\n' + location.href;
   try { if (navigator.share) { await navigator.share({ text: txt }); return; } } catch (e) { return; }
   try { await navigator.clipboard.writeText(txt); botao.textContent = 'Copiado!'; setTimeout(() => botao.textContent = 'Mandar pro grupo', 2000); } catch (e) {}
+}
+
+/* ═══ AJUSTES E DESEMPENHO ═════════════════════════════════════
+   Aparelho fraco não some com o jogo: entra o modo leve, que tira
+   desfoque, partícula e brilho e deixa o essencial.              */
+function aplicaLeve() { document.body.classList.toggle('leve', !!prog.leve); }
+function decideLeve() {
+  if (prog.leve !== null && prog.leve !== undefined) return;
+  const nucleos = navigator.hardwareConcurrency || 4;
+  const memoria = navigator.deviceMemory || 4;
+  prog.leve = nucleos <= 4 && memoria <= 4;   /* na dúvida entra cheio: o vigia de fps corrige depois */
+  salvaProg();
+}
+let olhoFps = null, jaMediu = false;
+function vigiaFps() {
+  if (jaMediu || prog.leve) return;
+  jaMediu = true;
+  let quadros = 0;
+  const t0 = performance.now();
+  const passo = () => {
+    quadros++;
+    const dt = performance.now() - t0;
+    if (dt < 4000) { olhoFps = requestAnimationFrame(passo); return; }
+    olhoFps = null;
+    if (quadros / (dt / 1000) < 38) {
+      prog.leve = true; salvaProg(); aplicaLeve();
+      faixaTexto('Modo leve');
+      setTimeout(() => cartao('<h3>Liguei o modo leve</h3>' +
+        '<p>O jogo estava engasgando neste aparelho, então tirei desfoque, partícula e brilho pra rodar liso. Dá pra voltar atrás nos ajustes, no botão de engrenagem da tela inicial.</p>' +
+        '<div class="bts"><button class="bt" data-ac="fecha">Beleza</button></div>'), 900);
+    }
+  };
+  olhoFps = requestAnimationFrame(passo);
+}
+
+const CHAVES_AJUSTE = [
+  { k: 'som', nome: 'Som', texto: 'Estouros, especiais e avisos.' },
+  { k: 'musica', nome: 'Música', texto: 'A trilha que toca por baixo.' },
+  { k: 'vibrar', nome: 'Vibração', texto: 'Tremida a cada jogada.' },
+  { k: 'cheio', nome: 'Efeitos cheios', texto: 'Desligue se o aparelho engasgar.' }
+];
+const valorAjuste = k => k === 'cheio' ? !prog.leve : !!prog[k];
+function mostraAjustes() {
+  cartao('<h3>Ajustes</h3>' +
+    CHAVES_AJUSTE.map(a =>
+      '<div class="ajuste"><div class="txt"><b>' + a.nome + '</b><small>' + a.texto + '</small></div>' +
+      '<button class="chave' + (valorAjuste(a.k) ? ' on' : '') + '" data-ac="mudar" data-k="' + a.k + '" ' +
+      'role="switch" aria-checked="' + valorAjuste(a.k) + '" aria-label="' + a.nome + '"><span></span></button></div>').join('') +
+    '<p class="versao-cartao">versão ' + VERSAO_JOGO + '</p>' +
+    '<div class="bts"><button class="bt" data-ac="fecha">Fechar</button></div>');
+}
+function mudaAjuste(k) {
+  if (k === 'cheio') { prog.leve = !prog.leve; aplicaLeve(); }
+  else prog[k] = !prog[k];
+  salvaProg();
+  pintaBotaoSom();
+  if (k === 'som' || k === 'musica') {
+    if (prog.som && prog.musica) { Som.liga(); Musica.liga(document.body.classList.contains('em-jogo') ? 'jogo' : 'menu', mundoAtual); }
+    else Musica.para();
+  }
+  if (prog.som) { Som.liga(); Som.toque(); }
+  if (k === 'vibrar' && prog.vibrar) vibra(TREMIDA.especial);
+  mostraAjustes();
 }
 
 /* ═══ TELAS ═════════════════════════════════════════════════════ */
@@ -534,7 +600,39 @@ function rolaAteAtual() {
 }
 
 /* ═══ ABRIR UMA FASE ════════════════════════════════════════════ */
+function retomaPartida(d) {
+  const f = fase(d.f);
+  instalaMundo(f.m);
+  J = { fase: d.f, mov: d.mov, pontos: d.pontos, coletado: d.col,
+        papelTotal: d.pt, papelFeito: d.pf, ocupado: true, fim: false, cascata: 1,
+        bauFeito: d.bf, bauNaTela: d.bn, bauPendentes: d.bp, contaCresce: d.cc, alvoCresce: d.ac,
+        papelBase: d.base };
+  papel = d.papel;
+  uid = 0;
+  grid = d.g.map(l => l.map(cod => {
+    if (!cod) return null;
+    if (cod === 'b') return novoBau();
+    const pd = cod.split('.');
+    const p = novaPeca(+pd[0]); p.sp = +pd[1]; return p;
+  }));
+  pontosNaTela = 0;
+  fechaCartao();
+  tela('tela-jogo');
+  requestAnimationFrame(() => {
+    montaCasas(); dimensiona(); montaPecas(); atualizaHud(); desligaPoder();
+    mesa.classList.toggle('com-bau', f.obj.tipo === 'bau');
+    pintaPapel();
+    if (J.alvoCresce) pintaAvisoCresce();
+    J.ocupado = false;
+    reiniciaDica();
+    Som.liga(); Som.sobe(0);
+    Musica.liga('jogo', mundoAtual);
+    faixaTexto('De volta');
+  });
+}
+
 function abreFase(i) {
+  limpaPartida();
   const f = fase(i);
   instalaMundo(f.m);
   soltaSemente();
@@ -546,6 +644,7 @@ function abreFase(i) {
                                    : Array.from({ length: H }, () => Array(W).fill(0));
   J.papelBase = papel.map(l => l.slice());
   J.papelTotal = contaPapel(papel);
+  pontosNaTela = 0;
   montaTabuleiro();
   fechaCartao();
   tela('tela-jogo');
@@ -570,6 +669,7 @@ function comecaFase() {
   reiniciaDica();
   Som.liga(); Som.sobe(0);
   Musica.liga('jogo', mundoAtual);
+  vigiaFps();
   if (f.desafio) faixaTexto('25 jogadas'); else faixaTexto(metros(f.prof));
 }
 function mostraAviso(titulo, icone, texto) {
@@ -596,6 +696,8 @@ function iniciar() {
   faiscasBox = document.getElementById('faiscas');
 
   carregaProg();
+  decideLeve();
+  aplicaLeve();
   document.getElementById('versao').textContent = 'v' + VERSAO_JOGO;
   document.addEventListener('pointerdown', e => {
     if (e.target.closest('.bt, .ico-bt, .poder, .no, .bt-compra, .subir')) { Som.liga(); Som.toque(); }
@@ -610,6 +712,7 @@ function iniciar() {
   document.getElementById('bt-ajuda').onclick = () => { Som.liga(); mostraAjuda(); };
   document.getElementById('bt-mapa-volta').onclick = () => { instalaMundo(fase(prog.max).m); tela('tela-inicio'); };
   document.getElementById('bt-jogo-volta').onclick = () => { soltaSemente(); fechaCartao(); montaMapa(); tela('tela-mapa'); };
+  document.getElementById('bt-ajustes').onclick = () => { Som.liga(); mostraAjustes(); };
   document.getElementById('bt-desafio').onclick = () => { Som.liga(); mostraDesafio(); };
   document.getElementById('bt-loja').onclick = () => { Som.liga(); mostraLoja(); };
   document.getElementById('poderes').addEventListener('click', e => {
@@ -632,6 +735,9 @@ function iniciar() {
     else if (ac === 'bau') pegaBau();
     else if (ac === 'desafio') abreDesafio();
     else if (ac === 'compartilha') compartilhaDesafio(b);
+    else if (ac === 'mudar') mudaAjuste(b.dataset.k);
+    else if (ac === 'retoma') { const d = lePartida(); limpaPartida(); if (d) retomaPartida(d); else fechaCartao(); }
+    else if (ac === 'descarta') { limpaPartida(); fechaCartao(); if (prog.dia !== hoje()) setTimeout(mostraBau, 300); }
     else if (ac === 'folego') usaFolegoNoCartao();
     else if (ac === 'comeca') { fechaCartao(); comecaFase(); }
     else if (ac === 'mapa') { fechaCartao(); montaMapa(); tela('tela-mapa'); }
@@ -657,7 +763,18 @@ function iniciar() {
   papel = Array.from({ length: H }, () => Array(W).fill(0));
   grid = Array.from({ length: H }, () => Array(W).fill(null));
 
-  if (prog.dia !== hoje()) setTimeout(mostraBau, 700);
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) { salvaPartida(); Musica.para(); clearTimeout(dicaTimer); apagaDica(); if (olhoFps) { cancelAnimationFrame(olhoFps); olhoFps = null; } }
+    else if (prog.som && prog.musica) Musica.liga(document.body.classList.contains('em-jogo') ? 'jogo' : 'menu', mundoAtual);
+  });
+
+  const parada = lePartida();
+  if (parada && fase(parada.f)) {
+    setTimeout(() => cartao('<h3>Você parou no meio</h3>' +
+      '<p>A fase ' + (parada.f + 1) + ' ficou pela metade, com ' + parada.mov + (parada.mov === 1 ? ' jogada' : ' jogadas') + ' e ' + nf(parada.pontos) + ' pontos. Quer voltar pra ela?</p>' +
+      '<div class="bts"><button class="bt vidro" data-ac="descarta">Começar de novo</button>' +
+      '<button class="bt" data-ac="retoma">Continuar</button></div>'), 500);
+  } else if (prog.dia !== hoje()) setTimeout(mostraBau, 700);
 }
 
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', iniciar);

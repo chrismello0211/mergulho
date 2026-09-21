@@ -2,7 +2,7 @@
    MERGULHO · combinar 3 da beira da praia até 4.000 metros
    ═══════════════════════════════════════════════════════════════ */
 
-const VERSAO_JOGO = '2026.09.24';
+const VERSAO_JOGO = '2026.09.25';
 const W = 7, H = 8, TIPOS = 6;
 const NADA = 0, LH = 1, LV = 2, BOMBA = 3, ARCO = 4;
 
@@ -110,11 +110,13 @@ const PADROES_GER = [['bandeja',24],['xadrez',26],['faixas',26],['colunas',30],[
 
 function semente(i) { let t = (i * 1103515245 + 12345) >>> 0; return () => { t = (t * 1664525 + 1013904223) >>> 0; return t / 4294967296; }; }
 const geradas = {};
+let geradasN = 0;
 const r100 = x => Math.round(x / 100) * 100;
 
 function fase(i) {
   if (i < BASE.length) return BASE[i];
   if (geradas[i]) return geradas[i];
+  if (geradasN > 400) { for (const k in geradas) delete geradas[k]; geradasN = 0; }   /* não deixa a memória crescer sem fim */
   const r = semente(i);
   const pos = i % CICLO, m = Math.floor(pos / 6), base = BASE[pos];
   const dif = Math.min(1, (i - CICLO) / 260);          /* aperta ao longo de umas 260 fases e para */
@@ -147,6 +149,7 @@ function fase(i) {
   let marcas;
   if (tipo === 'pontos') { const m0 = r100(p50 * (.50 + .06 * dif)); marcas = [m0, r100((m0 + p50) / 2), r100(p50)]; }
   else marcas = [r100(p50 * .42), r100(p50 * .72), r100(p50)];
+  geradasN++;
   return (geradas[i] = { m, prof: base.prof, nome, mov, obj, marcas, exped: Math.floor(i / CICLO) + 1 });
 }
 const expedicao = i => Math.floor(i / CICLO) + 1;
@@ -217,6 +220,7 @@ function casasCobertas(g) { let n = 0; for (let r = 0; r < H; r++) for (let c = 
 /* ── guardar o progresso ───────────────────────────────────── */
 const CHAVE = 'mergulho-v1';
 let prog = { estrelas: {}, max: 0, som: true, vistos: {}, moedas: 120,
+             musica: true, vibrar: true, leve: null,
              poderes: { arpao: 1, troca: 1, giro: 1, folego: 1 }, dia: '',
              desafio: { semana: '', melhor: 0, nome: '' } };
 function carregaProg() {
@@ -227,6 +231,12 @@ function carregaProg() {
   } catch (e) { /* sem armazenamento: joga do mesmo jeito, só não guarda */ }
 }
 function salvaProg() { try { localStorage.setItem(CHAVE, JSON.stringify(prog)); } catch (e) {} }
+const CHAVE_PARTIDA = CHAVE + '-partida';
+function limpaPartida() { try { localStorage.removeItem(CHAVE_PARTIDA); } catch (e) {} }
+function lePartida() {
+  try { const c = localStorage.getItem(CHAVE_PARTIDA); return c ? JSON.parse(c) : null; } catch (e) { return null; }
+}
+
 function totalEstrelas() { return Object.values(prog.estrelas).reduce((a, b) => a + b, 0); }
 
 /* ── som feito na hora: bolha que sobe, mais grave quanto mais fundo ── */
@@ -301,7 +311,7 @@ const Som = {
   vitoria() { [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => this.eco(f * this.f, 0.42, 'triangle', 0.13), i * 120)); },
   derrota() { [392, 330, 262].forEach((f, i) => setTimeout(() => this.nota(f * this.f, 0.36, 'sine', 0.12), i * 160)); }
 };
-function vibra(ms) { try { if (navigator.vibrate && prog.som) navigator.vibrate(ms); } catch (e) {} }
+function vibra(ms) { try { if (navigator.vibrate && prog.vibrar) navigator.vibrate(ms); } catch (e) {} }
 const TREMIDA = {
   toque: 6, combina: 12, grande: [16, 30, 16], especial: [24, 18, 40], combo: [40, 25, 60, 25, 80],
   bau: [26, 40], estrela: [18, 50, 18], vitoria: [20, 60, 20, 60, 120], derrota: [90, 40, 90], aperto: 14
@@ -333,7 +343,7 @@ const Musica = {
   },
   nota(f, dur, tipo, vol) {
     const ctx = Som.ctx;
-    if (!ctx || !prog.som) return;
+    if (!ctx || !prog.som || !prog.musica) return;
     const t = ctx.currentTime, o = ctx.createOscillator(), g = ctx.createGain();
     o.type = tipo; o.frequency.setValueAtTime(f, t);
     g.gain.setValueAtTime(0.0001, t);
@@ -344,7 +354,7 @@ const Musica = {
   },
   batida(vol, freq, dur) {
     const ctx = Som.ctx;
-    if (!ctx || !prog.som) return;
+    if (!ctx || !prog.som || !prog.musica) return;
     const t = ctx.currentTime, n = Math.floor(ctx.sampleRate * dur);
     const buf = ctx.createBuffer(1, n, ctx.sampleRate), d = buf.getChannelData(0);
     for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / n, 2);
@@ -354,7 +364,7 @@ const Musica = {
     s.connect(f); f.connect(g); g.connect(ctx.destination); s.start(t);
   },
   toca() {
-    if (!Som.ctx || !prog.som) return;
+    if (!Som.ctx || !prog.som || !prog.musica) return;
     const p = this.passo % 16, esc = this.escalas[this.m], raiz = this.raiz[this.m];
     const jogo = this.modo === 'jogo';
     const vol = jogo ? 0.05 + this.aperto * 0.02 : 0.035;

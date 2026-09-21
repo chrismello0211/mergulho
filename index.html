@@ -37,8 +37,11 @@
 :root[data-theme="dark"]{ --vidro:rgba(2,20,34,.5); }
 [data-mundo="3"],[data-mundo="4"]{ --sombra-peca:none; }
 
-*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none}
+button,.no,.poder,.bt,.ico-bt,.bt-compra{touch-action:manipulation}
 html,body{height:100%}
+@supports (height:100dvh){ html,body{height:100dvh} }
+@supports (-webkit-touch-callout:none){ body{min-height:-webkit-fill-available} }
 html{scroll-padding-top:var(--safe-t)}
 body{
   margin:0;font-family:Nunito,system-ui,-apple-system,"Segoe UI",sans-serif;
@@ -148,21 +151,24 @@ body:not(.em-jogo) #cena{display:none}
   font-size:15.5px;font-weight:800;line-height:1.45;text-align:center;max-width:25ch;margin:0;
   color:var(--espuma);text-shadow:0 1px 2px rgba(0,50,70,.35);
 }
-.vitrine{display:flex;gap:6px;margin:22px 0 28px}
+.vitrine{display:flex;margin:22px 0 28px}
+.vitrine > * + *{margin-left:6px}
 .vitrine svg{width:46px;height:46px;filter:var(--sombra-peca);animation:flutua 3s ease-in-out infinite}
 .vitrine svg:nth-child(2){animation-delay:.2s}.vitrine svg:nth-child(3){animation-delay:.4s}
 .vitrine svg:nth-child(4){animation-delay:.6s}.vitrine svg:nth-child(5){animation-delay:.8s}.vitrine svg:nth-child(6){animation-delay:1s}
 @keyframes flutua{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
-.inicio-bts{display:flex;flex-direction:column;align-items:center;gap:12px}
+.inicio-bts{display:flex;flex-direction:column;align-items:center}
+.inicio-bts > * + *{margin-top:12px}
 .rodape{position:absolute;bottom:calc(var(--safe-b) + 14px);left:0;right:0;margin:0;text-align:center;font-size:12.5px;font-weight:800;color:rgba(243,251,255,.62);z-index:2}
 
 /* ═══ MAPA: a coluna d'água ═════════════════════════════════════ */
 #tela-mapa{background:#0B4F7A}
 .topo{
-  display:flex;align-items:center;gap:12px;padding:10px 14px;flex:0 0 auto;position:relative;z-index:3;
+  display:flex;align-items:center;padding:10px 14px;flex:0 0 auto;position:relative;z-index:3;
   background:rgba(4,30,48,.62);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
   box-shadow:0 1px 0 rgba(243,251,255,.1);
 }
+.topo > * + *{margin-left:10px}
 .topo h2{font-family:var(--display);font-weight:800;font-size:22px;margin:0;flex:1}
 .placar-estrelas{
   display:flex;align-items:center;gap:6px;font-family:var(--display);font-weight:800;font-size:18px;
@@ -217,7 +223,8 @@ body:not(.em-jogo) #cena{display:none}
 /* ═══ JOGO ══════════════════════════════════════════════════════ */
 #tela-jogo{padding-top:calc(var(--safe-t) + 8px)}
 .hud{flex:0 0 auto;padding:0 12px;position:relative;z-index:2}
-.hud-topo{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.hud-topo{display:flex;align-items:center;margin-bottom:8px}
+.hud-topo > * + *{margin-left:10px}
 .fase-titulo{
   flex:1;min-width:0;height:42px;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:0 14px;
   border-radius:14px;background:var(--vidro);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);box-shadow:inset 0 0 0 1px var(--vidro-borda);
@@ -228,11 +235,13 @@ body:not(.em-jogo) #cena{display:none}
   border-radius:20px;padding:10px 12px 12px;background:var(--vidro);
   -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);box-shadow:inset 0 0 0 1px var(--vidro-borda);
 }
-.hud-linha{display:flex;align-items:center;gap:10px}
+.hud-linha{display:flex;align-items:center}
+.hud-linha > * + *{margin-left:10px}
 .objetivo{flex:1;min-width:0;display:flex;align-items:center;gap:10px;min-height:50px}
 .objetivo .rotulo{font-size:12px;font-weight:800;color:rgba(243,251,255,.66);line-height:1.2}
 .objetivo .valor{font-family:var(--display);font-weight:800;font-size:18px;line-height:1.15}
-.alvos{display:flex;gap:9px;align-items:center;flex-wrap:wrap}
+.alvos{display:flex;align-items:center;flex-wrap:wrap;margin:-3px}
+.alvos > *{margin:3px}
 .alvo{display:flex;align-items:center;gap:3px}
 .alvo .ic{width:30px;height:30px;filter:var(--sombra-peca)}
 .alvo b{font-family:var(--display);font-weight:800;font-size:17px}
@@ -357,7 +366,8 @@ body:not(.em-jogo) #cena{display:none}
 @keyframes entra{0%{transform:scale(.85) translateY(20px);opacity:0}100%{transform:none;opacity:1}}
 .cartao h3{font-family:var(--display);font-weight:800;font-size:30px;line-height:1.1;margin:0 0 6px;color:#0A6C7A}
 .cartao p{font-size:15px;font-weight:700;line-height:1.55;margin:0 0 4px;color:#2E5E6C}
-.cartao .bts{display:flex;gap:10px;justify-content:center;margin-top:20px;flex-wrap:wrap}
+.cartao .bts{display:flex;justify-content:center;margin-top:20px;flex-wrap:wrap;margin-left:-5px;margin-right:-5px}
+.cartao .bts > *{margin:5px}
 .cartao .bt{font-size:18px;padding:12px 22px 14px}
 .cartao .bt.vidro{font-size:16px;padding:11px 18px 12px}
 .cartao .bt.vidro{color:#0A6C7A;background:rgba(10,108,122,.08);box-shadow:inset 0 0 0 2px rgba(10,108,122,.3)}
@@ -402,7 +412,8 @@ body:not(.em-jogo) #cena{display:none}
 /* ── poderes, moedas e loja ─────────────────────────────────── */
 .barra-poderes{flex:0 0 auto;padding:2px 12px 6px;position:relative;z-index:2}
 .dica-poder{margin:0 0 6px;text-align:center;font-size:13px;font-weight:800;color:#BFF5EE;text-shadow:0 1px 3px rgba(0,20,40,.5)}
-.poderes{display:flex;gap:9px;justify-content:center}
+.poderes{display:flex;justify-content:center}
+.poderes > * + *{margin-left:9px}
 .poder{
   position:relative;width:62px;height:56px;border:0;border-radius:16px;padding:0;cursor:pointer;color:var(--espuma);
   display:grid;place-items:center;align-content:center;gap:1px;
@@ -537,6 +548,67 @@ body.aperto #vinheta{opacity:1;animation:vinheta 1.05s ease-in-out infinite}
 #bt-jogar{animation:pulsa-bt 2.6s ease-in-out infinite}
 @keyframes pulsa-bt{0%,100%{transform:scale(1)}50%{transform:scale(1.045)}}
 
+/* ── ajustes ────────────────────────────────────────────────── */
+.canto-som{display:flex}
+.canto-som > * + *{margin-left:8px}
+.ajuste{display:flex;align-items:center;text-align:left;background:rgba(10,108,122,.08);border-radius:16px;padding:11px 14px;margin:9px 0}
+.ajuste .txt{flex:1;min-width:0}
+.ajuste b{display:block;font-family:var(--display);font-weight:800;font-size:16px;color:var(--tinta)}
+.ajuste small{display:block;font-size:12.5px;font-weight:700;color:#2E5E6C;line-height:1.35}
+.chave{width:56px;height:32px;flex:0 0 auto;border:0;border-radius:999px;cursor:pointer;position:relative;padding:0;
+  background:rgba(10,108,122,.22);transition:background .2s}
+.chave span{position:absolute;top:4px;left:4px;width:24px;height:24px;border-radius:50%;background:#fff;
+  box-shadow:0 2px 5px rgba(0,30,50,.35);transition:transform .2s}
+.chave.on{background:var(--boia)}
+.chave.on span{transform:translateX(24px)}
+.cartao p.versao-cartao{font-size:12px;color:#4F7F8C;margin-top:14px}
+[data-mundo="3"] .ajuste,[data-mundo="4"] .ajuste{background:rgba(107,255,224,.07)}
+[data-mundo="3"] .ajuste b,[data-mundo="4"] .ajuste b{color:var(--espuma)}
+[data-mundo="3"] .ajuste small,[data-mundo="4"] .ajuste small{color:rgba(243,251,255,.78)}
+[data-mundo="3"] .chave,[data-mundo="4"] .chave{background:rgba(243,251,255,.18)}
+
+/* ── Safari antigo não entende inset ────────────────────────── */
+@supports not (inset: 0px){
+  #agua,#cena,#app .tela,#veu,#clarao,#vinheta,#fx-tela,.particulas,.raios,.trilha-svg,
+  .movimentos .fundo,.no .disco,.peca .capa,.barra .cheio,.ceu-sol{top:0;right:0;bottom:0;left:0}
+  .tela{top:0;right:0;bottom:0;left:0}
+  .barra .cheio{right:auto}
+  .ceu-sol{right:auto;bottom:auto}
+  .raios{bottom:auto}
+}
+
+/* ── tablet: o conteúdo para de esticar, o cenário continua inteiro ── */
+@media (min-width:640px){
+  .inicio-conteudo,.topo,#coluna,.leito,.superficie{max-width:600px;margin-left:auto;margin-right:auto}
+  .hud,.barra-poderes{max-width:530px;margin-left:auto;margin-right:auto}
+  #tela-inicio{--tw:min(70vw,520px)}
+  .subtitulo{font-size:17px}
+  .no{width:74px;height:74px}
+  .no .num{font-size:28px}
+  .no-rotulo{width:150px}
+  .no-rotulo b{font-size:15px}
+}
+
+/* ── tela deitada: em celular baixo, pede pra girar ─────────── */
+#gire{position:fixed;top:0;right:0;bottom:0;left:0;z-index:60;display:none;place-items:center;text-align:center;
+  background:linear-gradient(180deg,#0B4F7A,#061F38);padding:24px}
+#gire p{font-family:var(--display);font-weight:800;font-size:22px;color:var(--espuma);margin:14px 0 0;max-width:20ch}
+#gire svg{width:64px;height:64px;fill:none;stroke:var(--biolum);stroke-width:1.6}
+@media (orientation:landscape) and (max-height:500px){
+  #gire{display:grid}
+}
+
+/* ── modo leve: aparelho antigo joga liso ───────────────────── */
+body.leve{--sombra-peca:none}
+body.leve .causticas,body.leve .raios,body.leve .particulas,body.leve .nadador,
+body.leve #vinheta,body.leve .fx-onda,body.leve .fx-feixe{display:none}
+body.leve .fase-titulo,body.leve .painel,body.leve .ico-bt,body.leve .poder,body.leve .topo{-webkit-backdrop-filter:none;backdrop-filter:none;background:rgba(4,30,48,.72)}
+body.leve #veu{-webkit-backdrop-filter:none;backdrop-filter:none;background:rgba(2,22,36,.82)}
+body.leve .peca .corpo,body.leve .titulo,body.leve #bt-jogar{animation:none !important}
+body.leve .no .disco,body.leve #mesa{box-shadow:none}
+body.leve .fx-raio{box-shadow:none}
+body.leve .cartao{animation-duration:.18s}
+
 @media (prefers-reduced-motion: reduce){
   *{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.05s !important}
   .bolha-amb,.neve,.faisca-bio,#vinheta,.fx-raio,.fx-onda,.fx-feixe,.estilhaco{display:none}
@@ -593,6 +665,10 @@ body.aperto #vinheta{opacity:1;animation:vinheta 1.05s ease-in-out infinite}
 
 <div id="agua" aria-hidden="true"><div id="cena"></div></div>
 
+<div id="gire" aria-hidden="true"><div>
+    <svg viewBox="0 0 24 24"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M4 14a8 8 0 0 0 8 8M20 10a8 8 0 0 0-8-8"/></svg>
+    <p>Gire o aparelho para jogar em pé</p>
+  </div></div>
 <div id="app">
   <div id="clarao" aria-hidden="true"></div>
   <div id="vinheta" aria-hidden="true"></div>
@@ -603,6 +679,7 @@ body.aperto #vinheta{opacity:1;animation:vinheta 1.05s ease-in-out infinite}
     <div class="ceu-sol" aria-hidden="true"></div>
     <div class="canto-som">
       <button class="ico-bt claro" id="bt-som" aria-label="Som"></button>
+      <button class="ico-bt claro" id="bt-ajustes" aria-label="Ajustes"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M12 3v2.2M12 18.8V21M4.2 7.5l1.9 1.1M17.9 15.4l1.9 1.1M4.2 16.5l1.9-1.1M17.9 8.6l1.9-1.1"/></svg></button>
     </div>
     <svg class="titulo" viewBox="0 0 470 132" role="img" aria-label="Mergulho">
       <defs>
@@ -705,7 +782,7 @@ body.aperto #vinheta{opacity:1;animation:vinheta 1.05s ease-in-out infinite}
    MERGULHO · combinar 3 da beira da praia até 4.000 metros
    ═══════════════════════════════════════════════════════════════ */
 
-const VERSAO_JOGO = '2026.09.24';
+const VERSAO_JOGO = '2026.09.25';
 const W = 7, H = 8, TIPOS = 6;
 const NADA = 0, LH = 1, LV = 2, BOMBA = 3, ARCO = 4;
 
@@ -813,11 +890,13 @@ const PADROES_GER = [['bandeja',24],['xadrez',26],['faixas',26],['colunas',30],[
 
 function semente(i) { let t = (i * 1103515245 + 12345) >>> 0; return () => { t = (t * 1664525 + 1013904223) >>> 0; return t / 4294967296; }; }
 const geradas = {};
+let geradasN = 0;
 const r100 = x => Math.round(x / 100) * 100;
 
 function fase(i) {
   if (i < BASE.length) return BASE[i];
   if (geradas[i]) return geradas[i];
+  if (geradasN > 400) { for (const k in geradas) delete geradas[k]; geradasN = 0; }   /* não deixa a memória crescer sem fim */
   const r = semente(i);
   const pos = i % CICLO, m = Math.floor(pos / 6), base = BASE[pos];
   const dif = Math.min(1, (i - CICLO) / 260);          /* aperta ao longo de umas 260 fases e para */
@@ -850,6 +929,7 @@ function fase(i) {
   let marcas;
   if (tipo === 'pontos') { const m0 = r100(p50 * (.50 + .06 * dif)); marcas = [m0, r100((m0 + p50) / 2), r100(p50)]; }
   else marcas = [r100(p50 * .42), r100(p50 * .72), r100(p50)];
+  geradasN++;
   return (geradas[i] = { m, prof: base.prof, nome, mov, obj, marcas, exped: Math.floor(i / CICLO) + 1 });
 }
 const expedicao = i => Math.floor(i / CICLO) + 1;
@@ -920,6 +1000,7 @@ function casasCobertas(g) { let n = 0; for (let r = 0; r < H; r++) for (let c = 
 /* ── guardar o progresso ───────────────────────────────────── */
 const CHAVE = 'mergulho-v1';
 let prog = { estrelas: {}, max: 0, som: true, vistos: {}, moedas: 120,
+             musica: true, vibrar: true, leve: null,
              poderes: { arpao: 1, troca: 1, giro: 1, folego: 1 }, dia: '',
              desafio: { semana: '', melhor: 0, nome: '' } };
 function carregaProg() {
@@ -930,6 +1011,12 @@ function carregaProg() {
   } catch (e) { /* sem armazenamento: joga do mesmo jeito, só não guarda */ }
 }
 function salvaProg() { try { localStorage.setItem(CHAVE, JSON.stringify(prog)); } catch (e) {} }
+const CHAVE_PARTIDA = CHAVE + '-partida';
+function limpaPartida() { try { localStorage.removeItem(CHAVE_PARTIDA); } catch (e) {} }
+function lePartida() {
+  try { const c = localStorage.getItem(CHAVE_PARTIDA); return c ? JSON.parse(c) : null; } catch (e) { return null; }
+}
+
 function totalEstrelas() { return Object.values(prog.estrelas).reduce((a, b) => a + b, 0); }
 
 /* ── som feito na hora: bolha que sobe, mais grave quanto mais fundo ── */
@@ -1004,7 +1091,7 @@ const Som = {
   vitoria() { [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => this.eco(f * this.f, 0.42, 'triangle', 0.13), i * 120)); },
   derrota() { [392, 330, 262].forEach((f, i) => setTimeout(() => this.nota(f * this.f, 0.36, 'sine', 0.12), i * 160)); }
 };
-function vibra(ms) { try { if (navigator.vibrate && prog.som) navigator.vibrate(ms); } catch (e) {} }
+function vibra(ms) { try { if (navigator.vibrate && prog.vibrar) navigator.vibrate(ms); } catch (e) {} }
 const TREMIDA = {
   toque: 6, combina: 12, grande: [16, 30, 16], especial: [24, 18, 40], combo: [40, 25, 60, 25, 80],
   bau: [26, 40], estrela: [18, 50, 18], vitoria: [20, 60, 20, 60, 120], derrota: [90, 40, 90], aperto: 14
@@ -1036,7 +1123,7 @@ const Musica = {
   },
   nota(f, dur, tipo, vol) {
     const ctx = Som.ctx;
-    if (!ctx || !prog.som) return;
+    if (!ctx || !prog.som || !prog.musica) return;
     const t = ctx.currentTime, o = ctx.createOscillator(), g = ctx.createGain();
     o.type = tipo; o.frequency.setValueAtTime(f, t);
     g.gain.setValueAtTime(0.0001, t);
@@ -1047,7 +1134,7 @@ const Musica = {
   },
   batida(vol, freq, dur) {
     const ctx = Som.ctx;
-    if (!ctx || !prog.som) return;
+    if (!ctx || !prog.som || !prog.musica) return;
     const t = ctx.currentTime, n = Math.floor(ctx.sampleRate * dur);
     const buf = ctx.createBuffer(1, n, ctx.sampleRate), d = buf.getChannelData(0);
     for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / n, 2);
@@ -1057,7 +1144,7 @@ const Musica = {
     s.connect(f); f.connect(g); g.connect(ctx.destination); s.start(t);
   },
   toca() {
-    if (!Som.ctx || !prog.som) return;
+    if (!Som.ctx || !prog.som || !prog.musica) return;
     const p = this.passo % 16, esc = this.escalas[this.m], raiz = this.raiz[this.m];
     const jogo = this.modo === 'jogo';
     const vol = jogo ? 0.05 + this.aperto * 0.02 : 0.035;
@@ -1917,7 +2004,8 @@ function dimensiona() {
   if (!area || !area.clientHeight) return;
   const dispW = area.clientWidth - 16 - GAP * 2;
   const dispH = area.clientHeight - 12 - GAP * 2;
-  CEL = Math.max(32, Math.min(Math.floor(Math.min(dispW / W, dispH / H)), 64));
+  const teto = Math.min(window.innerWidth, window.innerHeight) >= 700 ? 72 : 64;   /* tablet merece peça maior */
+  CEL = Math.max(32, Math.min(Math.floor(Math.min(dispW / W, dispH / H)), teto));
   document.documentElement.style.setProperty('--cel', CEL + 'px');
   mesa.style.width = (CEL * W + GAP * 2) + 'px';
   mesa.style.height = (CEL * H + GAP * 2) + 'px';
@@ -2031,9 +2119,9 @@ function montaPecas() {
     const p = grid[r][c];
     const el = criaEl(p); pecasBox.appendChild(el); els.set(p.id, el);
     posiciona(el, r, c, true);
-    const corpo = el.firstChild;
-    corpo.animate([{ transform: 'scale(0) rotate(-40deg)', opacity: 0 }, { transform: 'scale(1) rotate(0)', opacity: 1 }],
-      { duration: 340, delay: (r + c) * 22, easing: 'cubic-bezier(.2,1.6,.4,1)', fill: 'backwards' });
+    if (typeof el.firstChild.animate === 'function')
+      el.firstChild.animate([{ transform: 'scale(0) rotate(-40deg)', opacity: 0 }, { transform: 'scale(1) rotate(0)', opacity: 1 }],
+        { duration: 340, delay: (r + c) * 22, easing: 'cubic-bezier(.2,1.6,.4,1)', fill: 'backwards' });
   }
 }
 
@@ -2041,6 +2129,11 @@ function montaPecas() {
 /* ═══ EFEITOS ═══════════════════════════════════════════════════
    Tudo aqui é curto e some sozinho. A regra: quanto maior a
    jogada, mais camadas entram (luz, onda, estilhaço, tremor).   */
+/* Safari velho não tem element.animate: nesses o efeito só não aparece */
+function anima(el, quadros, opcoes) {
+  if (typeof el.animate !== 'function') { el.style.opacity = '0'; return null; }
+  try { return el.animate(quadros, opcoes); } catch (e) { el.style.opacity = '0'; return null; }
+}
 function solta(el, ms, onde) {
   const caixa = onde || faiscasBox;
   if (caixa === faiscasBox && caixa.childElementCount > 150) return;   /* teto pra não engasgar celular fraco */
@@ -2087,7 +2180,7 @@ function estilhacos(r, c, cor, n) {
     d.style.left = (c * CEL + CEL / 2) + 'px';
     d.style.top = (r * CEL + CEL / 2) + 'px';
     const ang = Math.random() * Math.PI * 2, dist = 22 + Math.random() * 60;
-    d.animate([
+    anima(d, [
       { transform: 'translate(-50%,-50%) rotate(0deg) scale(1)', opacity: 1 },
       { transform: 'translate(' + (Math.cos(ang) * dist - 50) + '%,' + (Math.sin(ang) * dist + 40) + '%) rotate(' + (Math.random() * 720 - 360) + 'deg) scale(.3)', opacity: 0 }
     ], { duration: 520 + Math.random() * 420, easing: 'cubic-bezier(.15,.7,.4,1)' });
@@ -2130,7 +2223,7 @@ function fogos(n) {
       d.style.left = x + '%'; d.style.top = y + '%';
       d.style.background = cor; d.style.boxShadow = '0 0 10px 3px ' + cor;
       const a = (j / 14) * Math.PI * 2, dist = 50 + Math.random() * 90;
-      d.animate([{ transform: 'translate(-50%,-50%) scale(.4)', opacity: 1 },
+      anima(d, [{ transform: 'translate(-50%,-50%) scale(.4)', opacity: 1 },
                  { transform: 'translate(' + (Math.cos(a) * dist) + 'px,' + (Math.sin(a) * dist + 30) + 'px) scale(.2)', opacity: 0 }],
                 { duration: 800 + Math.random() * 300, easing: 'cubic-bezier(.1,.8,.3,1)' });
       solta(d, 1200, tela);
@@ -2165,7 +2258,7 @@ function respingos(r, c, cor, n) {
     d.style.top = (r * CEL + CEL / 2 - tam / 2) + 'px';
     const ang = Math.random() * Math.PI * 2, dist = 16 + Math.random() * 36;
     const dx = Math.cos(ang) * dist, dy = brilho ? Math.sin(ang) * dist : Math.sin(ang) * dist * .45 - 26 - Math.random() * 30;
-    d.animate([
+    anima(d, [
       { transform: 'translate(0,0) scale(.5)', opacity: 1 },
       { transform: 'translate(' + dx.toFixed(1) + 'px,' + dy.toFixed(1) + 'px) scale(1)', opacity: 0 }
     ], { duration: 650 + Math.random() * 350, easing: 'cubic-bezier(.2,.8,.4,1)' });
@@ -2439,6 +2532,7 @@ async function tentaTroca(a, b) {
   }
   await resolver(conj, [chave(b.r, b.c), chave(a.r, a.c)]);
   passoCrescer();
+  salvaPartida();
   J.ocupado = false;
   await confere();
   reiniciaDica();
@@ -2455,9 +2549,23 @@ async function disparaEspecial(cel) {
   expandir(conj, null);
   await resolver(conj, [chave(cel.r, cel.c)]);
   passoCrescer();
+  salvaPartida();
   J.ocupado = false;
   await confere();
   reiniciaDica();
+}
+
+/* guarda a partida a cada jogada: se o celular matar o app, volta igual */
+function salvaPartida() {
+  if (!J || J.fim || J.desafio || J.fase == null || J.fase < 0) return;
+  try {
+    localStorage.setItem(CHAVE_PARTIDA, JSON.stringify({
+      f: J.fase, mov: J.mov, pontos: J.pontos, col: J.coletado,
+      pt: J.papelTotal, pf: J.papelFeito, bf: J.bauFeito, bn: J.bauNaTela, bp: J.bauPendentes,
+      cc: J.contaCresce, ac: J.alvoCresce, papel: papel, base: J.papelBase,
+      g: grid.map(l => l.map(p => p ? (p.bau ? 'b' : p.t + '.' + p.sp) : ''))
+    }));
+  } catch (e) { /* sem espaço: só não guarda */ }
 }
 
 /* ═══ ALGA QUE VOLTA A CRESCER ══════════════════════════════════
@@ -2505,13 +2613,16 @@ async function usaPoderNaCelula(cel) {
   if (!p) return;
 
   if (poderAtivo === 'arpao') {
+    if (p.bau) { Som.liga(); Som.nao(); faixaTexto('O baú não sai no arpão'); return; }
     gastaPoder('arpao');
     desligaPoder();
     J.ocupado = true;
     const el = els.get(p.id);
     if (el) el.classList.add('some');
     Som.liga(); Som.especial(); vibra(20);
-    await limpar(new Set([chave(cel.r, cel.c)]), null);
+    const alvoConj = new Set([chave(cel.r, cel.c)]);
+    if (p.sp) expandir(alvoConj, null);      /* arpão em especial dispara ele */
+    await limpar(alvoConj, null);
     await resolver(null, null);
     J.ocupado = false;
     await confere();
@@ -2704,6 +2815,7 @@ async function venceu() {
   if (J.pontos >= f.marcas[1]) e = 2;
   if (J.pontos >= f.marcas[2]) e = 3;
   const primeira = !prog.estrelas[J.fase];
+  limpaPartida();
   prog.estrelas[J.fase] = Math.max(prog.estrelas[J.fase] || 0, e);
   if (J.fase + 1 > prog.max) prog.max = J.fase + 1;
   const ganho = moedasDaFase(e, primeira);
@@ -2739,6 +2851,7 @@ async function venceu() {
 
 async function perdeu() {
   J.ocupado = true;
+  limpaPartida();
   document.body.classList.remove('aperto');
   Musica.tensao(false, 0);
   Som.liga(); Som.derrota(); vibra(TREMIDA.derrota);
@@ -2969,6 +3082,7 @@ function abreDesafio() {
         bauFeito: 0, bauNaTela: 0, bauPendentes: 0, contaCresce: 0, alvoCresce: null };
   papel = Array.from({ length: H }, () => Array(W).fill(0));
   J.papelBase = papel.map(l => l.slice());
+  pontosNaTela = 0;
   montaTabuleiro();
   fechaCartao();
   tela('tela-jogo');
@@ -3002,6 +3116,69 @@ async function compartilhaDesafio(botao) {
   const txt = 'Fiz ' + nf(prog.desafio.melhor) + ' pontos no desafio da semana do Mergulho (' + desafioAtual.semana + '). Bora bater?\n' + location.href;
   try { if (navigator.share) { await navigator.share({ text: txt }); return; } } catch (e) { return; }
   try { await navigator.clipboard.writeText(txt); botao.textContent = 'Copiado!'; setTimeout(() => botao.textContent = 'Mandar pro grupo', 2000); } catch (e) {}
+}
+
+/* ═══ AJUSTES E DESEMPENHO ═════════════════════════════════════
+   Aparelho fraco não some com o jogo: entra o modo leve, que tira
+   desfoque, partícula e brilho e deixa o essencial.              */
+function aplicaLeve() { document.body.classList.toggle('leve', !!prog.leve); }
+function decideLeve() {
+  if (prog.leve !== null && prog.leve !== undefined) return;
+  const nucleos = navigator.hardwareConcurrency || 4;
+  const memoria = navigator.deviceMemory || 4;
+  prog.leve = nucleos <= 4 && memoria <= 4;   /* na dúvida entra cheio: o vigia de fps corrige depois */
+  salvaProg();
+}
+let olhoFps = null, jaMediu = false;
+function vigiaFps() {
+  if (jaMediu || prog.leve) return;
+  jaMediu = true;
+  let quadros = 0;
+  const t0 = performance.now();
+  const passo = () => {
+    quadros++;
+    const dt = performance.now() - t0;
+    if (dt < 4000) { olhoFps = requestAnimationFrame(passo); return; }
+    olhoFps = null;
+    if (quadros / (dt / 1000) < 38) {
+      prog.leve = true; salvaProg(); aplicaLeve();
+      faixaTexto('Modo leve');
+      setTimeout(() => cartao('<h3>Liguei o modo leve</h3>' +
+        '<p>O jogo estava engasgando neste aparelho, então tirei desfoque, partícula e brilho pra rodar liso. Dá pra voltar atrás nos ajustes, no botão de engrenagem da tela inicial.</p>' +
+        '<div class="bts"><button class="bt" data-ac="fecha">Beleza</button></div>'), 900);
+    }
+  };
+  olhoFps = requestAnimationFrame(passo);
+}
+
+const CHAVES_AJUSTE = [
+  { k: 'som', nome: 'Som', texto: 'Estouros, especiais e avisos.' },
+  { k: 'musica', nome: 'Música', texto: 'A trilha que toca por baixo.' },
+  { k: 'vibrar', nome: 'Vibração', texto: 'Tremida a cada jogada.' },
+  { k: 'cheio', nome: 'Efeitos cheios', texto: 'Desligue se o aparelho engasgar.' }
+];
+const valorAjuste = k => k === 'cheio' ? !prog.leve : !!prog[k];
+function mostraAjustes() {
+  cartao('<h3>Ajustes</h3>' +
+    CHAVES_AJUSTE.map(a =>
+      '<div class="ajuste"><div class="txt"><b>' + a.nome + '</b><small>' + a.texto + '</small></div>' +
+      '<button class="chave' + (valorAjuste(a.k) ? ' on' : '') + '" data-ac="mudar" data-k="' + a.k + '" ' +
+      'role="switch" aria-checked="' + valorAjuste(a.k) + '" aria-label="' + a.nome + '"><span></span></button></div>').join('') +
+    '<p class="versao-cartao">versão ' + VERSAO_JOGO + '</p>' +
+    '<div class="bts"><button class="bt" data-ac="fecha">Fechar</button></div>');
+}
+function mudaAjuste(k) {
+  if (k === 'cheio') { prog.leve = !prog.leve; aplicaLeve(); }
+  else prog[k] = !prog[k];
+  salvaProg();
+  pintaBotaoSom();
+  if (k === 'som' || k === 'musica') {
+    if (prog.som && prog.musica) { Som.liga(); Musica.liga(document.body.classList.contains('em-jogo') ? 'jogo' : 'menu', mundoAtual); }
+    else Musica.para();
+  }
+  if (prog.som) { Som.liga(); Som.toque(); }
+  if (k === 'vibrar' && prog.vibrar) vibra(TREMIDA.especial);
+  mostraAjustes();
 }
 
 /* ═══ TELAS ═════════════════════════════════════════════════════ */
@@ -3117,7 +3294,39 @@ function rolaAteAtual() {
 }
 
 /* ═══ ABRIR UMA FASE ════════════════════════════════════════════ */
+function retomaPartida(d) {
+  const f = fase(d.f);
+  instalaMundo(f.m);
+  J = { fase: d.f, mov: d.mov, pontos: d.pontos, coletado: d.col,
+        papelTotal: d.pt, papelFeito: d.pf, ocupado: true, fim: false, cascata: 1,
+        bauFeito: d.bf, bauNaTela: d.bn, bauPendentes: d.bp, contaCresce: d.cc, alvoCresce: d.ac,
+        papelBase: d.base };
+  papel = d.papel;
+  uid = 0;
+  grid = d.g.map(l => l.map(cod => {
+    if (!cod) return null;
+    if (cod === 'b') return novoBau();
+    const pd = cod.split('.');
+    const p = novaPeca(+pd[0]); p.sp = +pd[1]; return p;
+  }));
+  pontosNaTela = 0;
+  fechaCartao();
+  tela('tela-jogo');
+  requestAnimationFrame(() => {
+    montaCasas(); dimensiona(); montaPecas(); atualizaHud(); desligaPoder();
+    mesa.classList.toggle('com-bau', f.obj.tipo === 'bau');
+    pintaPapel();
+    if (J.alvoCresce) pintaAvisoCresce();
+    J.ocupado = false;
+    reiniciaDica();
+    Som.liga(); Som.sobe(0);
+    Musica.liga('jogo', mundoAtual);
+    faixaTexto('De volta');
+  });
+}
+
 function abreFase(i) {
+  limpaPartida();
   const f = fase(i);
   instalaMundo(f.m);
   soltaSemente();
@@ -3129,6 +3338,7 @@ function abreFase(i) {
                                    : Array.from({ length: H }, () => Array(W).fill(0));
   J.papelBase = papel.map(l => l.slice());
   J.papelTotal = contaPapel(papel);
+  pontosNaTela = 0;
   montaTabuleiro();
   fechaCartao();
   tela('tela-jogo');
@@ -3153,6 +3363,7 @@ function comecaFase() {
   reiniciaDica();
   Som.liga(); Som.sobe(0);
   Musica.liga('jogo', mundoAtual);
+  vigiaFps();
   if (f.desafio) faixaTexto('25 jogadas'); else faixaTexto(metros(f.prof));
 }
 function mostraAviso(titulo, icone, texto) {
@@ -3179,6 +3390,8 @@ function iniciar() {
   faiscasBox = document.getElementById('faiscas');
 
   carregaProg();
+  decideLeve();
+  aplicaLeve();
   document.getElementById('versao').textContent = 'v' + VERSAO_JOGO;
   document.addEventListener('pointerdown', e => {
     if (e.target.closest('.bt, .ico-bt, .poder, .no, .bt-compra, .subir')) { Som.liga(); Som.toque(); }
@@ -3193,6 +3406,7 @@ function iniciar() {
   document.getElementById('bt-ajuda').onclick = () => { Som.liga(); mostraAjuda(); };
   document.getElementById('bt-mapa-volta').onclick = () => { instalaMundo(fase(prog.max).m); tela('tela-inicio'); };
   document.getElementById('bt-jogo-volta').onclick = () => { soltaSemente(); fechaCartao(); montaMapa(); tela('tela-mapa'); };
+  document.getElementById('bt-ajustes').onclick = () => { Som.liga(); mostraAjustes(); };
   document.getElementById('bt-desafio').onclick = () => { Som.liga(); mostraDesafio(); };
   document.getElementById('bt-loja').onclick = () => { Som.liga(); mostraLoja(); };
   document.getElementById('poderes').addEventListener('click', e => {
@@ -3215,6 +3429,9 @@ function iniciar() {
     else if (ac === 'bau') pegaBau();
     else if (ac === 'desafio') abreDesafio();
     else if (ac === 'compartilha') compartilhaDesafio(b);
+    else if (ac === 'mudar') mudaAjuste(b.dataset.k);
+    else if (ac === 'retoma') { const d = lePartida(); limpaPartida(); if (d) retomaPartida(d); else fechaCartao(); }
+    else if (ac === 'descarta') { limpaPartida(); fechaCartao(); if (prog.dia !== hoje()) setTimeout(mostraBau, 300); }
     else if (ac === 'folego') usaFolegoNoCartao();
     else if (ac === 'comeca') { fechaCartao(); comecaFase(); }
     else if (ac === 'mapa') { fechaCartao(); montaMapa(); tela('tela-mapa'); }
@@ -3240,7 +3457,18 @@ function iniciar() {
   papel = Array.from({ length: H }, () => Array(W).fill(0));
   grid = Array.from({ length: H }, () => Array(W).fill(null));
 
-  if (prog.dia !== hoje()) setTimeout(mostraBau, 700);
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) { salvaPartida(); Musica.para(); clearTimeout(dicaTimer); apagaDica(); if (olhoFps) { cancelAnimationFrame(olhoFps); olhoFps = null; } }
+    else if (prog.som && prog.musica) Musica.liga(document.body.classList.contains('em-jogo') ? 'jogo' : 'menu', mundoAtual);
+  });
+
+  const parada = lePartida();
+  if (parada && fase(parada.f)) {
+    setTimeout(() => cartao('<h3>Você parou no meio</h3>' +
+      '<p>A fase ' + (parada.f + 1) + ' ficou pela metade, com ' + parada.mov + (parada.mov === 1 ? ' jogada' : ' jogadas') + ' e ' + nf(parada.pontos) + ' pontos. Quer voltar pra ela?</p>' +
+      '<div class="bts"><button class="bt vidro" data-ac="descarta">Começar de novo</button>' +
+      '<button class="bt" data-ac="retoma">Continuar</button></div>'), 500);
+  } else if (prog.dia !== hoje()) setTimeout(mostraBau, 700);
 }
 
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', iniciar);

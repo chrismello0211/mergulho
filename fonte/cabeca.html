@@ -29,8 +29,11 @@
 :root[data-theme="dark"]{ --vidro:rgba(2,20,34,.5); }
 [data-mundo="3"],[data-mundo="4"]{ --sombra-peca:none; }
 
-*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none}
+button,.no,.poder,.bt,.ico-bt,.bt-compra{touch-action:manipulation}
 html,body{height:100%}
+@supports (height:100dvh){ html,body{height:100dvh} }
+@supports (-webkit-touch-callout:none){ body{min-height:-webkit-fill-available} }
 html{scroll-padding-top:var(--safe-t)}
 body{
   margin:0;font-family:Nunito,system-ui,-apple-system,"Segoe UI",sans-serif;
@@ -140,21 +143,24 @@ body:not(.em-jogo) #cena{display:none}
   font-size:15.5px;font-weight:800;line-height:1.45;text-align:center;max-width:25ch;margin:0;
   color:var(--espuma);text-shadow:0 1px 2px rgba(0,50,70,.35);
 }
-.vitrine{display:flex;gap:6px;margin:22px 0 28px}
+.vitrine{display:flex;margin:22px 0 28px}
+.vitrine > * + *{margin-left:6px}
 .vitrine svg{width:46px;height:46px;filter:var(--sombra-peca);animation:flutua 3s ease-in-out infinite}
 .vitrine svg:nth-child(2){animation-delay:.2s}.vitrine svg:nth-child(3){animation-delay:.4s}
 .vitrine svg:nth-child(4){animation-delay:.6s}.vitrine svg:nth-child(5){animation-delay:.8s}.vitrine svg:nth-child(6){animation-delay:1s}
 @keyframes flutua{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
-.inicio-bts{display:flex;flex-direction:column;align-items:center;gap:12px}
+.inicio-bts{display:flex;flex-direction:column;align-items:center}
+.inicio-bts > * + *{margin-top:12px}
 .rodape{position:absolute;bottom:calc(var(--safe-b) + 14px);left:0;right:0;margin:0;text-align:center;font-size:12.5px;font-weight:800;color:rgba(243,251,255,.62);z-index:2}
 
 /* ═══ MAPA: a coluna d'água ═════════════════════════════════════ */
 #tela-mapa{background:#0B4F7A}
 .topo{
-  display:flex;align-items:center;gap:12px;padding:10px 14px;flex:0 0 auto;position:relative;z-index:3;
+  display:flex;align-items:center;padding:10px 14px;flex:0 0 auto;position:relative;z-index:3;
   background:rgba(4,30,48,.62);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
   box-shadow:0 1px 0 rgba(243,251,255,.1);
 }
+.topo > * + *{margin-left:10px}
 .topo h2{font-family:var(--display);font-weight:800;font-size:22px;margin:0;flex:1}
 .placar-estrelas{
   display:flex;align-items:center;gap:6px;font-family:var(--display);font-weight:800;font-size:18px;
@@ -209,7 +215,8 @@ body:not(.em-jogo) #cena{display:none}
 /* ═══ JOGO ══════════════════════════════════════════════════════ */
 #tela-jogo{padding-top:calc(var(--safe-t) + 8px)}
 .hud{flex:0 0 auto;padding:0 12px;position:relative;z-index:2}
-.hud-topo{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.hud-topo{display:flex;align-items:center;margin-bottom:8px}
+.hud-topo > * + *{margin-left:10px}
 .fase-titulo{
   flex:1;min-width:0;height:42px;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:0 14px;
   border-radius:14px;background:var(--vidro);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);box-shadow:inset 0 0 0 1px var(--vidro-borda);
@@ -220,11 +227,13 @@ body:not(.em-jogo) #cena{display:none}
   border-radius:20px;padding:10px 12px 12px;background:var(--vidro);
   -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);box-shadow:inset 0 0 0 1px var(--vidro-borda);
 }
-.hud-linha{display:flex;align-items:center;gap:10px}
+.hud-linha{display:flex;align-items:center}
+.hud-linha > * + *{margin-left:10px}
 .objetivo{flex:1;min-width:0;display:flex;align-items:center;gap:10px;min-height:50px}
 .objetivo .rotulo{font-size:12px;font-weight:800;color:rgba(243,251,255,.66);line-height:1.2}
 .objetivo .valor{font-family:var(--display);font-weight:800;font-size:18px;line-height:1.15}
-.alvos{display:flex;gap:9px;align-items:center;flex-wrap:wrap}
+.alvos{display:flex;align-items:center;flex-wrap:wrap;margin:-3px}
+.alvos > *{margin:3px}
 .alvo{display:flex;align-items:center;gap:3px}
 .alvo .ic{width:30px;height:30px;filter:var(--sombra-peca)}
 .alvo b{font-family:var(--display);font-weight:800;font-size:17px}
@@ -349,7 +358,8 @@ body:not(.em-jogo) #cena{display:none}
 @keyframes entra{0%{transform:scale(.85) translateY(20px);opacity:0}100%{transform:none;opacity:1}}
 .cartao h3{font-family:var(--display);font-weight:800;font-size:30px;line-height:1.1;margin:0 0 6px;color:#0A6C7A}
 .cartao p{font-size:15px;font-weight:700;line-height:1.55;margin:0 0 4px;color:#2E5E6C}
-.cartao .bts{display:flex;gap:10px;justify-content:center;margin-top:20px;flex-wrap:wrap}
+.cartao .bts{display:flex;justify-content:center;margin-top:20px;flex-wrap:wrap;margin-left:-5px;margin-right:-5px}
+.cartao .bts > *{margin:5px}
 .cartao .bt{font-size:18px;padding:12px 22px 14px}
 .cartao .bt.vidro{font-size:16px;padding:11px 18px 12px}
 .cartao .bt.vidro{color:#0A6C7A;background:rgba(10,108,122,.08);box-shadow:inset 0 0 0 2px rgba(10,108,122,.3)}
@@ -394,7 +404,8 @@ body:not(.em-jogo) #cena{display:none}
 /* ── poderes, moedas e loja ─────────────────────────────────── */
 .barra-poderes{flex:0 0 auto;padding:2px 12px 6px;position:relative;z-index:2}
 .dica-poder{margin:0 0 6px;text-align:center;font-size:13px;font-weight:800;color:#BFF5EE;text-shadow:0 1px 3px rgba(0,20,40,.5)}
-.poderes{display:flex;gap:9px;justify-content:center}
+.poderes{display:flex;justify-content:center}
+.poderes > * + *{margin-left:9px}
 .poder{
   position:relative;width:62px;height:56px;border:0;border-radius:16px;padding:0;cursor:pointer;color:var(--espuma);
   display:grid;place-items:center;align-content:center;gap:1px;
@@ -528,6 +539,67 @@ body.aperto #vinheta{opacity:1;animation:vinheta 1.05s ease-in-out infinite}
 @keyframes titulo-bal{0%,100%{transform:translateX(-50%) translateY(0) rotate(-.4deg)}50%{transform:translateX(-50%) translateY(-6px) rotate(.4deg)}}
 #bt-jogar{animation:pulsa-bt 2.6s ease-in-out infinite}
 @keyframes pulsa-bt{0%,100%{transform:scale(1)}50%{transform:scale(1.045)}}
+
+/* ── ajustes ────────────────────────────────────────────────── */
+.canto-som{display:flex}
+.canto-som > * + *{margin-left:8px}
+.ajuste{display:flex;align-items:center;text-align:left;background:rgba(10,108,122,.08);border-radius:16px;padding:11px 14px;margin:9px 0}
+.ajuste .txt{flex:1;min-width:0}
+.ajuste b{display:block;font-family:var(--display);font-weight:800;font-size:16px;color:var(--tinta)}
+.ajuste small{display:block;font-size:12.5px;font-weight:700;color:#2E5E6C;line-height:1.35}
+.chave{width:56px;height:32px;flex:0 0 auto;border:0;border-radius:999px;cursor:pointer;position:relative;padding:0;
+  background:rgba(10,108,122,.22);transition:background .2s}
+.chave span{position:absolute;top:4px;left:4px;width:24px;height:24px;border-radius:50%;background:#fff;
+  box-shadow:0 2px 5px rgba(0,30,50,.35);transition:transform .2s}
+.chave.on{background:var(--boia)}
+.chave.on span{transform:translateX(24px)}
+.cartao p.versao-cartao{font-size:12px;color:#4F7F8C;margin-top:14px}
+[data-mundo="3"] .ajuste,[data-mundo="4"] .ajuste{background:rgba(107,255,224,.07)}
+[data-mundo="3"] .ajuste b,[data-mundo="4"] .ajuste b{color:var(--espuma)}
+[data-mundo="3"] .ajuste small,[data-mundo="4"] .ajuste small{color:rgba(243,251,255,.78)}
+[data-mundo="3"] .chave,[data-mundo="4"] .chave{background:rgba(243,251,255,.18)}
+
+/* ── Safari antigo não entende inset ────────────────────────── */
+@supports not (inset: 0px){
+  #agua,#cena,#app .tela,#veu,#clarao,#vinheta,#fx-tela,.particulas,.raios,.trilha-svg,
+  .movimentos .fundo,.no .disco,.peca .capa,.barra .cheio,.ceu-sol{top:0;right:0;bottom:0;left:0}
+  .tela{top:0;right:0;bottom:0;left:0}
+  .barra .cheio{right:auto}
+  .ceu-sol{right:auto;bottom:auto}
+  .raios{bottom:auto}
+}
+
+/* ── tablet: o conteúdo para de esticar, o cenário continua inteiro ── */
+@media (min-width:640px){
+  .inicio-conteudo,.topo,#coluna,.leito,.superficie{max-width:600px;margin-left:auto;margin-right:auto}
+  .hud,.barra-poderes{max-width:530px;margin-left:auto;margin-right:auto}
+  #tela-inicio{--tw:min(70vw,520px)}
+  .subtitulo{font-size:17px}
+  .no{width:74px;height:74px}
+  .no .num{font-size:28px}
+  .no-rotulo{width:150px}
+  .no-rotulo b{font-size:15px}
+}
+
+/* ── tela deitada: em celular baixo, pede pra girar ─────────── */
+#gire{position:fixed;top:0;right:0;bottom:0;left:0;z-index:60;display:none;place-items:center;text-align:center;
+  background:linear-gradient(180deg,#0B4F7A,#061F38);padding:24px}
+#gire p{font-family:var(--display);font-weight:800;font-size:22px;color:var(--espuma);margin:14px 0 0;max-width:20ch}
+#gire svg{width:64px;height:64px;fill:none;stroke:var(--biolum);stroke-width:1.6}
+@media (orientation:landscape) and (max-height:500px){
+  #gire{display:grid}
+}
+
+/* ── modo leve: aparelho antigo joga liso ───────────────────── */
+body.leve{--sombra-peca:none}
+body.leve .causticas,body.leve .raios,body.leve .particulas,body.leve .nadador,
+body.leve #vinheta,body.leve .fx-onda,body.leve .fx-feixe{display:none}
+body.leve .fase-titulo,body.leve .painel,body.leve .ico-bt,body.leve .poder,body.leve .topo{-webkit-backdrop-filter:none;backdrop-filter:none;background:rgba(4,30,48,.72)}
+body.leve #veu{-webkit-backdrop-filter:none;backdrop-filter:none;background:rgba(2,22,36,.82)}
+body.leve .peca .corpo,body.leve .titulo,body.leve #bt-jogar{animation:none !important}
+body.leve .no .disco,body.leve #mesa{box-shadow:none}
+body.leve .fx-raio{box-shadow:none}
+body.leve .cartao{animation-duration:.18s}
 
 @media (prefers-reduced-motion: reduce){
   *{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.05s !important}

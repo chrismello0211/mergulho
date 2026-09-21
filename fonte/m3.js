@@ -9,7 +9,8 @@ function dimensiona() {
   if (!area || !area.clientHeight) return;
   const dispW = area.clientWidth - 16 - GAP * 2;
   const dispH = area.clientHeight - 12 - GAP * 2;
-  CEL = Math.max(32, Math.min(Math.floor(Math.min(dispW / W, dispH / H)), 64));
+  const teto = Math.min(window.innerWidth, window.innerHeight) >= 700 ? 72 : 64;   /* tablet merece peça maior */
+  CEL = Math.max(32, Math.min(Math.floor(Math.min(dispW / W, dispH / H)), teto));
   document.documentElement.style.setProperty('--cel', CEL + 'px');
   mesa.style.width = (CEL * W + GAP * 2) + 'px';
   mesa.style.height = (CEL * H + GAP * 2) + 'px';
@@ -123,9 +124,9 @@ function montaPecas() {
     const p = grid[r][c];
     const el = criaEl(p); pecasBox.appendChild(el); els.set(p.id, el);
     posiciona(el, r, c, true);
-    const corpo = el.firstChild;
-    corpo.animate([{ transform: 'scale(0) rotate(-40deg)', opacity: 0 }, { transform: 'scale(1) rotate(0)', opacity: 1 }],
-      { duration: 340, delay: (r + c) * 22, easing: 'cubic-bezier(.2,1.6,.4,1)', fill: 'backwards' });
+    if (typeof el.firstChild.animate === 'function')
+      el.firstChild.animate([{ transform: 'scale(0) rotate(-40deg)', opacity: 0 }, { transform: 'scale(1) rotate(0)', opacity: 1 }],
+        { duration: 340, delay: (r + c) * 22, easing: 'cubic-bezier(.2,1.6,.4,1)', fill: 'backwards' });
   }
 }
 
@@ -133,6 +134,11 @@ function montaPecas() {
 /* ═══ EFEITOS ═══════════════════════════════════════════════════
    Tudo aqui é curto e some sozinho. A regra: quanto maior a
    jogada, mais camadas entram (luz, onda, estilhaço, tremor).   */
+/* Safari velho não tem element.animate: nesses o efeito só não aparece */
+function anima(el, quadros, opcoes) {
+  if (typeof el.animate !== 'function') { el.style.opacity = '0'; return null; }
+  try { return el.animate(quadros, opcoes); } catch (e) { el.style.opacity = '0'; return null; }
+}
 function solta(el, ms, onde) {
   const caixa = onde || faiscasBox;
   if (caixa === faiscasBox && caixa.childElementCount > 150) return;   /* teto pra não engasgar celular fraco */
@@ -179,7 +185,7 @@ function estilhacos(r, c, cor, n) {
     d.style.left = (c * CEL + CEL / 2) + 'px';
     d.style.top = (r * CEL + CEL / 2) + 'px';
     const ang = Math.random() * Math.PI * 2, dist = 22 + Math.random() * 60;
-    d.animate([
+    anima(d, [
       { transform: 'translate(-50%,-50%) rotate(0deg) scale(1)', opacity: 1 },
       { transform: 'translate(' + (Math.cos(ang) * dist - 50) + '%,' + (Math.sin(ang) * dist + 40) + '%) rotate(' + (Math.random() * 720 - 360) + 'deg) scale(.3)', opacity: 0 }
     ], { duration: 520 + Math.random() * 420, easing: 'cubic-bezier(.15,.7,.4,1)' });
@@ -222,7 +228,7 @@ function fogos(n) {
       d.style.left = x + '%'; d.style.top = y + '%';
       d.style.background = cor; d.style.boxShadow = '0 0 10px 3px ' + cor;
       const a = (j / 14) * Math.PI * 2, dist = 50 + Math.random() * 90;
-      d.animate([{ transform: 'translate(-50%,-50%) scale(.4)', opacity: 1 },
+      anima(d, [{ transform: 'translate(-50%,-50%) scale(.4)', opacity: 1 },
                  { transform: 'translate(' + (Math.cos(a) * dist) + 'px,' + (Math.sin(a) * dist + 30) + 'px) scale(.2)', opacity: 0 }],
                 { duration: 800 + Math.random() * 300, easing: 'cubic-bezier(.1,.8,.3,1)' });
       solta(d, 1200, tela);
@@ -257,7 +263,7 @@ function respingos(r, c, cor, n) {
     d.style.top = (r * CEL + CEL / 2 - tam / 2) + 'px';
     const ang = Math.random() * Math.PI * 2, dist = 16 + Math.random() * 36;
     const dx = Math.cos(ang) * dist, dy = brilho ? Math.sin(ang) * dist : Math.sin(ang) * dist * .45 - 26 - Math.random() * 30;
-    d.animate([
+    anima(d, [
       { transform: 'translate(0,0) scale(.5)', opacity: 1 },
       { transform: 'translate(' + dx.toFixed(1) + 'px,' + dy.toFixed(1) + 'px) scale(1)', opacity: 0 }
     ], { duration: 650 + Math.random() * 350, easing: 'cubic-bezier(.2,.8,.4,1)' });
@@ -531,6 +537,7 @@ async function tentaTroca(a, b) {
   }
   await resolver(conj, [chave(b.r, b.c), chave(a.r, a.c)]);
   passoCrescer();
+  salvaPartida();
   J.ocupado = false;
   await confere();
   reiniciaDica();
@@ -547,9 +554,23 @@ async function disparaEspecial(cel) {
   expandir(conj, null);
   await resolver(conj, [chave(cel.r, cel.c)]);
   passoCrescer();
+  salvaPartida();
   J.ocupado = false;
   await confere();
   reiniciaDica();
+}
+
+/* guarda a partida a cada jogada: se o celular matar o app, volta igual */
+function salvaPartida() {
+  if (!J || J.fim || J.desafio || J.fase == null || J.fase < 0) return;
+  try {
+    localStorage.setItem(CHAVE_PARTIDA, JSON.stringify({
+      f: J.fase, mov: J.mov, pontos: J.pontos, col: J.coletado,
+      pt: J.papelTotal, pf: J.papelFeito, bf: J.bauFeito, bn: J.bauNaTela, bp: J.bauPendentes,
+      cc: J.contaCresce, ac: J.alvoCresce, papel: papel, base: J.papelBase,
+      g: grid.map(l => l.map(p => p ? (p.bau ? 'b' : p.t + '.' + p.sp) : ''))
+    }));
+  } catch (e) { /* sem espaço: só não guarda */ }
 }
 
 /* ═══ ALGA QUE VOLTA A CRESCER ══════════════════════════════════
@@ -597,13 +618,16 @@ async function usaPoderNaCelula(cel) {
   if (!p) return;
 
   if (poderAtivo === 'arpao') {
+    if (p.bau) { Som.liga(); Som.nao(); faixaTexto('O baú não sai no arpão'); return; }
     gastaPoder('arpao');
     desligaPoder();
     J.ocupado = true;
     const el = els.get(p.id);
     if (el) el.classList.add('some');
     Som.liga(); Som.especial(); vibra(20);
-    await limpar(new Set([chave(cel.r, cel.c)]), null);
+    const alvoConj = new Set([chave(cel.r, cel.c)]);
+    if (p.sp) expandir(alvoConj, null);      /* arpão em especial dispara ele */
+    await limpar(alvoConj, null);
     await resolver(null, null);
     J.ocupado = false;
     await confere();
