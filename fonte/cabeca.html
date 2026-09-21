@@ -452,6 +452,22 @@ body:not(.em-jogo) #cena{display:none}
 }
 .cab-exped{position:relative;z-index:2;text-align:center;font-family:var(--display);font-weight:800;font-size:15px;color:#0B3A55;padding:6px 0 0}
 
+
+/* ── baú, alga que volta e desafio ──────────────────────────── */
+.peca.e-bau .corpo{animation:bau-bal 2.6s ease-in-out infinite}
+@keyframes bau-bal{0%,100%{transform:translateY(0) rotate(-2.5deg)}50%{transform:translateY(-3px) rotate(2.5deg)}}
+.peca.entrega{z-index:6}
+.peca.entrega .corpo{animation:bau-sai .56s cubic-bezier(.4,0,.7,1) forwards}
+@keyframes bau-sai{0%{transform:translateY(0) scale(1);opacity:1}55%{transform:translateY(26px) scale(.92) rotate(9deg);opacity:.9}100%{transform:translateY(66px) scale(.5) rotate(20deg);opacity:0}}
+[data-mundo="3"] .peca.e-bau svg,[data-mundo="4"] .peca.e-bau svg{filter:drop-shadow(0 0 7px rgba(255,211,92,.75))}
+#mesa.com-bau .casa.fundo i{box-shadow:inset 0 -3px 0 rgba(255,211,92,.5),inset 0 0 10px rgba(255,211,92,.16)}
+.casa.vai-crescer i{box-shadow:inset 0 0 0 2px rgba(120,230,140,.95),0 0 10px rgba(93,190,110,.6);animation:vai-crescer .95s ease-in-out infinite}
+@keyframes vai-crescer{0%,100%{opacity:.55;transform:scale(.94)}50%{opacity:1;transform:scale(1)}}
+.casa.cresceu i{animation:cresceu .5s cubic-bezier(.2,1.7,.4,1)}
+@keyframes cresceu{0%{transform:scale(0) rotate(-20deg)}100%{transform:scale(1) rotate(0)}}
+.cartao p.melhor{font-weight:800;color:#0A6C7A}
+[data-mundo="3"] .cartao p.melhor,[data-mundo="4"] .cartao p.melhor{color:var(--biolum)}
+
 @media (prefers-reduced-motion: reduce){
   *{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.05s !important}
   .bolha-amb,.neve,.faisca-bio{display:none}

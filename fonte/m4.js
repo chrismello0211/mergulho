@@ -1,6 +1,8 @@
 
 /* ═══ HUD ═══════════════════════════════════════════════════════ */
 const nf = n => n.toLocaleString('pt-BR');
+let desafioAtual = null;
+const faseAtual = () => J.desafio ? desafioAtual : fase(J.fase);
 const icone = t => '<svg class="ic" viewBox="0 0 100 100"><use href="#s' + t + '"/></svg>';
 
 function gastaJogada() {
@@ -11,16 +13,17 @@ function gastaJogada() {
 }
 
 function faltaObjetivo() {
-  const f = fase(J.fase);
+  const f = faseAtual();
   if (f.obj.tipo === 'pontos') return Math.max(0, f.marcas[0] - J.pontos);
   if (f.obj.tipo === 'coletar') return f.obj.itens.reduce((a, it) => a + Math.max(0, it[1] - J.coletado[it[0]]), 0);
+  if (f.obj.tipo === 'bau') return Math.max(0, f.obj.n - J.bauFeito);
   return Math.max(0, J.papelTotal - J.papelFeito);
 }
 function objetivoFeito() { return faltaObjetivo() === 0; }
 function nomeBloq(f, n) { const b = MUNDOS[f.m].bloq; return n + ' ' + (n === 1 ? b.um : b.varios); }
 
 function atualizaHud() {
-  const f = fase(J.fase);
+  const f = faseAtual();
   document.getElementById('mov-n').textContent = J.mov;
   document.getElementById('mov-lb').textContent = J.mov === 1 ? 'jogada' : 'jogadas';
   document.getElementById('movimentos').classList.toggle('aperto', J.mov <= 5);
@@ -35,10 +38,16 @@ function atualizaHud() {
   });
   document.getElementById('meta-texto').textContent = J.pontos >= teto ? 'três estrelas!' : nf(teto) + ' para 3 estrelas';
   document.getElementById('fase-nome').textContent = f.nome;
-  document.getElementById('fase-prof').textContent = metros(f.prof);
+  document.getElementById('fase-prof').textContent = f.desafio ? f.semana : metros(f.prof);
 
   const o = document.getElementById('objetivo');
-  if (f.obj.tipo === 'pontos') {
+  if (f.desafio) {
+    o.innerHTML = '<div><div class="rotulo">Objetivo</div><div class="valor">o máximo de pontos</div></div>';
+  } else if (f.obj.tipo === 'bau') {
+    const falta = Math.max(0, f.obj.n - J.bauFeito);
+    o.innerHTML = '<div><div class="rotulo">Descer até o fundo</div></div><div class="alvos">' +
+      '<div class="alvo' + (falta ? '' : ' feito') + '"><svg class="ic" viewBox="0 0 100 100"><use href="#i-bau"/></svg><b>' + (falta || '✓') + '</b></div></div>';
+  } else if (f.obj.tipo === 'pontos') {
     o.innerHTML = '<div><div class="rotulo">Objetivo</div><div class="valor">' + nf(f.marcas[0]) + ' pontos</div></div>';
   } else if (f.obj.tipo === 'coletar') {
     let s = '<div><div class="rotulo">Juntar</div></div><div class="alvos">';
@@ -57,7 +66,8 @@ function atualizaHud() {
 /* ═══ FIM DE FASE ═══════════════════════════════════════════════ */
 async function confere() {
   if (J.fim) return;
-  const porPontos = fase(J.fase).obj.tipo === 'pontos';
+  if (J.desafio) { if (J.mov <= 0) { J.fim = true; apagaDica(); clearTimeout(dicaTimer); fimDesafio(); } return; }
+  const porPontos = faseAtual().obj.tipo === 'pontos';
   const fecha = f => { J.fim = true; apagaDica(); clearTimeout(dicaTimer); return f(); };
   /* fase de pontuação joga até a última jogada: é lá que moram a 2ª e a 3ª estrela */
   if (porPontos) {
@@ -84,7 +94,7 @@ async function venceu() {
     }
     await espera(280);
   }
-  const f = fase(J.fase);
+  const f = faseAtual();
   let e = 1;
   if (J.pontos >= f.marcas[1]) e = 2;
   if (J.pontos >= f.marcas[2]) e = 3;
@@ -122,10 +132,11 @@ async function venceu() {
 async function perdeu() {
   J.ocupado = true;
   Som.liga(); Som.derrota();
-  const f = fase(J.fase);
+  const f = faseAtual();
   let falta;
   if (f.obj.tipo === 'pontos') falta = 'Faltaram ' + nf(f.marcas[0] - J.pontos) + ' pontos.';
   else if (f.obj.tipo === 'coletar') { const n = faltaObjetivo(); falta = 'Faltou juntar ' + n + (n === 1 ? ' peça.' : ' peças.'); }
+  else if (f.obj.tipo === 'bau') { const n = faltaObjetivo(); falta = n === 1 ? 'Faltou um baú chegar no fundo.' : 'Faltaram ' + n + ' baús chegarem no fundo.'; }
   else { const n = casasCobertas(papel); falta = (n === 1 ? 'Sobrou ' : 'Sobraram ') + nomeBloq(f, n) + '.'; }
   await espera(400);
   cartao(
@@ -173,8 +184,15 @@ function mostraAjuda() {
     '<h4>Dois especiais juntos</h4>' +
     '<p>Duas correntezas fazem uma cruz. Correnteza com bolha limpa três fileiras e três colunas. Duas pérolas limpam o tabuleiro inteiro.</p>' +
 
+    '<h4>O baú</h4>' +
+    '<div class="regra"><div class="amostra">' + amostra('i-bau') + '</div>' +
+    '<div>Ele não combina com nada e não sai com especial. Estoure as peças debaixo dele, ou empurre ele de lado gastando uma jogada, até chegar na última fileira.</div></div>' +
+
+    '<h4>Poderes</h4>' +
+    '<p>Arpão tira uma peça, troca livre junta duas que estão longe, redemoinho embaralha e fôlego dá mais 5 jogadas, até depois que elas acabaram. Nenhum deles gasta jogada. Moeda para comprar vem de fase concluída e do baú do dia.</p>' +
+
     '<h4>O que cobre o fundo</h4>' +
-    '<p>Em algumas fases o fundo vem coberto de areia, alga, rede, lodo ou breu. Estoure uma peça em cima para limpar a casa. As mais escuras precisam de duas.</p>' +
+    '<p>Em algumas fases o fundo vem coberto de areia, alga, rede, lodo ou breu. Estoure uma peça em cima para limpar a casa. As mais escuras precisam de duas, e em algumas fases a alga volta a crescer: a casa que vai voltar pisca antes.</p>' +
 
     '<h4>Estrelas</h4>' +
     '<p>Cumprir o objetivo vale uma estrela. As outras duas vêm da pontuação, e ponto bom vem de reação em cadeia e de sobrar jogada no fim.</p>' +
@@ -295,6 +313,83 @@ function pegaBau() {
   fechaCartao();
 }
 
+/* ═══ DESAFIO DA SEMANA ════════════════════════════════════════
+   Mesma semente para todo mundo na semana: o tabuleiro e a ordem
+   das peças novas são iguais, ganha quem jogar melhor.           */
+const Placar = {
+  url: '',   /* URL do Realtime Database, ex.: https://seu-projeto.firebaseio.com — vazio, o ranking fica só no aparelho */
+  id: null,
+  async envia(nome, pontos, semana) {
+    if (!this.url || !nome) return;
+    try {
+      this.id = this.id || Math.random().toString(36).slice(2, 10);
+      await fetch(this.url + '/mergulho/' + semana + '/' + this.id + '.json',
+        { method: 'PUT', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ nome: nome, pontos: pontos, quando: Date.now() }) });
+    } catch (e) { /* sem rede: o recorde continua salvo aqui */ }
+  },
+  async lista(semana) {
+    if (!this.url) return null;
+    try {
+      const r = await fetch(this.url + '/mergulho/' + semana + '.json');
+      const d = await r.json();
+      return Object.values(d || {}).sort((a, b) => b.pontos - a.pontos).slice(0, 20);
+    } catch (e) { return null; }
+  }
+};
+function melhorDaSemana(f) { return prog.desafio.semana === f.semana ? prog.desafio.melhor : 0; }
+function mostraDesafio() {
+  const f = faseDesafio(), melhor = melhorDaSemana(f);
+  cartao('<h3>Desafio da semana</h3>' +
+    '<p>O mesmo tabuleiro para todo mundo até domingo. São 25 jogadas e vale quem fizer mais ponto.</p>' +
+    '<p class="melhor">' + (melhor ? 'Seu melhor: ' + nf(melhor) : 'Você ainda não jogou esta semana.') + '</p>' +
+    '<div class="bts"><button class="bt vidro" data-ac="fecha">Agora não</button>' +
+    '<button class="bt" data-ac="desafio">Jogar</button></div>');
+}
+function abreDesafio() {
+  const f = faseDesafio();
+  desafioAtual = f;
+  semeiaJogo(f.semana);
+  instalaMundo(f.m);
+  J = { fase: -1, desafio: true, mov: f.mov, pontos: 0, coletado: [0, 0, 0, 0, 0, 0],
+        papelTotal: 0, papelFeito: 0, ocupado: true, fim: false, cascata: 1,
+        bauFeito: 0, bauNaTela: 0, bauPendentes: 0, contaCresce: 0, alvoCresce: null };
+  papel = Array.from({ length: H }, () => Array(W).fill(0));
+  J.papelBase = papel.map(l => l.slice());
+  montaTabuleiro();
+  fechaCartao();
+  tela('tela-jogo');
+  requestAnimationFrame(() => {
+    montaCasas(); dimensiona(); montaPecas(); atualizaHud(); desligaPoder();
+    mesa.classList.remove('com-bau');
+    comecaFase();
+  });
+}
+async function fimDesafio() {
+  J.fim = true; J.ocupado = true;
+  const f = desafioAtual;
+  if (prog.desafio.semana !== f.semana) { prog.desafio.semana = f.semana; prog.desafio.melhor = 0; }
+  const recorde = J.pontos > prog.desafio.melhor;
+  if (recorde) prog.desafio.melhor = J.pontos;
+  prog.moedas += 20;
+  salvaProg(); pintaMoedas();
+  Som.liga(); Som.vitoria();
+  await espera(400);
+  cartao('<h3>' + (recorde ? 'Recorde da semana!' : 'Fim do desafio') + '</h3>' +
+    '<p class="placar-final">' + nf(J.pontos) + '<small>pontos</small></p>' +
+    '<p class="melhor">Seu melhor nesta semana: ' + nf(prog.desafio.melhor) + '</p>' +
+    '<p class="ganho-moedas">' + moedaSvg + '+20</p>' +
+    '<div class="bts"><button class="bt vidro" data-ac="mapa">Mapa</button>' +
+    '<button class="bt vidro" data-ac="compartilha">Mandar pro grupo</button>' +
+    '<button class="bt" data-ac="desafio">Jogar de novo</button></div>');
+  Placar.envia(prog.desafio.nome, prog.desafio.melhor, f.semana);
+}
+async function compartilhaDesafio(botao) {
+  const txt = 'Fiz ' + nf(prog.desafio.melhor) + ' pontos no desafio da semana do Mergulho (' + desafioAtual.semana + '). Bora bater?\n' + location.href;
+  try { if (navigator.share) { await navigator.share({ text: txt }); return; } } catch (e) { return; }
+  try { await navigator.clipboard.writeText(txt); botao.textContent = 'Copiado!'; setTimeout(() => botao.textContent = 'Mandar pro grupo', 2000); } catch (e) {}
+}
+
 /* ═══ TELAS ═════════════════════════════════════════════════════ */
 function tela(id) {
   ['tela-inicio', 'tela-mapa', 'tela-jogo'].forEach(t =>
@@ -409,10 +504,14 @@ function rolaAteAtual() {
 function abreFase(i) {
   const f = fase(i);
   instalaMundo(f.m);
+  soltaSemente();
   J = { fase: i, mov: f.mov, pontos: 0, coletado: [0, 0, 0, 0, 0, 0],
-        papelTotal: 0, papelFeito: 0, ocupado: true, fim: false, cascata: 1 };
+        papelTotal: 0, papelFeito: 0, ocupado: true, fim: false, cascata: 1,
+        bauFeito: 0, bauNaTela: 0, bauPendentes: f.obj.tipo === 'bau' ? f.obj.n : 0,
+        contaCresce: 0, alvoCresce: null };
   papel = (f.obj.tipo === 'papel') ? fazPapel(f.obj.padrao, f.obj.camadas)
                                    : Array.from({ length: H }, () => Array(W).fill(0));
+  J.papelBase = papel.map(l => l.slice());
   J.papelTotal = contaPapel(papel);
   montaTabuleiro();
   fechaCartao();
@@ -423,14 +522,26 @@ function abreFase(i) {
     montaPecas();
     atualizaHud();
     desligaPoder();
+    mesa.classList.toggle('com-bau', f.obj.tipo === 'bau');
     if (!prog.vistos[f.m]) { prog.vistos[f.m] = true; salvaProg(); mostraMundo(f.m); }
     else comecaFase();
   });
 }
 function comecaFase() {
+  const f = faseAtual();
+  if (!prog.vistos.bau && f.obj.tipo === 'bau') { prog.vistos.bau = true; salvaProg(); return mostraAviso('O baú', '#i-bau',
+    'O baú só quer chegar na última fileira. Ele não combina com nada e especial nenhum leva ele embora. Estoure as peças debaixo dele, ou empurre ele de lado, que ele afunda sozinho.'); }
+  if (!prog.vistos.cresce && f.obj.cresce) { prog.vistos.cresce = true; salvaProg(); return mostraAviso('A alga volta', null,
+    'Nesta fase a alga cresce de novo se você demorar. A casa que vai voltar pisca antes, então dá pra chegar na frente. Nas últimas jogadas ela para de crescer.'); }
   J.ocupado = false;
   reiniciaDica();
-  faixaTexto(metros(fase(J.fase).prof));
+  if (f.desafio) faixaTexto('25 jogadas'); else faixaTexto(metros(f.prof));
+}
+function mostraAviso(titulo, icone, texto) {
+  cartao('<h3>' + titulo + '</h3>' +
+    (icone ? '<div class="vitrine-mini"><svg class="ic" viewBox="0 0 100 100"><use href="' + icone + '"/></svg></div>' : '') +
+    '<p>' + texto + '</p>' +
+    '<div class="bts"><button class="bt" data-ac="comeca">Entendi</button></div>');
 }
 
 /* ═══ SOM: BOTÃO ════════════════════════════════════════════════ */
@@ -459,7 +570,8 @@ function iniciar() {
   document.getElementById('bt-jogar').onclick = () => { Som.liga(); montaMapa(); tela('tela-mapa'); };
   document.getElementById('bt-ajuda').onclick = () => { Som.liga(); mostraAjuda(); };
   document.getElementById('bt-mapa-volta').onclick = () => { instalaMundo(fase(prog.max).m); tela('tela-inicio'); };
-  document.getElementById('bt-jogo-volta').onclick = () => { fechaCartao(); montaMapa(); tela('tela-mapa'); };
+  document.getElementById('bt-jogo-volta').onclick = () => { soltaSemente(); fechaCartao(); montaMapa(); tela('tela-mapa'); };
+  document.getElementById('bt-desafio').onclick = () => { Som.liga(); mostraDesafio(); };
   document.getElementById('bt-loja').onclick = () => { Som.liga(); mostraLoja(); };
   document.getElementById('poderes').addEventListener('click', e => {
     const b = e.target.closest('[data-p]');
@@ -475,6 +587,8 @@ function iniciar() {
     if (ac === 'fecha') fechaCartao();
     else if (ac === 'compra') compra(b.dataset.id);
     else if (ac === 'bau') pegaBau();
+    else if (ac === 'desafio') abreDesafio();
+    else if (ac === 'compartilha') compartilhaDesafio(b);
     else if (ac === 'folego') usaFolegoNoCartao();
     else if (ac === 'comeca') { fechaCartao(); comecaFase(); }
     else if (ac === 'mapa') { fechaCartao(); montaMapa(); tela('tela-mapa'); }

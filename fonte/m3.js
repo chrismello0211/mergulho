@@ -33,7 +33,7 @@ function montaCasas() {
   celulasBox.innerHTML = '';
   for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) {
     const d = document.createElement('div');
-    d.className = 'casa';
+    d.className = 'casa' + (r === H - 1 ? ' fundo' : '');
     d.innerHTML = '<i></i>';
     celulasBox.appendChild(d);
   }
@@ -61,6 +61,7 @@ function quebraPapel(r, c) {
 
 function corpoDaPeca(p) {
   let s = '';
+  if (p.bau) return '<svg viewBox="0 0 100 100"><use href="#i-bau"/></svg>';
   if (p.sp === ARCO) s = '<svg viewBox="0 0 100 100"><use href="#s-arco"/></svg>';
   else {
     s = '<svg viewBox="0 0 100 100"><use href="#s' + p.t + '"/></svg>';
@@ -71,6 +72,7 @@ function corpoDaPeca(p) {
   return s;
 }
 function classeEsp(p) {
+  if (p.bau) return 'e-bau';
   return p.sp === LH ? 'esp-lh' : p.sp === LV ? 'esp-lv' : p.sp === BOMBA ? 'esp-bomba' : p.sp === ARCO ? 'esp-arco' : '';
 }
 function criaEl(p) {
@@ -164,9 +166,35 @@ function faixaTexto(t) {
   f.textContent = t; f.classList.remove('mostra'); f.offsetHeight; f.classList.add('mostra');
 }
 
+/* ═══ O BAÚ CHEGANDO AO FUNDO ═══════════════════════════════════
+   Quem encosta na última fileira já saiu: desce escorregando,
+   solta faísca dourada e vale 500.                               */
+async function entregaBaus() {
+  const saem = [];
+  for (let c = 0; c < W; c++) { const p = grid[H - 1][c]; if (p && p.bau) saem.push([c, p]); }
+  if (!saem.length) return false;
+  for (const [c, p] of saem) {
+    const el = els.get(p.id);
+    if (el) { el.classList.add('entrega'); const e = el; setTimeout(() => e.remove(), 560); }
+    els.delete(p.id);
+    grid[H - 1][c] = null;
+    J.bauFeito++; J.bauNaTela = Math.max(0, J.bauNaTela - 1);
+    J.pontos += 500;
+    faisca(H - 1, c, '+500', '#FFD35C');
+    respingos(H - 1, c, '#FFD35C', 9);
+  }
+  Som.liga(); Som.bau(); vibra(34);
+  atualizaHud();
+  await espera(460);
+  gravidade();
+  sincroniza('cai');
+  await espera(280);
+  return true;
+}
+
 /* ═══ LIMPEZA E CASCATA ═════════════════════════════════════════ */
 async function limpar(conj, novos) {
-  const vivas = [...conj].filter(k => grid[linha(k)][coluna(k)]);
+  const vivas = [...conj].filter(k => { const p = grid[linha(k)][coluna(k)]; return p && !p.bau; });
   if (!vivas.length && !(novos && novos.length)) return false;
 
   let ganho = 0, temEsp = false;
@@ -230,7 +258,7 @@ async function resolver(conjInicial, preferidos) {
     let grupos = [];
     if (!conj) {
       const corridas = acharCorridas();
-      if (!corridas.length) break;
+      if (!corridas.length) { if (await entregaBaus()) continue; break; }
       grupos = fazGrupos(corridas);
       conj = new Set();
       for (const g of grupos) for (const k of g.cells) conj.add(k);
@@ -332,8 +360,9 @@ async function tentaTroca(a, b) {
 
   const especial = (pa.sp === ARCO || pb.sp === ARCO) || (pa.sp && pb.sp);
   const virouCombo = temCorridaEm(a.r, a.c) || temCorridaEm(b.r, b.c);
+  const temBau = pa.bau || pb.bau;   /* empurrar o baú de lado é jogada válida */
 
-  if (!especial && !virouCombo) {
+  if (!especial && !virouCombo && !temBau) {
     grid[a.r][a.c] = pa; grid[b.r][b.c] = pb;
     posiciona(ea, a.r, a.c); posiciona(eb, b.r, b.c);
     ea.classList.add('nao'); eb.classList.add('nao');
@@ -355,9 +384,43 @@ async function tentaTroca(a, b) {
     vibra(40);
   }
   await resolver(conj, [chave(b.r, b.c), chave(a.r, a.c)]);
+  passoCrescer();
   J.ocupado = false;
   await confere();
   reiniciaDica();
+}
+
+/* ═══ ALGA QUE VOLTA A CRESCER ══════════════════════════════════
+   A casa marcada cresce na jogada seguinte, nunca sem aviso, e
+   nunca nas três últimas jogadas: dá pra reagir.                 */
+function pintaAvisoCresce() {
+  celulasBox.querySelectorAll('.vai-crescer').forEach(e => e.classList.remove('vai-crescer'));
+  if (J.alvoCresce) celulasBox.children[J.alvoCresce[0] * W + J.alvoCresce[1]].classList.add('vai-crescer');
+}
+function passoCrescer() {
+  const f = faseAtual();
+  if (!f.obj.cresce || J.fim) return;
+  if (J.alvoCresce) {
+    const [r, c] = J.alvoCresce;
+    J.alvoCresce = null;
+    if (papel[r][c] === 0) {
+      papel[r][c] = 1; J.papelTotal++;
+      pintaPapel();
+      const casa = celulasBox.children[r * W + c];
+      casa.classList.add('cresceu');
+      setTimeout(() => casa.classList.remove('cresceu'), 520);
+      Som.liga(); Som.cresce();
+      atualizaHud();
+    }
+  }
+  J.contaCresce = (J.contaCresce || 0) + 1;
+  if (J.mov > 3 && casasCobertas(papel) > 0 && J.contaCresce % f.obj.cresce === 0) {
+    const cand = [];
+    for (let r = 0; r < H; r++) for (let c = 0; c < W; c++)
+      if (papel[r][c] === 0 && J.papelBase[r][c] > 0) cand.push([r, c]);
+    if (cand.length) J.alvoCresce = cand[sorteia(cand.length)];
+  }
+  pintaAvisoCresce();
 }
 
 

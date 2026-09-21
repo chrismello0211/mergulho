@@ -16,6 +16,8 @@ function tipoSeguro(r, c) {
   return t;
 }
 function novaPeca(t) { return { id: ++uid, t: t, sp: NADA }; }
+/* o baú não combina com nada, não sai com especial e só quer chegar no fundo */
+function novoBau() { return { id: ++uid, t: -1, sp: NADA, bau: true }; }
 
 function montaTabuleiro() {
   do {
@@ -31,9 +33,9 @@ function acharCorridas() {
     let c = 0;
     while (c < W) {
       const p = grid[r][c];
-      if (!p) { c++; continue; }
+      if (!p || p.bau) { c++; continue; }
       let k = c + 1;
-      while (k < W && grid[r][k] && grid[r][k].t === p.t) k++;
+      while (k < W && grid[r][k] && !grid[r][k].bau && grid[r][k].t === p.t) k++;
       if (k - c >= 3) out.push({ dir: 'h', r: r, c: c, len: k - c, t: p.t });
       c = k;
     }
@@ -42,9 +44,9 @@ function acharCorridas() {
     let r = 0;
     while (r < H) {
       const p = grid[r][c];
-      if (!p) { r++; continue; }
+      if (!p || p.bau) { r++; continue; }
       let k = r + 1;
-      while (k < H && grid[k][c] && grid[k][c].t === p.t) k++;
+      while (k < H && grid[k][c] && !grid[k][c].bau && grid[k][c].t === p.t) k++;
       if (k - r >= 3) out.push({ dir: 'v', r: r, c: c, len: k - r, t: p.t });
       r = k;
     }
@@ -117,7 +119,7 @@ function posEspecial(g, preferidos) {
 /* ═══ ESPECIAIS ═════════════════════════════════════════════════ */
 function corMaisComum() {
   const n = Array(TIPOS).fill(0);
-  for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) if (grid[r][c]) n[grid[r][c].t]++;
+  for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) if (grid[r][c] && !grid[r][c].bau) n[grid[r][c].t]++;
   let melhor = 0;
   for (let i = 1; i < TIPOS; i++) if (n[i] > n[melhor]) melhor = i;
   return melhor;
@@ -212,10 +214,10 @@ function criaCombo(r1, c1, r2, c2) {
   return ok;
 }
 function temCorridaEm(r, c) {
-  const p = grid[r][c]; if (!p) return false;
+  const p = grid[r][c]; if (!p || p.bau) return false;
   let n = 1;
-  for (let x = c - 1; x >= 0 && grid[r][x] && grid[r][x].t === p.t; x--) n++;
-  for (let x = c + 1; x < W && grid[r][x] && grid[r][x].t === p.t; x++) n++;
+  for (let x = c - 1; x >= 0 && grid[r][x] && !grid[r][x].bau && grid[r][x].t === p.t; x--) n++;
+  for (let x = c + 1; x < W && grid[r][x] && !grid[r][x].bau && grid[r][x].t === p.t; x++) n++;
   if (n >= 3) return true;
   let m = 1;
   for (let y = r - 1; y >= 0 && grid[y][c] && grid[y][c].t === p.t; y--) m++;
@@ -243,10 +245,10 @@ function embaralhaModelo() {
   let voltas = 0;
   do {
     const soltos = [];
-    for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) if (grid[r][c] && !grid[r][c].sp) soltos.push(grid[r][c].t);
+    for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) if (grid[r][c] && !grid[r][c].sp && !grid[r][c].bau) soltos.push(grid[r][c].t);
     for (let i = soltos.length - 1; i > 0; i--) { const j = sorteia(i + 1); const t = soltos[i]; soltos[i] = soltos[j]; soltos[j] = t; }
     let i = 0;
-    for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) if (grid[r][c] && !grid[r][c].sp) grid[r][c].t = soltos[i++];
+    for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) if (grid[r][c] && !grid[r][c].sp && !grid[r][c].bau) grid[r][c].t = soltos[i++];
     voltas++;
   } while ((acharCorridas().length || !temJogada()) && voltas < 60);
 }
@@ -264,7 +266,13 @@ function gravidade() {
     }
     let acima = -1;
     for (let r = escreve; r >= 0; r--) {
-      const p = novaPeca(sorteia(TIPOS));
+      /* enquanto faltar baú, ele entra junto com as peças novas, de pouco em pouco */
+      /* um baú por coluna: empilhados eles se atrapalham */
+      let colunaLivre = true;
+      for (let q = 0; q < H; q++) if (grid[q][c] && grid[q][c].bau) colunaLivre = false;
+      const cabeBau = J.bauPendentes > 0 && J.bauNaTela < 2 && colunaLivre && r === escreve && rnd() < .42;
+      const p = cabeBau ? novoBau() : novaPeca(sorteia(TIPOS));
+      if (cabeBau) { J.bauPendentes--; J.bauNaTela++; }
       p.entrando = acima--;
       grid[r][c] = p; caindo.push(p);
     }

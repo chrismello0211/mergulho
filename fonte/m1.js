@@ -6,7 +6,17 @@ const W = 7, H = 8, TIPOS = 6;
 const NADA = 0, LH = 1, LV = 2, BOMBA = 3, ARCO = 4;
 
 const $ = s => document.querySelector(s);
-const sorteia = n => Math.floor(Math.random() * n);
+/* todo sorteio do jogo passa por aqui: no desafio da semana a gente
+   troca a fonte por uma semente e o tabuleiro sai igual pra todo mundo */
+let rnd = Math.random;
+const sorteia = n => Math.floor(rnd() * n);
+function semeiaJogo(txt) {
+  let h = 2166136261;
+  for (let i = 0; i < txt.length; i++) { h ^= txt.charCodeAt(i); h = Math.imul(h, 16777619); }
+  let t = h >>> 0;
+  rnd = () => { t = (t * 1664525 + 1013904223) >>> 0; return t / 4294967296; };
+}
+function soltaSemente() { rnd = Math.random; }
 const espera = ms => new Promise(r => setTimeout(r, ms));
 const chave = (r, c) => r * W + c;
 const linha = k => (k / W) | 0;
@@ -55,28 +65,28 @@ const BASE = [
   { m:1, prof:15,   nome:'Porta do recife',    mov:22, obj:{tipo:'pontos'},                                        marcas:[10800,15900,20900] },
   { m:1, prof:18,   nome:'Jardim de coral',    mov:26, obj:{tipo:'papel', padrao:'faixas', camadas:1},             marcas:[5300,9100,12700] },
   { m:1, prof:22,   nome:'Cardume',            mov:24, obj:{tipo:'coletar', itens:[[3,16],[5,16]]},                marcas:[6300,10700,14900] },
-  { m:1, prof:26,   nome:'Correnteza',         mov:22, obj:{tipo:'pontos'},                                        marcas:[10000,14600,19100] },
+  { m:1, prof:26,   nome:'Correnteza',         mov:24, obj:{tipo:'bau', n:2},                                        marcas:[4100,7100,9900] },
   { m:1, prof:30,   nome:'Toca do polvo',      mov:23, obj:{tipo:'coletar', itens:[[0,13],[2,13],[4,13]]},         marcas:[6000,10300,14300] },
-  { m:1, prof:35,   nome:'Parede de coral',    mov:31, obj:{tipo:'papel', padrao:'losango', camadas:2},            marcas:[8300,14200,19700] },
+  { m:1, prof:35,   nome:'Parede de coral',    mov:31, obj:{tipo:'papel', padrao:'losango', camadas:2, cresce:4},            marcas:[9000,15500,21500] },
 
   { m:2, prof:45,   nome:'O casco',            mov:22, obj:{tipo:'pontos'},                                        marcas:[10400,14500,18600] },
   { m:2, prof:60,   nome:'Convés tombado',     mov:30, obj:{tipo:'papel', padrao:'colunas', camadas:1},            marcas:[7500,12800,17800] },
   { m:2, prof:75,   nome:'Porão',              mov:24, obj:{tipo:'coletar', itens:[[1,18],[2,18]]},                marcas:[6200,10700,14800] },
-  { m:2, prof:90,   nome:'Âncora perdida',     mov:24, obj:{tipo:'pontos'},                                        marcas:[11900,16600,21300] },
+  { m:2, prof:90,   nome:'Âncora perdida',     mov:25, obj:{tipo:'bau', n:3},                                        marcas:[5000,8500,11800] },
   { m:2, prof:110,  nome:'Rede fantasma',      mov:34, obj:{tipo:'papel', padrao:'bandejao', camadas:1},           marcas:[8200,14000,19400] },
   { m:2, prof:130,  nome:'Proa na areia',      mov:23, obj:{tipo:'coletar', itens:[[3,14],[4,14],[5,14]]},         marcas:[5900,10100,14100] },
 
   { m:3, prof:200,  nome:'Último azul',        mov:22, obj:{tipo:'pontos'},                                        marcas:[10500,14800,19000] },
-  { m:3, prof:350,  nome:'Neve marinha',       mov:28, obj:{tipo:'papel', padrao:'cruz', camadas:2},               marcas:[6600,11400,15800] },
+  { m:3, prof:350,  nome:'Neve marinha',       mov:29, obj:{tipo:'papel', padrao:'cruz', camadas:2, cresce:5},               marcas:[7900,13600,18900] },
   { m:3, prof:500,  nome:'Luz de lanterna',    mov:24, obj:{tipo:'coletar', itens:[[4,22]]},                       marcas:[6400,11100,15400] },
   { m:3, prof:650,  nome:'Migração',           mov:23, obj:{tipo:'papel', padrao:'ondas', camadas:1},              marcas:[5000,8600,11900] },
-  { m:3, prof:800,  nome:'Sem sol',            mov:24, obj:{tipo:'pontos'},                                        marcas:[12900,17300,21600] },
+  { m:3, prof:800,  nome:'Sem sol',            mov:28, obj:{tipo:'bau', n:4},                                        marcas:[6000,10300,14300] },
   { m:3, prof:1000, nome:'Mil metros',         mov:26, obj:{tipo:'papel', padrao:'alvo', camadas:1},               marcas:[6100,10400,14500] },
 
   { m:4, prof:1500, nome:'Breu',               mov:32, obj:{tipo:'papel', padrao:'bandeja', camadas:2},            marcas:[8400,14500,20100] },
   { m:4, prof:2000, nome:'Isca de luz',        mov:24, obj:{tipo:'coletar', itens:[[4,17],[5,17]]},                marcas:[6600,11300,15700] },
-  { m:4, prof:2500, nome:'Chaminé quente',     mov:24, obj:{tipo:'pontos'},                                        marcas:[12800,16700,20600] },
-  { m:4, prof:3000, nome:'Gigantes lentos',    mov:33, obj:{tipo:'papel', padrao:'xadrez', camadas:2},             marcas:[9200,15700,21900] },
+  { m:4, prof:2500, nome:'Chaminé quente',     mov:37, obj:{tipo:'bau', n:5},                                        marcas:[7100,12200,17000] },
+  { m:4, prof:3000, nome:'Gigantes lentos',    mov:38, obj:{tipo:'papel', padrao:'xadrez', camadas:2, cresce:4},             marcas:[11100,19000,26400] },
   { m:4, prof:3500, nome:'Pressão',            mov:22, obj:{tipo:'coletar', itens:[[0,14],[1,14],[2,14],[3,14]]},  marcas:[6300,10800,15000] },
   { m:4, prof:4000, nome:'O fundo',            mov:42, obj:{tipo:'papel', padrao:'bandejao', camadas:2},           marcas:[11200,19200,26700] }
 ];
@@ -108,7 +118,7 @@ function fase(i) {
   const pos = i % CICLO, m = Math.floor(pos / 6), base = BASE[pos];
   const dif = Math.min(1, (i - CICLO) / 260);          /* aperta ao longo de umas 260 fases e para */
   const nome = ZONAS[m][(i * 7 + Math.floor(r() * 3)) % ZONAS[m].length];  /* nomes seguidos nunca repetem */
-  const tipo = r() < .45 ? base.obj.tipo : ['pontos','coletar','papel'][Math.floor(r() * 3)];
+  const tipo = r() < .4 ? base.obj.tipo : ['pontos','coletar','papel','papel','bau'][Math.floor(r() * 5)];
   let mov, obj;
   if (tipo === 'pontos') {
     mov = Math.max(18, Math.round(base.mov - dif * 2 + r() * 3));
@@ -120,14 +130,19 @@ function fase(i) {
     const cores = [0,1,2,3,4,5];
     for (let k = cores.length - 1; k > 0; k--) { const j = Math.floor(r() * (k + 1)); const t = cores[k]; cores[k] = cores[j]; cores[j] = t; }
     obj = { tipo:'coletar', itens: cores.slice(0, n).sort((a,b)=>a-b).map(c => [c, alvo]) };
+  } else if (tipo === 'bau') {
+    const n = 2 + Math.floor(r() * 3 + dif * 1.5);
+    mov = Math.max(20, Math.round(22 + n * 3.2 - dif * 3));
+    obj = { tipo:'bau', n: n };
   } else {
     const pd = PADROES_GER[Math.floor(r() * PADROES_GER.length)];
     const camadas = r() < .28 + .34 * dif ? 2 : 1;
     mov = Math.max(18, Math.round(pd[1] * (camadas === 2 ? 1.3 : 1) * (1.04 - .14 * dif)));
     obj = { tipo:'papel', padrao: pd[0], camadas: camadas };
+    if (r() < .18 + .3 * dif) { obj.cresce = 4 + Math.floor(r() * 2); mov = Math.round(mov * 1.18); }
   }
   /* pontos por jogada medidos com o bot: sobem junto com o aperto da fase */
-  const p50 = Math.round(mov * (tipo === 'pontos' ? 880 + 120 * dif : 545 + 115 * dif));
+  const p50 = Math.round(mov * (tipo === 'pontos' ? 880 + 120 * dif : tipo === 'bau' ? 700 + 120 * dif : 545 + 115 * dif));
   let marcas;
   if (tipo === 'pontos') { const m0 = r100(p50 * (.50 + .06 * dif)); marcas = [m0, r100((m0 + p50) / 2), r100(p50)]; }
   else marcas = [r100(p50 * .42), r100(p50 * .72), r100(p50)];
@@ -147,6 +162,27 @@ const PODERES = [
 ];
 const moedasDaFase = (estrelas, primeira) => 12 + 14 * estrelas + (primeira ? 20 : 0);
 const hoje = () => new Date().toISOString().slice(0, 10);
+
+/* ── desafio da semana ─────────────────────────────────────────
+   Uma fase só, igual pro mundo inteiro na semana, tabuleiro e
+   peças novas saindo da mesma semente. Ganha quem fizer mais
+   ponto em 25 jogadas.                                          */
+function chaveSemana(d) {
+  const t = d || new Date();
+  const u = new Date(Date.UTC(t.getFullYear(), t.getMonth(), t.getDate()));
+  u.setUTCDate(u.getUTCDate() + 4 - (u.getUTCDay() || 7));
+  const ano = u.getUTCFullYear();
+  const sem = Math.ceil(((u - Date.UTC(ano, 0, 1)) / 86400000 + 1) / 7);
+  return ano + '-S' + String(sem).padStart(2, '0');
+}
+function faseDesafio() {
+  const chave = chaveSemana();
+  let h = 0;
+  for (let i = 0; i < chave.length; i++) h = (h * 31 + chave.charCodeAt(i)) >>> 0;
+  const m = h % 5;
+  return { m: m, prof: BASE[m * 6 + 3].prof, nome: 'Desafio da semana', mov: 25, desafio: true, semana: chave,
+           obj: { tipo: 'pontos' }, marcas: [6000, 16000, 26000] };
+}
 
 
 /* ── o que cobre o fundo: padrões dentro da zona que o jogo limpa
@@ -180,11 +216,13 @@ function casasCobertas(g) { let n = 0; for (let r = 0; r < H; r++) for (let c = 
 /* ── guardar o progresso ───────────────────────────────────── */
 const CHAVE = 'mergulho-v1';
 let prog = { estrelas: {}, max: 0, som: true, vistos: {}, moedas: 120,
-             poderes: { arpao: 1, troca: 1, giro: 1, folego: 1 }, dia: '' };
+             poderes: { arpao: 1, troca: 1, giro: 1, folego: 1 }, dia: '',
+             desafio: { semana: '', melhor: 0, nome: '' } };
 function carregaProg() {
   try {
     const cru = localStorage.getItem(CHAVE);
-    if (cru) { const p = JSON.parse(cru); prog = Object.assign(prog, p); prog.vistos = prog.vistos || {}; prog.poderes = Object.assign({ arpao:0, troca:0, giro:0, folego:0 }, prog.poderes); }
+    if (cru) { const p = JSON.parse(cru); prog = Object.assign(prog, p); prog.vistos = prog.vistos || {}; prog.poderes = Object.assign({ arpao:0, troca:0, giro:0, folego:0 }, prog.poderes);
+      prog.desafio = Object.assign({ semana:'', melhor:0, nome:'' }, prog.desafio); }
   } catch (e) { /* sem armazenamento: joga do mesmo jeito, só não guarda */ }
 }
 function salvaProg() { try { localStorage.setItem(CHAVE, JSON.stringify(prog)); } catch (e) {} }
@@ -235,6 +273,8 @@ const Som = {
   nao() { this.nota(190 * this.f, 0.11, 'triangle', 0.08, 150 * this.f); },
   especial() { this.ruido(0.3, 0.12, 750 * this.f); this.eco(260 * this.f, 0.32, 'sine', 0.12, 900 * this.f); },
   estoura() { this.ruido(0.45, 0.22, 520 * this.f); this.nota(110 * this.f, 0.5, 'sine', 0.2, 45); },
+  bau() { this.ruido(0.3, 0.16, 300 * this.f); this.nota(150 * this.f, 0.34, 'sine', 0.18, 70); setTimeout(() => this.eco(880 * this.f, 0.22, 'triangle', 0.12, 1320 * this.f), 120); },
+  cresce() { this.nota(220 * this.f, 0.22, 'sine', 0.1, 140 * this.f); this.ruido(0.18, 0.07, 400 * this.f); },
   estrela(i) { this.eco(([784, 988, 1319][i] || 784) * this.f, 0.5, 'sine', 0.15); },
   vitoria() { [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => this.eco(f * this.f, 0.42, 'triangle', 0.13), i * 120)); },
   derrota() { [392, 330, 262].forEach((f, i) => setTimeout(() => this.nota(f * this.f, 0.36, 'sine', 0.12), i * 160)); }

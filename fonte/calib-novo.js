@@ -69,35 +69,21 @@ function joga(f,n){
   return {taxa:ok/n,pts};
 }
 const pct=(a,q)=>a[Math.max(0,Math.min(a.length-1,Math.floor(q*a.length)))];
-const r100=x=>Math.round(x/100)*100;
 
 /* sucesso-alvo do bot, fase a fase: começa folgado e aperta devagar */
 const ALVO=[1,1,.97,.97,.95,.95, .95,.93,.93,.92,.91,.9, .92,.9,.9,.89,.88,.88, .9,.88,.88,.87,.86,.85, .88,.87,.86,.85,.84,.83];
 
-const alvoMundo=+process.argv[2];
-const saida=[];
-FASES.forEach((f0,i)=>{
-  if(!isNaN(alvoMundo)&&f0.m!==alvoMundo)return;
-  const f=JSON.parse(JSON.stringify(f0));
-  const alvo=ALVO[i];let res;
-  if(f.obj.tipo!=='pontos'&&process.argv[3]!=='fixo'){
-    for(let it=0;it<6;it++){
-      res=joga(f,40);
-      if(res.taxa>alvo+.07&&f.mov>18){f.mov-=res.taxa>alvo+.15?2:1;continue;}
-      if(res.taxa<alvo-.06){f.mov+=res.taxa<alvo-.15?2:1;continue;}
-      break;
-    }
+
+const quais=[11,19,27,22,26];
+const ALVO2={11:.9,19:.88,27:.85,22:.88,26:.85};
+for(const i of quais){
+  const f=JSON.parse(JSON.stringify(BASE[i]));const alvo=ALVO2[i];let res;
+  for(let it=0;it<8;it++){
+    res=joga(f,40);
+    if(res.taxa>alvo+.07&&f.mov>18){f.mov-=res.taxa>alvo+.15?2:1;continue;}
+    if(res.taxa<alvo-.06){f.mov+=res.taxa<alvo-.15?3:1;continue;}
+    break;
   }
-  res=joga(f,80);
-  const p50=pct(res.pts,.5);
-  let m0;
-  let marcas;
-  if(f.obj.tipo==='pontos'){
-    const frac=[.40,.52,.56,.60,.62][f.m];
-    m0=Math.min(Math.floor(pct(res.pts,1-alvo)/100)*100, r100(frac*p50));
-    res.taxa=res.pts.filter(x=>x>=m0).length/res.pts.length;
-    const m2=r100(p50); marcas=[m0, r100((m0+m2)/2), m2];
-  } else { m0=r100(.42*p50); marcas=[m0, r100(.72*p50), r100(p50)]; }
-  saida.push({i,nome:f.nome,mov:f.mov,taxa:Math.round(res.taxa*100),p50,marcas});
-  console.log(JSON.stringify(saida[saida.length-1]));
-});
+  res=joga(f,70);const p50=pct(res.pts,.5);
+  console.log(JSON.stringify({i:i,nome:f.nome,mov:f.mov,taxa:Math.round(res.taxa*100),p50:p50,marcas:[r100(.42*p50),r100(.72*p50),r100(p50)]}));
+}
