@@ -1,0 +1,15 @@
+
+<script>
+/* service worker: só no https (ou localhost), nunca em file:// */
+if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+  addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+    let recarregou = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (recarregou) return;
+      recarregou = true;
+      location.reload();
+    });
+  });
+}
+</script>
