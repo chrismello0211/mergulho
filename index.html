@@ -460,6 +460,22 @@ body:not(.em-jogo) #cena{display:none}
 }
 .cab-exped{position:relative;z-index:2;text-align:center;font-family:var(--display);font-weight:800;font-size:15px;color:#0B3A55;padding:6px 0 0}
 
+
+/* ── baú, alga que volta e desafio ──────────────────────────── */
+.peca.e-bau .corpo{animation:bau-bal 2.6s ease-in-out infinite}
+@keyframes bau-bal{0%,100%{transform:translateY(0) rotate(-2.5deg)}50%{transform:translateY(-3px) rotate(2.5deg)}}
+.peca.entrega{z-index:6}
+.peca.entrega .corpo{animation:bau-sai .56s cubic-bezier(.4,0,.7,1) forwards}
+@keyframes bau-sai{0%{transform:translateY(0) scale(1);opacity:1}55%{transform:translateY(26px) scale(.92) rotate(9deg);opacity:.9}100%{transform:translateY(66px) scale(.5) rotate(20deg);opacity:0}}
+[data-mundo="3"] .peca.e-bau svg,[data-mundo="4"] .peca.e-bau svg{filter:drop-shadow(0 0 7px rgba(255,211,92,.75))}
+#mesa.com-bau .casa.fundo i{box-shadow:inset 0 -3px 0 rgba(255,211,92,.5),inset 0 0 10px rgba(255,211,92,.16)}
+.casa.vai-crescer i{box-shadow:inset 0 0 0 2px rgba(120,230,140,.95),0 0 10px rgba(93,190,110,.6);animation:vai-crescer .95s ease-in-out infinite}
+@keyframes vai-crescer{0%,100%{opacity:.55;transform:scale(.94)}50%{opacity:1;transform:scale(1)}}
+.casa.cresceu i{animation:cresceu .5s cubic-bezier(.2,1.7,.4,1)}
+@keyframes cresceu{0%{transform:scale(0) rotate(-20deg)}100%{transform:scale(1) rotate(0)}}
+.cartao p.melhor{font-weight:800;color:#0A6C7A}
+[data-mundo="3"] .cartao p.melhor,[data-mundo="4"] .cartao p.melhor{color:var(--biolum)}
+
 @media (prefers-reduced-motion: reduce){
   *{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.05s !important}
   .bolha-amb,.neve,.faisca-bio{display:none}
@@ -495,6 +511,18 @@ body:not(.em-jogo) #cena{display:none}
     <circle cx="50" cy="50" r="30" fill="none" stroke="#B7790F" stroke-width="3" stroke-opacity=".55"/>
     <path d="M36 56q7-9 14 0t14 0" fill="none" stroke="#B7790F" stroke-width="5" stroke-linecap="round"/>
     <path d="M38 40q6-7 12 0t12 0" fill="none" stroke="#B7790F" stroke-width="4" stroke-linecap="round" stroke-opacity=".7"/>
+  </symbol>
+  <symbol id="i-bau" viewBox="0 0 100 100">
+    <ellipse cx="50" cy="88" rx="30" ry="6" fill="#000" opacity=".28"/>
+    <path d="M12 48C12 30 28 18 50 18s38 12 38 30Z" fill="#7A542F"/>
+    <path d="M12 48C12 30 28 18 50 18s38 12 38 30Z" fill="none" stroke="#4A3119" stroke-width="3.5" stroke-linejoin="round"/>
+    <path d="M22 44c0-14 12-22 28-22" fill="none" stroke="#A97845" stroke-width="5" stroke-linecap="round" opacity=".7"/>
+    <rect x="12" y="48" width="76" height="34" rx="5" fill="#6B4A2A" stroke="#4A3119" stroke-width="3.5"/>
+    <path d="M12 60h76M12 71h76" stroke="#573C21" stroke-width="2.5" opacity=".8"/>
+    <path d="M28 18v64M72 18v64" stroke="#E0A93C" stroke-width="7"/>
+    <path d="M28 18v64M72 18v64" stroke="#FFD35C" stroke-width="3"/>
+    <rect x="41" y="44" width="18" height="20" rx="4" fill="#FFD35C" stroke="#B7790F" stroke-width="3"/>
+    <circle cx="50" cy="52" r="3.4" fill="#7A5308"/><path d="M50 55v5" stroke="#7A5308" stroke-width="3" stroke-linecap="round"/>
   </symbol>
   <symbol id="i-loja" viewBox="0 0 24 24">
     <path d="M4 8h16l-1.4 12H5.4Z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/>
@@ -544,6 +572,7 @@ body:not(.em-jogo) #cena{display:none}
       <div class="inicio-bts">
         <button class="bt" id="bt-jogar">Mergulhar</button>
         <button class="bt vidro" id="bt-ajuda">Como jogar</button>
+        <button class="bt vidro" id="bt-desafio">Desafio da semana</button>
       </div>
     </div>
   </section>
@@ -613,7 +642,17 @@ const W = 7, H = 8, TIPOS = 6;
 const NADA = 0, LH = 1, LV = 2, BOMBA = 3, ARCO = 4;
 
 const $ = s => document.querySelector(s);
-const sorteia = n => Math.floor(Math.random() * n);
+/* todo sorteio do jogo passa por aqui: no desafio da semana a gente
+   troca a fonte por uma semente e o tabuleiro sai igual pra todo mundo */
+let rnd = Math.random;
+const sorteia = n => Math.floor(rnd() * n);
+function semeiaJogo(txt) {
+  let h = 2166136261;
+  for (let i = 0; i < txt.length; i++) { h ^= txt.charCodeAt(i); h = Math.imul(h, 16777619); }
+  let t = h >>> 0;
+  rnd = () => { t = (t * 1664525 + 1013904223) >>> 0; return t / 4294967296; };
+}
+function soltaSemente() { rnd = Math.random; }
 const espera = ms => new Promise(r => setTimeout(r, ms));
 const chave = (r, c) => r * W + c;
 const linha = k => (k / W) | 0;
@@ -662,28 +701,28 @@ const BASE = [
   { m:1, prof:15,   nome:'Porta do recife',    mov:22, obj:{tipo:'pontos'},                                        marcas:[10800,15900,20900] },
   { m:1, prof:18,   nome:'Jardim de coral',    mov:26, obj:{tipo:'papel', padrao:'faixas', camadas:1},             marcas:[5300,9100,12700] },
   { m:1, prof:22,   nome:'Cardume',            mov:24, obj:{tipo:'coletar', itens:[[3,16],[5,16]]},                marcas:[6300,10700,14900] },
-  { m:1, prof:26,   nome:'Correnteza',         mov:22, obj:{tipo:'pontos'},                                        marcas:[10000,14600,19100] },
+  { m:1, prof:26,   nome:'Correnteza',         mov:24, obj:{tipo:'bau', n:2},                                        marcas:[4100,7100,9900] },
   { m:1, prof:30,   nome:'Toca do polvo',      mov:23, obj:{tipo:'coletar', itens:[[0,13],[2,13],[4,13]]},         marcas:[6000,10300,14300] },
-  { m:1, prof:35,   nome:'Parede de coral',    mov:31, obj:{tipo:'papel', padrao:'losango', camadas:2},            marcas:[8300,14200,19700] },
+  { m:1, prof:35,   nome:'Parede de coral',    mov:31, obj:{tipo:'papel', padrao:'losango', camadas:2, cresce:4},            marcas:[9000,15500,21500] },
 
   { m:2, prof:45,   nome:'O casco',            mov:22, obj:{tipo:'pontos'},                                        marcas:[10400,14500,18600] },
   { m:2, prof:60,   nome:'Convés tombado',     mov:30, obj:{tipo:'papel', padrao:'colunas', camadas:1},            marcas:[7500,12800,17800] },
   { m:2, prof:75,   nome:'Porão',              mov:24, obj:{tipo:'coletar', itens:[[1,18],[2,18]]},                marcas:[6200,10700,14800] },
-  { m:2, prof:90,   nome:'Âncora perdida',     mov:24, obj:{tipo:'pontos'},                                        marcas:[11900,16600,21300] },
+  { m:2, prof:90,   nome:'Âncora perdida',     mov:25, obj:{tipo:'bau', n:3},                                        marcas:[5000,8500,11800] },
   { m:2, prof:110,  nome:'Rede fantasma',      mov:34, obj:{tipo:'papel', padrao:'bandejao', camadas:1},           marcas:[8200,14000,19400] },
   { m:2, prof:130,  nome:'Proa na areia',      mov:23, obj:{tipo:'coletar', itens:[[3,14],[4,14],[5,14]]},         marcas:[5900,10100,14100] },
 
   { m:3, prof:200,  nome:'Último azul',        mov:22, obj:{tipo:'pontos'},                                        marcas:[10500,14800,19000] },
-  { m:3, prof:350,  nome:'Neve marinha',       mov:28, obj:{tipo:'papel', padrao:'cruz', camadas:2},               marcas:[6600,11400,15800] },
+  { m:3, prof:350,  nome:'Neve marinha',       mov:29, obj:{tipo:'papel', padrao:'cruz', camadas:2, cresce:5},               marcas:[7900,13600,18900] },
   { m:3, prof:500,  nome:'Luz de lanterna',    mov:24, obj:{tipo:'coletar', itens:[[4,22]]},                       marcas:[6400,11100,15400] },
   { m:3, prof:650,  nome:'Migração',           mov:23, obj:{tipo:'papel', padrao:'ondas', camadas:1},              marcas:[5000,8600,11900] },
-  { m:3, prof:800,  nome:'Sem sol',            mov:24, obj:{tipo:'pontos'},                                        marcas:[12900,17300,21600] },
+  { m:3, prof:800,  nome:'Sem sol',            mov:28, obj:{tipo:'bau', n:4},                                        marcas:[6000,10300,14300] },
   { m:3, prof:1000, nome:'Mil metros',         mov:26, obj:{tipo:'papel', padrao:'alvo', camadas:1},               marcas:[6100,10400,14500] },
 
   { m:4, prof:1500, nome:'Breu',               mov:32, obj:{tipo:'papel', padrao:'bandeja', camadas:2},            marcas:[8400,14500,20100] },
   { m:4, prof:2000, nome:'Isca de luz',        mov:24, obj:{tipo:'coletar', itens:[[4,17],[5,17]]},                marcas:[6600,11300,15700] },
-  { m:4, prof:2500, nome:'Chaminé quente',     mov:24, obj:{tipo:'pontos'},                                        marcas:[12800,16700,20600] },
-  { m:4, prof:3000, nome:'Gigantes lentos',    mov:33, obj:{tipo:'papel', padrao:'xadrez', camadas:2},             marcas:[9200,15700,21900] },
+  { m:4, prof:2500, nome:'Chaminé quente',     mov:37, obj:{tipo:'bau', n:5},                                        marcas:[7100,12200,17000] },
+  { m:4, prof:3000, nome:'Gigantes lentos',    mov:38, obj:{tipo:'papel', padrao:'xadrez', camadas:2, cresce:4},             marcas:[11100,19000,26400] },
   { m:4, prof:3500, nome:'Pressão',            mov:22, obj:{tipo:'coletar', itens:[[0,14],[1,14],[2,14],[3,14]]},  marcas:[6300,10800,15000] },
   { m:4, prof:4000, nome:'O fundo',            mov:42, obj:{tipo:'papel', padrao:'bandejao', camadas:2},           marcas:[11200,19200,26700] }
 ];
@@ -715,7 +754,7 @@ function fase(i) {
   const pos = i % CICLO, m = Math.floor(pos / 6), base = BASE[pos];
   const dif = Math.min(1, (i - CICLO) / 260);          /* aperta ao longo de umas 260 fases e para */
   const nome = ZONAS[m][(i * 7 + Math.floor(r() * 3)) % ZONAS[m].length];  /* nomes seguidos nunca repetem */
-  const tipo = r() < .45 ? base.obj.tipo : ['pontos','coletar','papel'][Math.floor(r() * 3)];
+  const tipo = r() < .4 ? base.obj.tipo : ['pontos','coletar','papel','papel','bau'][Math.floor(r() * 5)];
   let mov, obj;
   if (tipo === 'pontos') {
     mov = Math.max(18, Math.round(base.mov - dif * 2 + r() * 3));
@@ -727,14 +766,19 @@ function fase(i) {
     const cores = [0,1,2,3,4,5];
     for (let k = cores.length - 1; k > 0; k--) { const j = Math.floor(r() * (k + 1)); const t = cores[k]; cores[k] = cores[j]; cores[j] = t; }
     obj = { tipo:'coletar', itens: cores.slice(0, n).sort((a,b)=>a-b).map(c => [c, alvo]) };
+  } else if (tipo === 'bau') {
+    const n = 2 + Math.floor(r() * 3 + dif * 1.5);
+    mov = Math.max(20, Math.round(22 + n * 3.2 - dif * 3));
+    obj = { tipo:'bau', n: n };
   } else {
     const pd = PADROES_GER[Math.floor(r() * PADROES_GER.length)];
     const camadas = r() < .28 + .34 * dif ? 2 : 1;
     mov = Math.max(18, Math.round(pd[1] * (camadas === 2 ? 1.3 : 1) * (1.04 - .14 * dif)));
     obj = { tipo:'papel', padrao: pd[0], camadas: camadas };
+    if (r() < .18 + .3 * dif) { obj.cresce = 4 + Math.floor(r() * 2); mov = Math.round(mov * 1.18); }
   }
   /* pontos por jogada medidos com o bot: sobem junto com o aperto da fase */
-  const p50 = Math.round(mov * (tipo === 'pontos' ? 880 + 120 * dif : 545 + 115 * dif));
+  const p50 = Math.round(mov * (tipo === 'pontos' ? 880 + 120 * dif : tipo === 'bau' ? 700 + 120 * dif : 545 + 115 * dif));
   let marcas;
   if (tipo === 'pontos') { const m0 = r100(p50 * (.50 + .06 * dif)); marcas = [m0, r100((m0 + p50) / 2), r100(p50)]; }
   else marcas = [r100(p50 * .42), r100(p50 * .72), r100(p50)];
@@ -754,6 +798,27 @@ const PODERES = [
 ];
 const moedasDaFase = (estrelas, primeira) => 12 + 14 * estrelas + (primeira ? 20 : 0);
 const hoje = () => new Date().toISOString().slice(0, 10);
+
+/* ── desafio da semana ─────────────────────────────────────────
+   Uma fase só, igual pro mundo inteiro na semana, tabuleiro e
+   peças novas saindo da mesma semente. Ganha quem fizer mais
+   ponto em 25 jogadas.                                          */
+function chaveSemana(d) {
+  const t = d || new Date();
+  const u = new Date(Date.UTC(t.getFullYear(), t.getMonth(), t.getDate()));
+  u.setUTCDate(u.getUTCDate() + 4 - (u.getUTCDay() || 7));
+  const ano = u.getUTCFullYear();
+  const sem = Math.ceil(((u - Date.UTC(ano, 0, 1)) / 86400000 + 1) / 7);
+  return ano + '-S' + String(sem).padStart(2, '0');
+}
+function faseDesafio() {
+  const chave = chaveSemana();
+  let h = 0;
+  for (let i = 0; i < chave.length; i++) h = (h * 31 + chave.charCodeAt(i)) >>> 0;
+  const m = h % 5;
+  return { m: m, prof: BASE[m * 6 + 3].prof, nome: 'Desafio da semana', mov: 25, desafio: true, semana: chave,
+           obj: { tipo: 'pontos' }, marcas: [6000, 16000, 26000] };
+}
 
 
 /* ── o que cobre o fundo: padrões dentro da zona que o jogo limpa
@@ -787,11 +852,13 @@ function casasCobertas(g) { let n = 0; for (let r = 0; r < H; r++) for (let c = 
 /* ── guardar o progresso ───────────────────────────────────── */
 const CHAVE = 'mergulho-v1';
 let prog = { estrelas: {}, max: 0, som: true, vistos: {}, moedas: 120,
-             poderes: { arpao: 1, troca: 1, giro: 1, folego: 1 }, dia: '' };
+             poderes: { arpao: 1, troca: 1, giro: 1, folego: 1 }, dia: '',
+             desafio: { semana: '', melhor: 0, nome: '' } };
 function carregaProg() {
   try {
     const cru = localStorage.getItem(CHAVE);
-    if (cru) { const p = JSON.parse(cru); prog = Object.assign(prog, p); prog.vistos = prog.vistos || {}; prog.poderes = Object.assign({ arpao:0, troca:0, giro:0, folego:0 }, prog.poderes); }
+    if (cru) { const p = JSON.parse(cru); prog = Object.assign(prog, p); prog.vistos = prog.vistos || {}; prog.poderes = Object.assign({ arpao:0, troca:0, giro:0, folego:0 }, prog.poderes);
+      prog.desafio = Object.assign({ semana:'', melhor:0, nome:'' }, prog.desafio); }
   } catch (e) { /* sem armazenamento: joga do mesmo jeito, só não guarda */ }
 }
 function salvaProg() { try { localStorage.setItem(CHAVE, JSON.stringify(prog)); } catch (e) {} }
@@ -842,6 +909,8 @@ const Som = {
   nao() { this.nota(190 * this.f, 0.11, 'triangle', 0.08, 150 * this.f); },
   especial() { this.ruido(0.3, 0.12, 750 * this.f); this.eco(260 * this.f, 0.32, 'sine', 0.12, 900 * this.f); },
   estoura() { this.ruido(0.45, 0.22, 520 * this.f); this.nota(110 * this.f, 0.5, 'sine', 0.2, 45); },
+  bau() { this.ruido(0.3, 0.16, 300 * this.f); this.nota(150 * this.f, 0.34, 'sine', 0.18, 70); setTimeout(() => this.eco(880 * this.f, 0.22, 'triangle', 0.12, 1320 * this.f), 120); },
+  cresce() { this.nota(220 * this.f, 0.22, 'sine', 0.1, 140 * this.f); this.ruido(0.18, 0.07, 400 * this.f); },
   estrela(i) { this.eco(([784, 988, 1319][i] || 784) * this.f, 0.5, 'sine', 0.15); },
   vitoria() { [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => this.eco(f * this.f, 0.42, 'triangle', 0.13), i * 120)); },
   derrota() { [392, 330, 262].forEach((f, i) => setTimeout(() => this.nota(f * this.f, 0.36, 'sine', 0.12), i * 160)); }
@@ -1394,6 +1463,8 @@ function tipoSeguro(r, c) {
   return t;
 }
 function novaPeca(t) { return { id: ++uid, t: t, sp: NADA }; }
+/* o baú não combina com nada, não sai com especial e só quer chegar no fundo */
+function novoBau() { return { id: ++uid, t: -1, sp: NADA, bau: true }; }
 
 function montaTabuleiro() {
   do {
@@ -1409,9 +1480,9 @@ function acharCorridas() {
     let c = 0;
     while (c < W) {
       const p = grid[r][c];
-      if (!p) { c++; continue; }
+      if (!p || p.bau) { c++; continue; }
       let k = c + 1;
-      while (k < W && grid[r][k] && grid[r][k].t === p.t) k++;
+      while (k < W && grid[r][k] && !grid[r][k].bau && grid[r][k].t === p.t) k++;
       if (k - c >= 3) out.push({ dir: 'h', r: r, c: c, len: k - c, t: p.t });
       c = k;
     }
@@ -1420,9 +1491,9 @@ function acharCorridas() {
     let r = 0;
     while (r < H) {
       const p = grid[r][c];
-      if (!p) { r++; continue; }
+      if (!p || p.bau) { r++; continue; }
       let k = r + 1;
-      while (k < H && grid[k][c] && grid[k][c].t === p.t) k++;
+      while (k < H && grid[k][c] && !grid[k][c].bau && grid[k][c].t === p.t) k++;
       if (k - r >= 3) out.push({ dir: 'v', r: r, c: c, len: k - r, t: p.t });
       r = k;
     }
@@ -1495,7 +1566,7 @@ function posEspecial(g, preferidos) {
 /* ═══ ESPECIAIS ═════════════════════════════════════════════════ */
 function corMaisComum() {
   const n = Array(TIPOS).fill(0);
-  for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) if (grid[r][c]) n[grid[r][c].t]++;
+  for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) if (grid[r][c] && !grid[r][c].bau) n[grid[r][c].t]++;
   let melhor = 0;
   for (let i = 1; i < TIPOS; i++) if (n[i] > n[melhor]) melhor = i;
   return melhor;
@@ -1590,10 +1661,10 @@ function criaCombo(r1, c1, r2, c2) {
   return ok;
 }
 function temCorridaEm(r, c) {
-  const p = grid[r][c]; if (!p) return false;
+  const p = grid[r][c]; if (!p || p.bau) return false;
   let n = 1;
-  for (let x = c - 1; x >= 0 && grid[r][x] && grid[r][x].t === p.t; x--) n++;
-  for (let x = c + 1; x < W && grid[r][x] && grid[r][x].t === p.t; x++) n++;
+  for (let x = c - 1; x >= 0 && grid[r][x] && !grid[r][x].bau && grid[r][x].t === p.t; x--) n++;
+  for (let x = c + 1; x < W && grid[r][x] && !grid[r][x].bau && grid[r][x].t === p.t; x++) n++;
   if (n >= 3) return true;
   let m = 1;
   for (let y = r - 1; y >= 0 && grid[y][c] && grid[y][c].t === p.t; y--) m++;
@@ -1621,10 +1692,10 @@ function embaralhaModelo() {
   let voltas = 0;
   do {
     const soltos = [];
-    for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) if (grid[r][c] && !grid[r][c].sp) soltos.push(grid[r][c].t);
+    for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) if (grid[r][c] && !grid[r][c].sp && !grid[r][c].bau) soltos.push(grid[r][c].t);
     for (let i = soltos.length - 1; i > 0; i--) { const j = sorteia(i + 1); const t = soltos[i]; soltos[i] = soltos[j]; soltos[j] = t; }
     let i = 0;
-    for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) if (grid[r][c] && !grid[r][c].sp) grid[r][c].t = soltos[i++];
+    for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) if (grid[r][c] && !grid[r][c].sp && !grid[r][c].bau) grid[r][c].t = soltos[i++];
     voltas++;
   } while ((acharCorridas().length || !temJogada()) && voltas < 60);
 }
@@ -1642,7 +1713,13 @@ function gravidade() {
     }
     let acima = -1;
     for (let r = escreve; r >= 0; r--) {
-      const p = novaPeca(sorteia(TIPOS));
+      /* enquanto faltar baú, ele entra junto com as peças novas, de pouco em pouco */
+      /* um baú por coluna: empilhados eles se atrapalham */
+      let colunaLivre = true;
+      for (let q = 0; q < H; q++) if (grid[q][c] && grid[q][c].bau) colunaLivre = false;
+      const cabeBau = J.bauPendentes > 0 && J.bauNaTela < 2 && colunaLivre && r === escreve && rnd() < .42;
+      const p = cabeBau ? novoBau() : novaPeca(sorteia(TIPOS));
+      if (cabeBau) { J.bauPendentes--; J.bauNaTela++; }
       p.entrando = acima--;
       grid[r][c] = p; caindo.push(p);
     }
@@ -1685,7 +1762,7 @@ function montaCasas() {
   celulasBox.innerHTML = '';
   for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) {
     const d = document.createElement('div');
-    d.className = 'casa';
+    d.className = 'casa' + (r === H - 1 ? ' fundo' : '');
     d.innerHTML = '<i></i>';
     celulasBox.appendChild(d);
   }
@@ -1713,6 +1790,7 @@ function quebraPapel(r, c) {
 
 function corpoDaPeca(p) {
   let s = '';
+  if (p.bau) return '<svg viewBox="0 0 100 100"><use href="#i-bau"/></svg>';
   if (p.sp === ARCO) s = '<svg viewBox="0 0 100 100"><use href="#s-arco"/></svg>';
   else {
     s = '<svg viewBox="0 0 100 100"><use href="#s' + p.t + '"/></svg>';
@@ -1723,6 +1801,7 @@ function corpoDaPeca(p) {
   return s;
 }
 function classeEsp(p) {
+  if (p.bau) return 'e-bau';
   return p.sp === LH ? 'esp-lh' : p.sp === LV ? 'esp-lv' : p.sp === BOMBA ? 'esp-bomba' : p.sp === ARCO ? 'esp-arco' : '';
 }
 function criaEl(p) {
@@ -1816,9 +1895,35 @@ function faixaTexto(t) {
   f.textContent = t; f.classList.remove('mostra'); f.offsetHeight; f.classList.add('mostra');
 }
 
+/* ═══ O BAÚ CHEGANDO AO FUNDO ═══════════════════════════════════
+   Quem encosta na última fileira já saiu: desce escorregando,
+   solta faísca dourada e vale 500.                               */
+async function entregaBaus() {
+  const saem = [];
+  for (let c = 0; c < W; c++) { const p = grid[H - 1][c]; if (p && p.bau) saem.push([c, p]); }
+  if (!saem.length) return false;
+  for (const [c, p] of saem) {
+    const el = els.get(p.id);
+    if (el) { el.classList.add('entrega'); const e = el; setTimeout(() => e.remove(), 560); }
+    els.delete(p.id);
+    grid[H - 1][c] = null;
+    J.bauFeito++; J.bauNaTela = Math.max(0, J.bauNaTela - 1);
+    J.pontos += 500;
+    faisca(H - 1, c, '+500', '#FFD35C');
+    respingos(H - 1, c, '#FFD35C', 9);
+  }
+  Som.liga(); Som.bau(); vibra(34);
+  atualizaHud();
+  await espera(460);
+  gravidade();
+  sincroniza('cai');
+  await espera(280);
+  return true;
+}
+
 /* ═══ LIMPEZA E CASCATA ═════════════════════════════════════════ */
 async function limpar(conj, novos) {
-  const vivas = [...conj].filter(k => grid[linha(k)][coluna(k)]);
+  const vivas = [...conj].filter(k => { const p = grid[linha(k)][coluna(k)]; return p && !p.bau; });
   if (!vivas.length && !(novos && novos.length)) return false;
 
   let ganho = 0, temEsp = false;
@@ -1882,7 +1987,7 @@ async function resolver(conjInicial, preferidos) {
     let grupos = [];
     if (!conj) {
       const corridas = acharCorridas();
-      if (!corridas.length) break;
+      if (!corridas.length) { if (await entregaBaus()) continue; break; }
       grupos = fazGrupos(corridas);
       conj = new Set();
       for (const g of grupos) for (const k of g.cells) conj.add(k);
@@ -1984,8 +2089,9 @@ async function tentaTroca(a, b) {
 
   const especial = (pa.sp === ARCO || pb.sp === ARCO) || (pa.sp && pb.sp);
   const virouCombo = temCorridaEm(a.r, a.c) || temCorridaEm(b.r, b.c);
+  const temBau = pa.bau || pb.bau;   /* empurrar o baú de lado é jogada válida */
 
-  if (!especial && !virouCombo) {
+  if (!especial && !virouCombo && !temBau) {
     grid[a.r][a.c] = pa; grid[b.r][b.c] = pb;
     posiciona(ea, a.r, a.c); posiciona(eb, b.r, b.c);
     ea.classList.add('nao'); eb.classList.add('nao');
@@ -2007,9 +2113,43 @@ async function tentaTroca(a, b) {
     vibra(40);
   }
   await resolver(conj, [chave(b.r, b.c), chave(a.r, a.c)]);
+  passoCrescer();
   J.ocupado = false;
   await confere();
   reiniciaDica();
+}
+
+/* ═══ ALGA QUE VOLTA A CRESCER ══════════════════════════════════
+   A casa marcada cresce na jogada seguinte, nunca sem aviso, e
+   nunca nas três últimas jogadas: dá pra reagir.                 */
+function pintaAvisoCresce() {
+  celulasBox.querySelectorAll('.vai-crescer').forEach(e => e.classList.remove('vai-crescer'));
+  if (J.alvoCresce) celulasBox.children[J.alvoCresce[0] * W + J.alvoCresce[1]].classList.add('vai-crescer');
+}
+function passoCrescer() {
+  const f = faseAtual();
+  if (!f.obj.cresce || J.fim) return;
+  if (J.alvoCresce) {
+    const [r, c] = J.alvoCresce;
+    J.alvoCresce = null;
+    if (papel[r][c] === 0) {
+      papel[r][c] = 1; J.papelTotal++;
+      pintaPapel();
+      const casa = celulasBox.children[r * W + c];
+      casa.classList.add('cresceu');
+      setTimeout(() => casa.classList.remove('cresceu'), 520);
+      Som.liga(); Som.cresce();
+      atualizaHud();
+    }
+  }
+  J.contaCresce = (J.contaCresce || 0) + 1;
+  if (J.mov > 3 && casasCobertas(papel) > 0 && J.contaCresce % f.obj.cresce === 0) {
+    const cand = [];
+    for (let r = 0; r < H; r++) for (let c = 0; c < W; c++)
+      if (papel[r][c] === 0 && J.papelBase[r][c] > 0) cand.push([r, c]);
+    if (cand.length) J.alvoCresce = cand[sorteia(cand.length)];
+  }
+  pintaAvisoCresce();
 }
 
 
@@ -2103,6 +2243,8 @@ function apagaDica() { dicaAtiva.forEach(e => e.classList.remove('dica')); dicaA
 
 /* ═══ HUD ═══════════════════════════════════════════════════════ */
 const nf = n => n.toLocaleString('pt-BR');
+let desafioAtual = null;
+const faseAtual = () => J.desafio ? desafioAtual : fase(J.fase);
 const icone = t => '<svg class="ic" viewBox="0 0 100 100"><use href="#s' + t + '"/></svg>';
 
 function gastaJogada() {
@@ -2113,16 +2255,17 @@ function gastaJogada() {
 }
 
 function faltaObjetivo() {
-  const f = fase(J.fase);
+  const f = faseAtual();
   if (f.obj.tipo === 'pontos') return Math.max(0, f.marcas[0] - J.pontos);
   if (f.obj.tipo === 'coletar') return f.obj.itens.reduce((a, it) => a + Math.max(0, it[1] - J.coletado[it[0]]), 0);
+  if (f.obj.tipo === 'bau') return Math.max(0, f.obj.n - J.bauFeito);
   return Math.max(0, J.papelTotal - J.papelFeito);
 }
 function objetivoFeito() { return faltaObjetivo() === 0; }
 function nomeBloq(f, n) { const b = MUNDOS[f.m].bloq; return n + ' ' + (n === 1 ? b.um : b.varios); }
 
 function atualizaHud() {
-  const f = fase(J.fase);
+  const f = faseAtual();
   document.getElementById('mov-n').textContent = J.mov;
   document.getElementById('mov-lb').textContent = J.mov === 1 ? 'jogada' : 'jogadas';
   document.getElementById('movimentos').classList.toggle('aperto', J.mov <= 5);
@@ -2137,10 +2280,16 @@ function atualizaHud() {
   });
   document.getElementById('meta-texto').textContent = J.pontos >= teto ? 'três estrelas!' : nf(teto) + ' para 3 estrelas';
   document.getElementById('fase-nome').textContent = f.nome;
-  document.getElementById('fase-prof').textContent = metros(f.prof);
+  document.getElementById('fase-prof').textContent = f.desafio ? f.semana : metros(f.prof);
 
   const o = document.getElementById('objetivo');
-  if (f.obj.tipo === 'pontos') {
+  if (f.desafio) {
+    o.innerHTML = '<div><div class="rotulo">Objetivo</div><div class="valor">o máximo de pontos</div></div>';
+  } else if (f.obj.tipo === 'bau') {
+    const falta = Math.max(0, f.obj.n - J.bauFeito);
+    o.innerHTML = '<div><div class="rotulo">Descer até o fundo</div></div><div class="alvos">' +
+      '<div class="alvo' + (falta ? '' : ' feito') + '"><svg class="ic" viewBox="0 0 100 100"><use href="#i-bau"/></svg><b>' + (falta || '✓') + '</b></div></div>';
+  } else if (f.obj.tipo === 'pontos') {
     o.innerHTML = '<div><div class="rotulo">Objetivo</div><div class="valor">' + nf(f.marcas[0]) + ' pontos</div></div>';
   } else if (f.obj.tipo === 'coletar') {
     let s = '<div><div class="rotulo">Juntar</div></div><div class="alvos">';
@@ -2159,7 +2308,8 @@ function atualizaHud() {
 /* ═══ FIM DE FASE ═══════════════════════════════════════════════ */
 async function confere() {
   if (J.fim) return;
-  const porPontos = fase(J.fase).obj.tipo === 'pontos';
+  if (J.desafio) { if (J.mov <= 0) { J.fim = true; apagaDica(); clearTimeout(dicaTimer); fimDesafio(); } return; }
+  const porPontos = faseAtual().obj.tipo === 'pontos';
   const fecha = f => { J.fim = true; apagaDica(); clearTimeout(dicaTimer); return f(); };
   /* fase de pontuação joga até a última jogada: é lá que moram a 2ª e a 3ª estrela */
   if (porPontos) {
@@ -2186,7 +2336,7 @@ async function venceu() {
     }
     await espera(280);
   }
-  const f = fase(J.fase);
+  const f = faseAtual();
   let e = 1;
   if (J.pontos >= f.marcas[1]) e = 2;
   if (J.pontos >= f.marcas[2]) e = 3;
@@ -2224,10 +2374,11 @@ async function venceu() {
 async function perdeu() {
   J.ocupado = true;
   Som.liga(); Som.derrota();
-  const f = fase(J.fase);
+  const f = faseAtual();
   let falta;
   if (f.obj.tipo === 'pontos') falta = 'Faltaram ' + nf(f.marcas[0] - J.pontos) + ' pontos.';
   else if (f.obj.tipo === 'coletar') { const n = faltaObjetivo(); falta = 'Faltou juntar ' + n + (n === 1 ? ' peça.' : ' peças.'); }
+  else if (f.obj.tipo === 'bau') { const n = faltaObjetivo(); falta = n === 1 ? 'Faltou um baú chegar no fundo.' : 'Faltaram ' + n + ' baús chegarem no fundo.'; }
   else { const n = casasCobertas(papel); falta = (n === 1 ? 'Sobrou ' : 'Sobraram ') + nomeBloq(f, n) + '.'; }
   await espera(400);
   cartao(
@@ -2275,8 +2426,15 @@ function mostraAjuda() {
     '<h4>Dois especiais juntos</h4>' +
     '<p>Duas correntezas fazem uma cruz. Correnteza com bolha limpa três fileiras e três colunas. Duas pérolas limpam o tabuleiro inteiro.</p>' +
 
+    '<h4>O baú</h4>' +
+    '<div class="regra"><div class="amostra">' + amostra('i-bau') + '</div>' +
+    '<div>Ele não combina com nada e não sai com especial. Estoure as peças debaixo dele, ou empurre ele de lado gastando uma jogada, até chegar na última fileira.</div></div>' +
+
+    '<h4>Poderes</h4>' +
+    '<p>Arpão tira uma peça, troca livre junta duas que estão longe, redemoinho embaralha e fôlego dá mais 5 jogadas, até depois que elas acabaram. Nenhum deles gasta jogada. Moeda para comprar vem de fase concluída e do baú do dia.</p>' +
+
     '<h4>O que cobre o fundo</h4>' +
-    '<p>Em algumas fases o fundo vem coberto de areia, alga, rede, lodo ou breu. Estoure uma peça em cima para limpar a casa. As mais escuras precisam de duas.</p>' +
+    '<p>Em algumas fases o fundo vem coberto de areia, alga, rede, lodo ou breu. Estoure uma peça em cima para limpar a casa. As mais escuras precisam de duas, e em algumas fases a alga volta a crescer: a casa que vai voltar pisca antes.</p>' +
 
     '<h4>Estrelas</h4>' +
     '<p>Cumprir o objetivo vale uma estrela. As outras duas vêm da pontuação, e ponto bom vem de reação em cadeia e de sobrar jogada no fim.</p>' +
@@ -2397,6 +2555,83 @@ function pegaBau() {
   fechaCartao();
 }
 
+/* ═══ DESAFIO DA SEMANA ════════════════════════════════════════
+   Mesma semente para todo mundo na semana: o tabuleiro e a ordem
+   das peças novas são iguais, ganha quem jogar melhor.           */
+const Placar = {
+  url: '',   /* URL do Realtime Database, ex.: https://seu-projeto.firebaseio.com — vazio, o ranking fica só no aparelho */
+  id: null,
+  async envia(nome, pontos, semana) {
+    if (!this.url || !nome) return;
+    try {
+      this.id = this.id || Math.random().toString(36).slice(2, 10);
+      await fetch(this.url + '/mergulho/' + semana + '/' + this.id + '.json',
+        { method: 'PUT', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ nome: nome, pontos: pontos, quando: Date.now() }) });
+    } catch (e) { /* sem rede: o recorde continua salvo aqui */ }
+  },
+  async lista(semana) {
+    if (!this.url) return null;
+    try {
+      const r = await fetch(this.url + '/mergulho/' + semana + '.json');
+      const d = await r.json();
+      return Object.values(d || {}).sort((a, b) => b.pontos - a.pontos).slice(0, 20);
+    } catch (e) { return null; }
+  }
+};
+function melhorDaSemana(f) { return prog.desafio.semana === f.semana ? prog.desafio.melhor : 0; }
+function mostraDesafio() {
+  const f = faseDesafio(), melhor = melhorDaSemana(f);
+  cartao('<h3>Desafio da semana</h3>' +
+    '<p>O mesmo tabuleiro para todo mundo até domingo. São 25 jogadas e vale quem fizer mais ponto.</p>' +
+    '<p class="melhor">' + (melhor ? 'Seu melhor: ' + nf(melhor) : 'Você ainda não jogou esta semana.') + '</p>' +
+    '<div class="bts"><button class="bt vidro" data-ac="fecha">Agora não</button>' +
+    '<button class="bt" data-ac="desafio">Jogar</button></div>');
+}
+function abreDesafio() {
+  const f = faseDesafio();
+  desafioAtual = f;
+  semeiaJogo(f.semana);
+  instalaMundo(f.m);
+  J = { fase: -1, desafio: true, mov: f.mov, pontos: 0, coletado: [0, 0, 0, 0, 0, 0],
+        papelTotal: 0, papelFeito: 0, ocupado: true, fim: false, cascata: 1,
+        bauFeito: 0, bauNaTela: 0, bauPendentes: 0, contaCresce: 0, alvoCresce: null };
+  papel = Array.from({ length: H }, () => Array(W).fill(0));
+  J.papelBase = papel.map(l => l.slice());
+  montaTabuleiro();
+  fechaCartao();
+  tela('tela-jogo');
+  requestAnimationFrame(() => {
+    montaCasas(); dimensiona(); montaPecas(); atualizaHud(); desligaPoder();
+    mesa.classList.remove('com-bau');
+    comecaFase();
+  });
+}
+async function fimDesafio() {
+  J.fim = true; J.ocupado = true;
+  const f = desafioAtual;
+  if (prog.desafio.semana !== f.semana) { prog.desafio.semana = f.semana; prog.desafio.melhor = 0; }
+  const recorde = J.pontos > prog.desafio.melhor;
+  if (recorde) prog.desafio.melhor = J.pontos;
+  prog.moedas += 20;
+  salvaProg(); pintaMoedas();
+  Som.liga(); Som.vitoria();
+  await espera(400);
+  cartao('<h3>' + (recorde ? 'Recorde da semana!' : 'Fim do desafio') + '</h3>' +
+    '<p class="placar-final">' + nf(J.pontos) + '<small>pontos</small></p>' +
+    '<p class="melhor">Seu melhor nesta semana: ' + nf(prog.desafio.melhor) + '</p>' +
+    '<p class="ganho-moedas">' + moedaSvg + '+20</p>' +
+    '<div class="bts"><button class="bt vidro" data-ac="mapa">Mapa</button>' +
+    '<button class="bt vidro" data-ac="compartilha">Mandar pro grupo</button>' +
+    '<button class="bt" data-ac="desafio">Jogar de novo</button></div>');
+  Placar.envia(prog.desafio.nome, prog.desafio.melhor, f.semana);
+}
+async function compartilhaDesafio(botao) {
+  const txt = 'Fiz ' + nf(prog.desafio.melhor) + ' pontos no desafio da semana do Mergulho (' + desafioAtual.semana + '). Bora bater?\n' + location.href;
+  try { if (navigator.share) { await navigator.share({ text: txt }); return; } } catch (e) { return; }
+  try { await navigator.clipboard.writeText(txt); botao.textContent = 'Copiado!'; setTimeout(() => botao.textContent = 'Mandar pro grupo', 2000); } catch (e) {}
+}
+
 /* ═══ TELAS ═════════════════════════════════════════════════════ */
 function tela(id) {
   ['tela-inicio', 'tela-mapa', 'tela-jogo'].forEach(t =>
@@ -2511,10 +2746,14 @@ function rolaAteAtual() {
 function abreFase(i) {
   const f = fase(i);
   instalaMundo(f.m);
+  soltaSemente();
   J = { fase: i, mov: f.mov, pontos: 0, coletado: [0, 0, 0, 0, 0, 0],
-        papelTotal: 0, papelFeito: 0, ocupado: true, fim: false, cascata: 1 };
+        papelTotal: 0, papelFeito: 0, ocupado: true, fim: false, cascata: 1,
+        bauFeito: 0, bauNaTela: 0, bauPendentes: f.obj.tipo === 'bau' ? f.obj.n : 0,
+        contaCresce: 0, alvoCresce: null };
   papel = (f.obj.tipo === 'papel') ? fazPapel(f.obj.padrao, f.obj.camadas)
                                    : Array.from({ length: H }, () => Array(W).fill(0));
+  J.papelBase = papel.map(l => l.slice());
   J.papelTotal = contaPapel(papel);
   montaTabuleiro();
   fechaCartao();
@@ -2525,14 +2764,26 @@ function abreFase(i) {
     montaPecas();
     atualizaHud();
     desligaPoder();
+    mesa.classList.toggle('com-bau', f.obj.tipo === 'bau');
     if (!prog.vistos[f.m]) { prog.vistos[f.m] = true; salvaProg(); mostraMundo(f.m); }
     else comecaFase();
   });
 }
 function comecaFase() {
+  const f = faseAtual();
+  if (!prog.vistos.bau && f.obj.tipo === 'bau') { prog.vistos.bau = true; salvaProg(); return mostraAviso('O baú', '#i-bau',
+    'O baú só quer chegar na última fileira. Ele não combina com nada e especial nenhum leva ele embora. Estoure as peças debaixo dele, ou empurre ele de lado, que ele afunda sozinho.'); }
+  if (!prog.vistos.cresce && f.obj.cresce) { prog.vistos.cresce = true; salvaProg(); return mostraAviso('A alga volta', null,
+    'Nesta fase a alga cresce de novo se você demorar. A casa que vai voltar pisca antes, então dá pra chegar na frente. Nas últimas jogadas ela para de crescer.'); }
   J.ocupado = false;
   reiniciaDica();
-  faixaTexto(metros(fase(J.fase).prof));
+  if (f.desafio) faixaTexto('25 jogadas'); else faixaTexto(metros(f.prof));
+}
+function mostraAviso(titulo, icone, texto) {
+  cartao('<h3>' + titulo + '</h3>' +
+    (icone ? '<div class="vitrine-mini"><svg class="ic" viewBox="0 0 100 100"><use href="' + icone + '"/></svg></div>' : '') +
+    '<p>' + texto + '</p>' +
+    '<div class="bts"><button class="bt" data-ac="comeca">Entendi</button></div>');
 }
 
 /* ═══ SOM: BOTÃO ════════════════════════════════════════════════ */
@@ -2561,7 +2812,8 @@ function iniciar() {
   document.getElementById('bt-jogar').onclick = () => { Som.liga(); montaMapa(); tela('tela-mapa'); };
   document.getElementById('bt-ajuda').onclick = () => { Som.liga(); mostraAjuda(); };
   document.getElementById('bt-mapa-volta').onclick = () => { instalaMundo(fase(prog.max).m); tela('tela-inicio'); };
-  document.getElementById('bt-jogo-volta').onclick = () => { fechaCartao(); montaMapa(); tela('tela-mapa'); };
+  document.getElementById('bt-jogo-volta').onclick = () => { soltaSemente(); fechaCartao(); montaMapa(); tela('tela-mapa'); };
+  document.getElementById('bt-desafio').onclick = () => { Som.liga(); mostraDesafio(); };
   document.getElementById('bt-loja').onclick = () => { Som.liga(); mostraLoja(); };
   document.getElementById('poderes').addEventListener('click', e => {
     const b = e.target.closest('[data-p]');
@@ -2577,6 +2829,8 @@ function iniciar() {
     if (ac === 'fecha') fechaCartao();
     else if (ac === 'compra') compra(b.dataset.id);
     else if (ac === 'bau') pegaBau();
+    else if (ac === 'desafio') abreDesafio();
+    else if (ac === 'compartilha') compartilhaDesafio(b);
     else if (ac === 'folego') usaFolegoNoCartao();
     else if (ac === 'comeca') { fechaCartao(); comecaFase(); }
     else if (ac === 'mapa') { fechaCartao(); montaMapa(); tela('tela-mapa'); }
