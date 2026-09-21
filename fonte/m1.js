@@ -2,6 +2,7 @@
    MERGULHO · combinar 3 da beira da praia até 4.000 metros
    ═══════════════════════════════════════════════════════════════ */
 
+const VERSAO_JOGO = '2026.09.24';
 const W = 7, H = 8, TIPOS = 6;
 const NADA = 0, LH = 1, LV = 2, BOMBA = 3, ARCO = 4;
 
@@ -268,7 +269,28 @@ const Som = {
     const g = this.ctx.createGain(); g.gain.value = vol || 0.2;
     s.connect(fl); fl.connect(g); g.connect(this.ctx.destination); s.start(t);
   },
-  pop(n) { const f = 380 * Math.pow(1.08, Math.min(n, 12)) * this.f; this.eco(f, 0.13, 'sine', 0.16, f * 1.75); },
+  pop(n) {
+    const f = 380 * Math.pow(1.09, Math.min(n, 14)) * this.f;
+    this.eco(f, 0.13, 'sine', 0.17, f * 1.8);
+    if (n >= 3) setTimeout(() => this.nota(f * 1.5, 0.09, 'triangle', 0.08, f * 2.4), 45);
+  },
+  toque() { this.nota(520 * this.f, 0.05, 'sine', 0.07, 700 * this.f); },
+  raio() {   /* correnteza varrendo a fileira */
+    this.ruido(0.42, 0.2, 1500 * this.f);
+    this.nota(900 * this.f, 0.3, 'sawtooth', 0.09, 180 * this.f);
+  },
+  bomba() {
+    this.ruido(0.55, 0.3, 320 * this.f);
+    this.nota(140 * this.f, 0.6, 'sine', 0.24, 38);
+    setTimeout(() => this.ruido(0.4, 0.14, 900 * this.f), 60);
+  },
+  combo() {
+    [0, 90, 180, 300].forEach((d, i) => setTimeout(() => this.eco((440 + i * 180) * this.f, 0.3, 'triangle', 0.16), d));
+    this.ruido(0.7, 0.24, 600 * this.f);
+  },
+  cai(n) { this.nota((260 + n * 40) * this.f, 0.07, 'sine', 0.05, (200 + n * 30) * this.f); },
+  alerta() { this.nota(180 * this.f, 0.1, 'triangle', 0.13, 120 * this.f); setTimeout(() => this.nota(150 * this.f, 0.14, 'triangle', 0.1, 90 * this.f), 130); },
+  sobe(i) { this.nota((520 + i * 140) * this.f, 0.14, 'triangle', 0.12, (640 + i * 180) * this.f); },
   troca() { this.nota(300 * this.f, 0.08, 'sine', 0.09, 370 * this.f); },
   nao() { this.nota(190 * this.f, 0.11, 'triangle', 0.08, 150 * this.f); },
   especial() { this.ruido(0.3, 0.12, 750 * this.f); this.eco(260 * this.f, 0.32, 'sine', 0.12, 900 * this.f); },
@@ -280,3 +302,71 @@ const Som = {
   derrota() { [392, 330, 262].forEach((f, i) => setTimeout(() => this.nota(f * this.f, 0.36, 'sine', 0.12), i * 160)); }
 };
 function vibra(ms) { try { if (navigator.vibrate && prog.som) navigator.vibrate(ms); } catch (e) {} }
+const TREMIDA = {
+  toque: 6, combina: 12, grande: [16, 30, 16], especial: [24, 18, 40], combo: [40, 25, 60, 25, 80],
+  bau: [26, 40], estrela: [18, 50, 18], vitoria: [20, 60, 20, 60, 120], derrota: [90, 40, 90], aperto: 14
+};
+
+/* ═══ MÚSICA ════════════════════════════════════════════════════
+   Feita na hora, sem arquivo: baixo, bumbo, chimbal e um arpejo
+   na escala do mundo. Acelera quando as jogadas acabam.          */
+const Musica = {
+  passo: 0, timer: null, modo: null, m: 0, aperto: 0, calor: 0,
+  escalas: [[0,2,4,7,9],[0,2,4,7,11],[0,3,5,7,10],[0,2,3,7,10],[0,1,5,6,10]],
+  raiz: [196, 174.61, 146.83, 130.81, 110],
+  liga(modo, m) {
+    if (this.modo === modo && this.m === m && this.timer) return;
+    this.modo = modo; this.m = m == null ? this.m : m; this.passo = 0;
+    clearInterval(this.timer);
+    this.timer = setInterval(() => this.toca(), 1000);
+    this.ritmo();
+  },
+  ritmo() {
+    clearInterval(this.timer);
+    const bpm = (this.modo === 'menu' ? 74 : 96 + this.aperto * 26 + this.calor * 8);
+    this.timer = setInterval(() => this.toca(), 60000 / bpm / 4);
+  },
+  para() { clearInterval(this.timer); this.timer = null; this.modo = null; },
+  tensao(a, calor) {
+    const novo = a ? 1 : 0;
+    if (novo !== this.aperto || calor !== this.calor) { this.aperto = novo; this.calor = calor || 0; if (this.timer) this.ritmo(); }
+  },
+  nota(f, dur, tipo, vol) {
+    const ctx = Som.ctx;
+    if (!ctx || !prog.som) return;
+    const t = ctx.currentTime, o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = tipo; o.frequency.setValueAtTime(f, t);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol, t + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(ctx.destination);
+    o.start(t); o.stop(t + dur + 0.02);
+  },
+  batida(vol, freq, dur) {
+    const ctx = Som.ctx;
+    if (!ctx || !prog.som) return;
+    const t = ctx.currentTime, n = Math.floor(ctx.sampleRate * dur);
+    const buf = ctx.createBuffer(1, n, ctx.sampleRate), d = buf.getChannelData(0);
+    for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / n, 2);
+    const s = ctx.createBufferSource(); s.buffer = buf;
+    const f = ctx.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = freq; f.Q.value = 1.1;
+    const g = ctx.createGain(); g.gain.value = vol;
+    s.connect(f); f.connect(g); g.connect(ctx.destination); s.start(t);
+  },
+  toca() {
+    if (!Som.ctx || !prog.som) return;
+    const p = this.passo % 16, esc = this.escalas[this.m], raiz = this.raiz[this.m];
+    const jogo = this.modo === 'jogo';
+    const vol = jogo ? 0.05 + this.aperto * 0.02 : 0.035;
+    if (p % 4 === 0) { this.nota(raiz / 2, 0.18, 'sine', vol * 1.6); if (jogo) this.batida(vol * 0.9, 90, 0.12); }
+    if (jogo && p % 8 === 4) this.batida(vol * 0.7, 1800, 0.09);
+    if (jogo && p % 2 === 1) this.batida(vol * 0.18, 6000, 0.03);
+    const arpejo = jogo ? [0, 3, 6, 10, 12, 14] : [0, 6, 12];
+    if (arpejo.indexOf(p) >= 0) {
+      const g = esc[(this.passo * 3 + (p % 5)) % esc.length];
+      this.nota(raiz * Math.pow(2, g / 12) * (p > 8 ? 2 : 1), jogo ? 0.16 : 0.5, jogo ? 'triangle' : 'sine', vol * (jogo ? 0.7 : 0.9));
+    }
+    if (p === 0) { const g = esc[(this.passo / 16 | 0) % esc.length]; this.nota(raiz * Math.pow(2, g / 12) / 2, 1.6, 'sine', vol * 0.5); }
+    this.passo++;
+  }
+};

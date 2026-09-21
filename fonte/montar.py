@@ -10,4 +10,10 @@ html = cab.replace('<body>\n</body>',
 destino = os.path.join(AQUI, '..', 'index.html')
 io.open(destino, 'w', encoding='utf-8', newline='\n').write(html)
 print('index.html montado:', len(html.encode('utf-8')), 'bytes')
-print('Lembrete: suba o VERSAO no sw.js antes de publicar.')
+import re
+ver = re.search(r"VERSAO_JOGO = '([^']+)'", ler('m1.js')).group(1)
+swp = os.path.join(AQUI, '..', 'sw.js')
+sw = io.open(swp, encoding='utf-8').read()
+sw = re.sub(r"const VERSAO = '[^']+';", "const VERSAO = 'v" + ver + "';", sw)
+io.open(swp, 'w', encoding='utf-8', newline='\n').write(sw)
+print('sw.js apontando para v' + ver + ' (a versão vem do VERSAO_JOGO no m1.js)')

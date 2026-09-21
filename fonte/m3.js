@@ -123,13 +123,118 @@ function montaPecas() {
     const p = grid[r][c];
     const el = criaEl(p); pecasBox.appendChild(el); els.set(p.id, el);
     posiciona(el, r, c, true);
+    const corpo = el.firstChild;
+    corpo.animate([{ transform: 'scale(0) rotate(-40deg)', opacity: 0 }, { transform: 'scale(1) rotate(0)', opacity: 1 }],
+      { duration: 340, delay: (r + c) * 22, easing: 'cubic-bezier(.2,1.6,.4,1)', fill: 'backwards' });
   }
 }
 
-/* faíscas e pontinhos */
-function faisca(r, c, texto, cor) {
+
+/* ═══ EFEITOS ═══════════════════════════════════════════════════
+   Tudo aqui é curto e some sozinho. A regra: quanto maior a
+   jogada, mais camadas entram (luz, onda, estilhaço, tremor).   */
+function solta(el, ms, onde) {
+  const caixa = onde || faiscasBox;
+  if (caixa === faiscasBox && caixa.childElementCount > 150) return;   /* teto pra não engasgar celular fraco */
+  caixa.appendChild(el);
+  setTimeout(() => el.remove(), ms);
+}
+
+function raioLinha(r, c, deitado) {
   const d = document.createElement('div');
-  d.className = 'ponto-voa';
+  d.className = 'fx-raio' + (deitado ? '' : ' v');
+  if (deitado) { d.style.left = '0px'; d.style.top = (r * CEL) + 'px'; d.style.width = (W * CEL) + 'px'; d.style.height = CEL + 'px'; }
+  else { d.style.top = '0px'; d.style.left = (c * CEL) + 'px'; d.style.height = (H * CEL) + 'px'; d.style.width = CEL + 'px'; }
+  solta(d, 640);
+}
+function ondaChoque(r, c, tam, cor) {
+  const d = document.createElement('div'), s = tam * CEL;
+  d.className = 'fx-onda';
+  d.style.width = d.style.height = s + 'px';
+  d.style.left = (c * CEL + CEL / 2 - s / 2) + 'px';
+  d.style.top = (r * CEL + CEL / 2 - s / 2) + 'px';
+  if (cor) d.style.borderColor = cor;
+  solta(d, 660);
+}
+function feixePerola(r, c, alvos) {
+  for (const k of alvos.slice(0, 14)) {
+    const ar = linha(k), ac = coluna(k);
+    const x1 = c * CEL + CEL / 2, y1 = r * CEL + CEL / 2;
+    const dx = ac * CEL + CEL / 2 - x1, dy = ar * CEL + CEL / 2 - y1;
+    const d = document.createElement('div');
+    d.className = 'fx-feixe';
+    d.style.left = x1 + 'px'; d.style.top = (y1 - 2) + 'px';
+    d.style.width = Math.hypot(dx, dy) + 'px';
+    d.style.transform = 'rotate(' + (Math.atan2(dy, dx) * 180 / Math.PI) + 'deg)';
+    solta(d, 540);
+  }
+}
+function estilhacos(r, c, cor, n) {
+  for (let i = 0; i < n; i++) {
+    const d = document.createElement('div');
+    d.className = 'estilhaco';
+    const t = 4 + Math.random() * 7;
+    d.style.width = t + 'px'; d.style.height = (t * (.5 + Math.random())) + 'px';
+    d.style.background = cor;
+    d.style.left = (c * CEL + CEL / 2) + 'px';
+    d.style.top = (r * CEL + CEL / 2) + 'px';
+    const ang = Math.random() * Math.PI * 2, dist = 22 + Math.random() * 60;
+    d.animate([
+      { transform: 'translate(-50%,-50%) rotate(0deg) scale(1)', opacity: 1 },
+      { transform: 'translate(' + (Math.cos(ang) * dist - 50) + '%,' + (Math.sin(ang) * dist + 40) + '%) rotate(' + (Math.random() * 720 - 360) + 'deg) scale(.3)', opacity: 0 }
+    ], { duration: 520 + Math.random() * 420, easing: 'cubic-bezier(.15,.7,.4,1)' });
+    solta(d, 950);
+  }
+}
+function clarao(cor) {
+  const f = document.getElementById('clarao');
+  if (!f) return;
+  f.style.background = 'radial-gradient(circle at 50% 52%, ' + cor + ', transparent 68%)';
+  f.classList.remove('bate'); void f.offsetWidth; f.classList.add('bate');
+}
+function tremeTela(nivel) {
+  mesa.classList.remove('treme', 'treme2', 'treme3');
+  void mesa.offsetWidth;
+  mesa.classList.add(nivel >= 3 ? 'treme3' : nivel === 2 ? 'treme2' : 'treme');
+  setTimeout(() => mesa.classList.remove('treme', 'treme2', 'treme3'), 440);
+}
+function chipCombo(n) {
+  const el = document.getElementById('combo');
+  if (!el) return;
+  el.textContent = 'x' + n;
+  el.className = 'combo n' + Math.min(n, 6);
+  void el.offsetWidth;
+  el.classList.add('mostra');
+  clearTimeout(chipCombo.t);
+  chipCombo.t = setTimeout(() => el.classList.remove('mostra'), 950);
+}
+/* fogos para a vitória: acontecem por cima de tudo */
+function fogos(n) {
+  const tela = document.getElementById('fx-tela');
+  if (!tela) return;
+  const cores = ['#6BFFE0', '#FFD35C', '#FF7390', '#9A5CFF', '#5CFF9E', '#5CB4FF'];
+  for (let i = 0; i < n; i++) setTimeout(() => {
+    const x = 12 + Math.random() * 76, y = 18 + Math.random() * 50, cor = cores[i % cores.length];
+    for (let j = 0; j < 14; j++) {
+      const d = document.createElement('div');
+      d.className = 'fagulha';
+      d.style.width = d.style.height = (4 + Math.random() * 5) + 'px';
+      d.style.left = x + '%'; d.style.top = y + '%';
+      d.style.background = cor; d.style.boxShadow = '0 0 10px 3px ' + cor;
+      const a = (j / 14) * Math.PI * 2, dist = 50 + Math.random() * 90;
+      d.animate([{ transform: 'translate(-50%,-50%) scale(.4)', opacity: 1 },
+                 { transform: 'translate(' + (Math.cos(a) * dist) + 'px,' + (Math.sin(a) * dist + 30) + 'px) scale(.2)', opacity: 0 }],
+                { duration: 800 + Math.random() * 300, easing: 'cubic-bezier(.1,.8,.3,1)' });
+      solta(d, 1200, tela);
+    }
+    Som.liga(); Som.sobe(i % 4);
+  }, i * 260);
+}
+
+/* faíscas e pontinhos */
+function faisca(r, c, texto, cor, grande) {
+  const d = document.createElement('div');
+  d.className = 'ponto-voa' + (grande ? ' grande' : '');
   d.textContent = texto;
   if (cor) d.style.color = cor;
   d.style.left = (c * CEL + CEL / 2) + 'px';
@@ -156,8 +261,7 @@ function respingos(r, c, cor, n) {
       { transform: 'translate(0,0) scale(.5)', opacity: 1 },
       { transform: 'translate(' + dx.toFixed(1) + 'px,' + dy.toFixed(1) + 'px) scale(1)', opacity: 0 }
     ], { duration: 650 + Math.random() * 350, easing: 'cubic-bezier(.2,.8,.4,1)' });
-    faiscasBox.appendChild(d);
-    setTimeout(() => d.remove(), 1050);
+    solta(d, 1050);
   }
 }
 const ELOGIOS = ['Boa!', 'Isso!', 'Que onda!', 'Mandou bem!', 'Maré cheia!', 'Redemoinho!'];
@@ -180,10 +284,12 @@ async function entregaBaus() {
     grid[H - 1][c] = null;
     J.bauFeito++; J.bauNaTela = Math.max(0, J.bauNaTela - 1);
     J.pontos += 500;
-    faisca(H - 1, c, '+500', '#FFD35C');
-    respingos(H - 1, c, '#FFD35C', 9);
+    faisca(H - 1, c, '+500', '#FFD35C', true);
+    respingos(H - 1, c, '#FFD35C', 10);
+    estilhacos(H - 1, c, '#FFD35C', 8);
+    ondaChoque(H - 1, c, 3.4, '#FFD35C');
   }
-  Som.liga(); Som.bau(); vibra(34);
+  Som.liga(); Som.bau(); vibra(TREMIDA.bau); clarao('rgba(255,211,92,.35)'); tremeTela(2);
   atualizaHud();
   await espera(460);
   gravidade();
@@ -208,18 +314,45 @@ async function limpar(conj, novos) {
     const el = els.get(p.id);
     if (el) el.classList.add('some');
     if (papel[r][c] > 0) { papel[r][c]--; J.papelFeito++; quebraPapel(r, c); }
-    if (vivas.length <= 14 || Math.random() < 0.35) respingos(r, c, corDe(p.t), vivas.length > 10 ? 3 : 5);
+    if (vivas.length <= 14 || Math.random() < 0.5) {
+      respingos(r, c, corDe(p.t), vivas.length > 10 ? 4 : 7);
+      estilhacos(r, c, corDe(p.t), vivas.length > 12 ? 2 : 4);
+    }
   }
   if (vivas.length >= 6) ganho += (vivas.length - 5) * 90;
   J.pontos += ganho;
 
   Som.liga();
-  if (temEsp || vivas.length >= 8) { Som.estoura(); mesa.classList.add('treme'); setTimeout(() => mesa.classList.remove('treme'), 340); vibra(28); }
-  else { Som.pop(J.cascata); vibra(10); }
+  /* cada especial que disparou desenha o próprio estrago */
+  let peso = vivas.length >= 8 ? 2 : 1;
+  for (const e of efeitosPendentes) {
+    if (e.sp === LH) { raioLinha(e.r, e.c, true); Som.raio(); peso = Math.max(peso, 2); }
+    else if (e.sp === LV) { raioLinha(e.r, e.c, false); Som.raio(); peso = Math.max(peso, 2); }
+    else if (e.sp === BOMBA) { ondaChoque(e.r, e.c, e.tam || 5.4, '#FFE7A3'); Som.bomba(); clarao('rgba(255,231,163,.45)'); peso = 3; }
+    else if (e.sp === 'tudo') {
+      Som.combo(); clarao('rgba(255,255,255,.6)');
+      [0, 120, 240].forEach((d, i) => setTimeout(() => ondaChoque(3 + i, 3, 7 + i * 2, ['#fff', '#6BFFE0', '#FFD35C'][i]), d));
+      faixaTexto('Tudo!');
+      peso = 3;
+    }
+    else if (e.sp === ARCO && e.alvos) { feixePerola(e.r, e.c, e.alvos); ondaChoque(e.r, e.c, 4, '#CFE9FF'); Som.combo(); clarao('rgba(207,233,255,.5)'); peso = 3; }
+  }
+  efeitosPendentes.length = 0;
+
+  if (temEsp || vivas.length >= 8) {
+    Som.estoura(); tremeTela(peso); vibra(peso >= 3 ? TREMIDA.combo : TREMIDA.especial);
+    if (peso >= 2) clarao('rgba(107,255,224,.28)');
+  } else {
+    Som.pop(J.cascata); vibra(vivas.length >= 5 ? TREMIDA.grande : TREMIDA.combina);
+    if (vivas.length >= 5) tremeTela(1);
+  }
+  if (J.cascata >= 2) { chipCombo(J.cascata); Musica.tensao(J.mov <= 5, J.cascata); }
+  if (J.cascata >= 4) { clarao('rgba(255,211,92,.3)'); tremeTela(3); }
 
   if (vivas.length) {
     const mr = Math.round(sr / vivas.length), mc = Math.round(sc / vivas.length);
-    faisca(mr, mc, '+' + ganho, J.cascata > 2 ? '#6BFFE0' : null);
+    faisca(mr, mc, '+' + ganho, J.cascata > 2 ? '#6BFFE0' : null, ganho >= 600 || J.cascata >= 3);
+    if (ganho >= 900) ondaChoque(mr, mc, 3.2, '#FFD35C');
   }
   if (J.cascata === 3) faixaTexto(ELOGIOS[sorteia(3) + 1]);
   if (J.cascata >= 5) faixaTexto(ELOGIOS[4 + (J.cascata >= 7 ? 1 : 0)]);
@@ -246,6 +379,7 @@ async function limpar(conj, novos) {
   await espera(70);
   gravidade();
   sincroniza('cai');
+  Som.cai(Math.min(J.cascata, 6));
   await espera(270);
   return true;
 }
@@ -339,7 +473,12 @@ function aoSoltar(e) {
   if (!arrasto || arrasto.usado) { arrasto = null; return; }
   const cel = arrasto.cel; arrasto = null;
   if (J.ocupado || J.fim) return;
-  if (sel && sel.r === cel.r && sel.c === cel.c) { limpaMarca(); return; }
+  if (sel && sel.r === cel.r && sel.c === cel.c) {
+    const p = grid[cel.r][cel.c];
+    limpaMarca();
+    if (p && p.sp) disparaEspecial(cel);   /* dois toques no especial: ele estoura sozinho */
+    return;
+  }
   if (sel && vizinhas(sel, cel)) { const a = sel; limpaMarca(); tentaTroca(a, cel); return; }
   marca(cel);
 }
@@ -361,8 +500,10 @@ async function tentaTroca(a, b) {
   const especial = (pa.sp === ARCO || pb.sp === ARCO) || (pa.sp && pb.sp);
   const virouCombo = temCorridaEm(a.r, a.c) || temCorridaEm(b.r, b.c);
   const temBau = pa.bau || pb.bau;   /* empurrar o baú de lado é jogada válida */
+  /* especial não precisa de combinação: trocar ele com qualquer vizinha já dispara */
+  const soltaEsp = !especial && !virouCombo && !temBau && !!(pa.sp || pb.sp);
 
-  if (!especial && !virouCombo && !temBau) {
+  if (!especial && !virouCombo && !temBau && !soltaEsp) {
     grid[a.r][a.c] = pa; grid[b.r][b.c] = pb;
     posiciona(ea, a.r, a.c); posiciona(eb, b.r, b.c);
     ea.classList.add('nao'); eb.classList.add('nao');
@@ -376,7 +517,12 @@ async function tentaTroca(a, b) {
 
   gastaJogada();
   let conj = null;
-  if (especial) {
+  if (soltaEsp) {
+    const alvo = pa.sp ? b : a;                 /* a peça especial está no lugar novo */
+    conj = new Set([chave(alvo.r, alvo.c)]);
+    expandir(conj, null);
+    vibra(TREMIDA.especial);
+  } else if (especial) {
     conj = comboTroca(b.r, b.c, a.r, a.c);
     atualizaEl(grid[a.r][a.c]); atualizaEl(grid[b.r][b.c]);
     for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) if (grid[r][c]) atualizaEl(grid[r][c]);
@@ -384,6 +530,22 @@ async function tentaTroca(a, b) {
     vibra(40);
   }
   await resolver(conj, [chave(b.r, b.c), chave(a.r, a.c)]);
+  passoCrescer();
+  J.ocupado = false;
+  await confere();
+  reiniciaDica();
+}
+
+async function disparaEspecial(cel) {
+  const p = grid[cel.r][cel.c];
+  if (!p || !p.sp || J.ocupado || J.fim) return;
+  J.ocupado = true;
+  reiniciaDica();
+  gastaJogada();
+  Som.liga(); Som.especial(); vibra(TREMIDA.especial);
+  const conj = new Set([chave(cel.r, cel.c)]);
+  expandir(conj, null);
+  await resolver(conj, [chave(cel.r, cel.c)]);
   passoCrescer();
   J.ocupado = false;
   await confere();

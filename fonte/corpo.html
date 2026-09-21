@@ -48,6 +48,9 @@
 <div id="agua" aria-hidden="true"><div id="cena"></div></div>
 
 <div id="app">
+  <div id="clarao" aria-hidden="true"></div>
+  <div id="vinheta" aria-hidden="true"></div>
+  <div id="fx-tela" aria-hidden="true"></div>
 
   <!-- ══ INÍCIO: o título boiando na linha d'água ══════════════ -->
   <section class="tela ativa" id="tela-inicio">
@@ -72,6 +75,7 @@
       <text class="t-seco" x="235" y="102" text-anchor="middle" clip-path="url(#t-seco)">Mergulho</text>
       <g clip-path="url(#t-molhado)"><text class="t-molhado" x="235" y="102" text-anchor="middle" filter="url(#t-ondula)" fill="url(#t-agua)">Mergulho</text></g>
     </svg>
+    <div class="particulas" aria-hidden="true"><i class="bolha-amb" style="left:8%;width:9px;height:9px;animation-duration:13s;animation-delay:-2s"></i><i class="bolha-amb" style="left:22%;width:6px;height:6px;animation-duration:16s;animation-delay:-7s"></i><i class="bolha-amb" style="left:37%;width:11px;height:11px;animation-duration:11s;animation-delay:-4s"></i><i class="bolha-amb" style="left:54%;width:7px;height:7px;animation-duration:15s;animation-delay:-10s"></i><i class="bolha-amb" style="left:69%;width:12px;height:12px;animation-duration:12s;animation-delay:-1s"></i><i class="bolha-amb" style="left:84%;width:8px;height:8px;animation-duration:14s;animation-delay:-6s"></i><i class="bolha-amb" style="left:93%;width:6px;height:6px;animation-duration:17s;animation-delay:-9s"></i></div>
     <div class="raios raios-inicio" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
     <div class="onda-inicio" aria-hidden="true"></div>
     <div class="inicio-conteudo">
@@ -90,6 +94,7 @@
         <button class="bt vidro" id="bt-desafio">Desafio da semana</button>
       </div>
     </div>
+    <p class="versao" id="versao" aria-hidden="true"></p>
   </section>
 
   <!-- ══ MAPA: a coluna d'água ═════════════════════════════════ -->
@@ -137,6 +142,7 @@
         <div id="pecas"></div>
         <div id="faiscas"></div>
         <div class="faixa" id="faixa"></div>
+        <div class="combo" id="combo" aria-hidden="true"></div>
       </div>
     </div>
     <div class="barra-poderes">

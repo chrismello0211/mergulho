@@ -468,9 +468,70 @@ body:not(.em-jogo) #cena{display:none}
 .cartao p.melhor{font-weight:800;color:#0A6C7A}
 [data-mundo="3"] .cartao p.melhor,[data-mundo="4"] .cartao p.melhor{color:var(--biolum)}
 
+
+/* ── bicho passeando no cenário ─────────────────────────────── */
+.nadador{position:absolute;pointer-events:none;opacity:.5;animation:nada linear infinite}
+.nadador svg{width:100%;height:100%}
+@keyframes nada{0%{transform:translateX(-22vw) translateY(0)}50%{transform:translateX(50vw) translateY(-14px)}100%{transform:translateX(122vw) translateY(0)}}
+.nadador.volta{animation-name:nada-volta}
+@keyframes nada-volta{0%{transform:translateX(122vw) scaleX(-1)}50%{transform:translateX(50vw) translateY(12px) scaleX(-1)}100%{transform:translateX(-22vw) scaleX(-1)}}
+
+/* ── efeitos: luz, onda, estilhaço, tremor, combo ───────────── */
+#clarao{position:fixed;inset:0;z-index:9;pointer-events:none;opacity:0}
+#clarao.bate{animation:clarao .42s ease-out}
+@keyframes clarao{0%{opacity:0}18%{opacity:1}100%{opacity:0}}
+#vinheta{position:fixed;inset:0;z-index:8;pointer-events:none;opacity:0;transition:opacity .4s;
+  background:radial-gradient(circle at 50% 55%,transparent 45%,rgba(255,60,30,.38) 100%)}
+body.aperto #vinheta{opacity:1;animation:vinheta 1.05s ease-in-out infinite}
+@keyframes vinheta{0%,100%{opacity:.5}50%{opacity:1}}
+#fx-tela{position:fixed;inset:0;z-index:30;pointer-events:none;overflow:hidden}
+.fx-raio{position:absolute;pointer-events:none;border-radius:999px;
+  background:linear-gradient(90deg,rgba(255,255,255,0),#fff 12%,#BFF5EE 50%,#fff 88%,rgba(255,255,255,0));
+  box-shadow:0 0 26px 10px rgba(191,245,238,.85);animation:fx-raio .62s cubic-bezier(.1,.8,.3,1) forwards}
+.fx-raio.v{background:linear-gradient(180deg,rgba(255,255,255,0),#fff 12%,#BFF5EE 50%,#fff 88%,rgba(255,255,255,0));animation-name:fx-raio-v}
+@keyframes fx-raio{0%{transform:scaleX(.05) scaleY(.35);opacity:0}18%{transform:scaleX(1) scaleY(1);opacity:1}100%{transform:scaleX(1) scaleY(.15);opacity:0}}
+@keyframes fx-raio-v{0%{transform:scaleY(.05) scaleX(.35);opacity:0}18%{transform:scaleY(1) scaleX(1);opacity:1}100%{transform:scaleY(1) scaleX(.15);opacity:0}}
+.fx-onda{position:absolute;border-radius:50%;border:4px solid #FFE7A3;pointer-events:none;
+  box-shadow:0 0 30px rgba(255,231,163,.7),inset 0 0 24px rgba(255,231,163,.45);animation:fx-onda .66s cubic-bezier(.1,.7,.3,1) forwards}
+@keyframes fx-onda{0%{transform:scale(.15);opacity:1;border-width:7px}100%{transform:scale(1.15);opacity:0;border-width:1px}}
+.fx-feixe{position:absolute;height:4px;transform-origin:0 50%;border-radius:999px;pointer-events:none;
+  background:linear-gradient(90deg,#fff,#CFE9FF);box-shadow:0 0 14px 4px rgba(207,233,255,.8);animation:fx-feixe .54s ease-out forwards}
+@keyframes fx-feixe{0%{transform:scaleX(0) rotate(var(--g,0deg));opacity:1}60%{opacity:1}100%{opacity:0}}
+.estilhaco{position:absolute;border-radius:2px;pointer-events:none;box-shadow:0 0 8px rgba(255,255,255,.35)}
+#mesa.treme2{animation:treme2 .42s cubic-bezier(.36,.07,.19,.97)}
+#mesa.treme3{animation:treme3 .46s cubic-bezier(.36,.07,.19,.97)}
+@keyframes treme2{10%,90%{transform:translate(-4px,2px) rotate(-.4deg)}30%,70%{transform:translate(6px,-4px) rotate(.5deg)}50%{transform:translate(-7px,3px) rotate(-.6deg)}}
+@keyframes treme3{8%{transform:translate(-9px,4px) rotate(-1deg) scale(1.01)}25%{transform:translate(10px,-6px) rotate(1deg) scale(1.02)}45%{transform:translate(-11px,5px) rotate(-1.2deg) scale(1.01)}65%{transform:translate(8px,-3px) rotate(.8deg)}85%{transform:translate(-4px,2px)}}
+.combo{position:absolute;left:50%;top:13%;transform:translate(-50%,-50%) scale(.3);z-index:9;pointer-events:none;opacity:0;
+  font-family:var(--display);font-weight:800;font-size:clamp(40px,13vw,68px);color:#FFE7A3;
+  text-shadow:0 4px 0 rgba(120,40,0,.45),0 0 26px rgba(255,211,92,.8)}
+.combo.mostra{animation:combo .95s cubic-bezier(.2,1.6,.35,1) forwards}
+.combo.n3{color:#FFD35C}.combo.n4{color:#FF9A5C}.combo.n5{color:#FF6B9D}.combo.n6{color:#6BFFE0}
+@keyframes combo{0%{opacity:0;transform:translate(-50%,-50%) scale(.3) rotate(-12deg)}
+  22%{opacity:1;transform:translate(-50%,-50%) scale(1.25) rotate(4deg)}
+  38%{transform:translate(-50%,-50%) scale(1) rotate(0)}
+  75%{opacity:1}100%{opacity:0;transform:translate(-50%,-90%) scale(.9)}}
+.ponto-voa.grande{font-size:29px;color:#FFD35C;text-shadow:0 3px 0 rgba(120,40,0,.5),0 0 20px rgba(255,211,92,.8)}
+.peca.some .corpo{animation:some .26s ease-in forwards}
+@keyframes some{0%{transform:scale(1)}30%{transform:scale(1.45) rotate(8deg);filter:brightness(2.4) saturate(1.4)}100%{transform:scale(.1) rotate(-14deg);opacity:0}}
+.barra .marca.ganhou svg{animation:estrela-pop .6s cubic-bezier(.2,1.8,.4,1)}
+@keyframes estrela-pop{0%{transform:scale(1)}40%{transform:scale(2.1) rotate(18deg)}100%{transform:scale(1)}}
+.pontos-linha .p.sobe{animation:pontos-sobe .3s ease}
+@keyframes pontos-sobe{0%{transform:scale(1)}45%{transform:scale(1.16);color:#FFE7A3}100%{transform:scale(1)}}
+.versao{position:absolute;bottom:calc(var(--safe-b) + 10px);left:0;right:0;margin:0;text-align:center;
+  font-size:11px;font-weight:800;letter-spacing:.04em;color:rgba(243,251,255,.42);z-index:3}
+.tela.ativa{animation:entra-tela .3s ease}
+@keyframes entra-tela{0%{opacity:0;transform:scale(.985)}100%{opacity:1;transform:none}}
+.no{animation:no-entra .4s cubic-bezier(.2,1.5,.4,1) backwards}
+@keyframes no-entra{0%{opacity:0;transform:translateX(var(--dx,0)) scale(.4)}100%{opacity:1}}
+.titulo{animation:titulo-bal 5s ease-in-out infinite}
+@keyframes titulo-bal{0%,100%{transform:translateX(-50%) translateY(0) rotate(-.4deg)}50%{transform:translateX(-50%) translateY(-6px) rotate(.4deg)}}
+#bt-jogar{animation:pulsa-bt 2.6s ease-in-out infinite}
+@keyframes pulsa-bt{0%,100%{transform:scale(1)}50%{transform:scale(1.045)}}
+
 @media (prefers-reduced-motion: reduce){
   *{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.05s !important}
-  .bolha-amb,.neve,.faisca-bio{display:none}
+  .bolha-amb,.neve,.faisca-bio,#vinheta,.fx-raio,.fx-onda,.fx-feixe,.estilhaco{display:none}
 }
 </style>
 </head>

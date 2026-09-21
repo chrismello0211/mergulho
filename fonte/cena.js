@@ -80,11 +80,24 @@ function particulas(m) {
   return s;
 }
 
+function nadadores(m) {
+  const bicho = m === 4 ? 's5' : 's4';     /* no abismo passa uma água-viva acesa */
+  let s = '';
+  for (let i = 0; i < 2; i++) {
+    const tam = 30 + acasoCena(i, 7) * 26, topo = 14 + acasoCena(i, 8) * 52;
+    s += '<div class="nadador' + (i ? ' volta' : '') + '" style="top:' + topo.toFixed(1) + '%;width:' + tam.toFixed(0) + 'px;height:' + tam.toFixed(0) +
+         'px;animation-duration:' + (26 + acasoCena(i, 9) * 22).toFixed(1) + 's;animation-delay:-' + (acasoCena(i, 10) * 20).toFixed(1) +
+         's"><svg viewBox="0 0 100 100"><use href="#' + bicho + '"/></svg></div>';
+  }
+  return s;
+}
+
 function cena(m) {
   let s = '';
   if (m <= 1) s += '<div class="causticas"></div>';
   if (m <= 2) s += '<div class="raios"><i></i><i></i><i></i><i></i><i></i></div>';
   s += '<svg class="chao" viewBox="0 0 400 170" preserveAspectRatio="xMidYMax slice" aria-hidden="true">' + CHAO[m] + '</svg>';
+  s += nadadores(m);
   s += '<div class="particulas">' + particulas(m) + '</div>';
   return s;
 }

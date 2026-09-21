@@ -1,4 +1,6 @@
 
+let efeitosPendentes = [];
+
 /* ═══ ESTADO ════════════════════════════════════════════════════ */
 let grid = [], papel = [], uid = 0;
 let J = {
@@ -147,7 +149,9 @@ function expandir(conj, corAlvo) {
     feitos.add(k);
     const r = linha(k), c = coluna(k), p = grid[r][c];
     if (!p || !p.sp) continue;
-    for (const a of areaEspecial(r, c, p, corAlvo)) {
+    const area = areaEspecial(r, c, p, corAlvo);
+    efeitosPendentes.push({ r: r, c: c, sp: p.sp, alvos: p.sp === ARCO ? area.slice() : null });
+    for (const a of area) {
       if (!conj.has(a)) conj.add(a);
       if (!feitos.has(a)) fila.push(a);
     }
@@ -163,9 +167,11 @@ function comboTroca(ra, ca, rb, cb) {
   const sa = a.sp, sb = b.sp;
   let corAlvo = null;
 
-  const tudo = () => { for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) conj.add(chave(y, x)); };
-  const linhaToda = r => { for (let x = 0; x < W; x++) conj.add(chave(r, x)); };
-  const colunaToda = c => { for (let y = 0; y < H; y++) conj.add(chave(y, c)); };
+  /* a camada de efeitos precisa saber o que estourou, porque aqui
+     os especiais são desarmados antes do expandir passar          */
+  const tudo = () => { for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) conj.add(chave(y, x)); efeitosPendentes.push({ r: rb, c: cb, sp: 'tudo' }); };
+  const linhaToda = r => { for (let x = 0; x < W; x++) conj.add(chave(r, x)); efeitosPendentes.push({ r: r, c: cb, sp: LH }); };
+  const colunaToda = c => { for (let y = 0; y < H; y++) conj.add(chave(y, c)); efeitosPendentes.push({ r: rb, c: c, sp: LV }); };
 
   if (sa === ARCO && sb === ARCO) {
     a.sp = b.sp = NADA; tudo();
@@ -183,7 +189,9 @@ function comboTroca(ra, ca, rb, cb) {
       }
     } else {
       corAlvo = outro.t;
-      for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (grid[y][x] && grid[y][x].t === outro.t) conj.add(chave(y, x));
+      const alvos = [];
+      for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (grid[y][x] && grid[y][x].t === outro.t) { conj.add(chave(y, x)); alvos.push(chave(y, x)); }
+      efeitosPendentes.push({ r: rb, c: cb, sp: ARCO, alvos: alvos });
     }
   } else if ((sa === LH || sa === LV) && (sb === LH || sb === LV)) {
     a.sp = b.sp = NADA;
@@ -194,6 +202,7 @@ function comboTroca(ra, ca, rb, cb) {
     conj.add(ka);
   } else if (sa === BOMBA && sb === BOMBA) {
     a.sp = b.sp = NADA;
+    efeitosPendentes.push({ r: rb, c: cb, sp: BOMBA, tam: 8 });
     for (let dr = -3; dr <= 3; dr++) for (let dc = -3; dc <= 3; dc++)
       if (Math.abs(dr) + Math.abs(dc) <= 3 && dentro(rb + dr, cb + dc)) conj.add(chave(rb + dr, cb + dc));
     conj.add(ka);

@@ -10,6 +10,10 @@ function gastaJogada() {
   const m = document.getElementById('movimentos');
   m.classList.add('bate'); setTimeout(() => m.classList.remove('bate'), 400);
   atualizaHud();
+  const aperto = J.mov <= 5 && J.mov > 0 && !J.fim;
+  document.body.classList.toggle('aperto', aperto);
+  if (aperto) { Som.liga(); Som.alerta(); vibra(TREMIDA.aperto); }
+  Musica.tensao(aperto, 0);
 }
 
 function faltaObjetivo() {
@@ -27,14 +31,20 @@ function atualizaHud() {
   document.getElementById('mov-n').textContent = J.mov;
   document.getElementById('mov-lb').textContent = J.mov === 1 ? 'jogada' : 'jogadas';
   document.getElementById('movimentos').classList.toggle('aperto', J.mov <= 5);
-  document.getElementById('pontos').textContent = nf(J.pontos);
+  animaPontos();
 
   const teto = f.marcas[2];
   document.getElementById('barra-cheio').style.width = Math.min(100, J.pontos / teto * 100) + '%';
   [0, 1, 2].forEach(i => {
     const m = document.getElementById('m' + (i + 1));
+    const tem = J.pontos >= f.marcas[i], antes = m.dataset.on === '1';
     m.style.left = (f.marcas[i] / teto * 100) + '%';
-    m.querySelector('use').setAttribute('href', J.pontos >= f.marcas[i] ? '#i-estrela' : '#i-estrela-off');
+    m.querySelector('use').setAttribute('href', tem ? '#i-estrela' : '#i-estrela-off');
+    if (tem && !antes) {
+      m.classList.remove('ganhou'); void m.offsetWidth; m.classList.add('ganhou');
+      Som.liga(); Som.sobe(i); vibra(TREMIDA.estrela); clarao('rgba(255,211,92,.3)');
+    }
+    m.dataset.on = tem ? '1' : '0';
   });
   document.getElementById('meta-texto').textContent = J.pontos >= teto ? 'três estrelas!' : nf(teto) + ' para 3 estrelas';
   document.getElementById('fase-nome').textContent = f.nome;
@@ -61,6 +71,18 @@ function atualizaHud() {
     o.innerHTML = '<div><div class="rotulo">' + MUNDOS[f.m].bloq.verbo + '</div>' +
       '<div class="valor">' + (falta ? nomeBloq(f, falta) : 'tudo limpo ✓') + '</div></div>';
   }
+}
+
+let pontosNaTela = 0, pontosRaf = null;
+function animaPontos() {
+  const el = document.getElementById('pontos');
+  if (Math.abs(J.pontos - pontosNaTela) < 1) { pontosNaTela = J.pontos; el.textContent = nf(J.pontos); pontosRaf = null; return; }
+  pontosNaTela += (J.pontos - pontosNaTela) * 0.22 + 1;
+  el.textContent = nf(Math.round(pontosNaTela));
+  el.classList.add('sobe');
+  clearTimeout(animaPontos.t);
+  animaPontos.t = setTimeout(() => el.classList.remove('sobe'), 300);
+  pontosRaf = requestAnimationFrame(animaPontos);
 }
 
 /* ═══ FIM DE FASE ═══════════════════════════════════════════════ */
@@ -125,13 +147,18 @@ async function venceu() {
     '</div>'
   );
   Som.liga(); Som.vitoria();
-  for (let i = 0; i < e; i++) setTimeout(() => Som.estrela(i), 260 + i * 220);
-  vibra([20, 60, 20]);
+  document.body.classList.remove('aperto');
+  Musica.tensao(false, 0);
+  fogos(2 + e * 2);
+  for (let i = 0; i < e; i++) setTimeout(() => { Som.estrela(i); vibra(TREMIDA.estrela); }, 260 + i * 220);
+  vibra(TREMIDA.vitoria);
 }
 
 async function perdeu() {
   J.ocupado = true;
-  Som.liga(); Som.derrota();
+  document.body.classList.remove('aperto');
+  Musica.tensao(false, 0);
+  Som.liga(); Som.derrota(); vibra(TREMIDA.derrota);
   const f = faseAtual();
   let falta;
   if (f.obj.tipo === 'pontos') falta = 'Faltaram ' + nf(f.marcas[0] - J.pontos) + ' pontos.';
@@ -180,6 +207,9 @@ function mostraAjuda() {
     '<h4>Cinco em linha viram pérola</h4>' +
     '<div class="regra"><div class="amostra">' + amostra('s3') + '<span class="seta">›</span>' + amostra('s-arco') + '</div>' +
     '<div>Troque a pérola com qualquer peça e somem todas daquela cor.</div></div>' +
+
+    '<h4>Especial estoura sozinho</h4>' +
+    '<p>Não precisa combinar: troque o especial com qualquer peça do lado, ou toque duas vezes nele, que ele dispara na hora. Gasta uma jogada.</p>' +
 
     '<h4>Dois especiais juntos</h4>' +
     '<p>Duas correntezas fazem uma cruz. Correnteza com bolha limpa três fileiras e três colunas. Duas pérolas limpam o tabuleiro inteiro.</p>' +
@@ -374,6 +404,7 @@ async function fimDesafio() {
   prog.moedas += 20;
   salvaProg(); pintaMoedas();
   Som.liga(); Som.vitoria();
+  if (recorde) fogos(6);
   await espera(400);
   cartao('<h3>' + (recorde ? 'Recorde da semana!' : 'Fim do desafio') + '</h3>' +
     '<p class="placar-final">' + nf(J.pontos) + '<small>pontos</small></p>' +
@@ -395,6 +426,8 @@ function tela(id) {
   ['tela-inicio', 'tela-mapa', 'tela-jogo'].forEach(t =>
     document.getElementById(t).classList.toggle('ativa', t === id));
   document.body.classList.toggle('em-jogo', id === 'tela-jogo');
+  if (id === 'tela-jogo') Musica.liga('jogo', mundoAtual);
+  else { document.body.classList.remove('aperto'); Musica.liga('menu', mundoAtual); }
   corDaBarra(id === 'tela-jogo' ? COR_TOPO[mundoAtual] : id === 'tela-inicio' ? '#FFF3D2' : '#0B4F7A');
 }
 
@@ -421,7 +454,7 @@ function noDoMapa(i) {
   const lado = desloc < 0 ? 'left:calc(50% + ' + (desloc + 52).toFixed(1) + 'px);text-align:left'
                           : 'right:calc(50% - ' + (desloc - 52).toFixed(1) + 'px);text-align:right';
   return '<div class="no-linha">' +
-    '<button class="no' + (travada ? ' travada' : '') + (i === prog.max && !travada ? ' atual' : '') + '" data-i="' + i + '" style="transform:translateX(' + desloc.toFixed(1) + 'px)" aria-label="Fase ' + (i + 1) + ': ' + f.nome + (travada ? ', ainda fechada' : '') + '">' +
+    '<button class="no' + (travada ? ' travada' : '') + (i === prog.max && !travada ? ' atual' : '') + '" data-i="' + i + '" style="transform:translateX(' + desloc.toFixed(1) + 'px);--dx:' + desloc.toFixed(1) + 'px;animation-delay:' + (((i - mapaIni) % 24) * 26) + 'ms" aria-label="Fase ' + (i + 1) + ': ' + f.nome + (travada ? ', ainda fechada' : '') + '">' +
       '<span class="disco"></span><span class="num">' + (travada ? CADEADO : (i + 1)) + '</span>' + trio + '</button>' +
     '<span class="no-rotulo' + (travada ? ' apagado' : '') + '" style="' + lado + '"><b>' + f.nome + '</b><small>' + metros(f.prof) + '</small></span>' +
   '</div>';
@@ -535,6 +568,8 @@ function comecaFase() {
     'Nesta fase a alga cresce de novo se você demorar. A casa que vai voltar pisca antes, então dá pra chegar na frente. Nas últimas jogadas ela para de crescer.'); }
   J.ocupado = false;
   reiniciaDica();
+  Som.liga(); Som.sobe(0);
+  Musica.liga('jogo', mundoAtual);
   if (f.desafio) faixaTexto('25 jogadas'); else faixaTexto(metros(f.prof));
 }
 function mostraAviso(titulo, icone, texto) {
@@ -561,6 +596,10 @@ function iniciar() {
   faiscasBox = document.getElementById('faiscas');
 
   carregaProg();
+  document.getElementById('versao').textContent = 'v' + VERSAO_JOGO;
+  document.addEventListener('pointerdown', e => {
+    if (e.target.closest('.bt, .ico-bt, .poder, .no, .bt-compra, .subir')) { Som.liga(); Som.toque(); }
+  }, true);
   pintaBotaoSom();
   pintaMoedas();
   pintaPoderes();
@@ -577,7 +616,11 @@ function iniciar() {
     const b = e.target.closest('[data-p]');
     if (b) clicaPoder(b.dataset.p);
   });
-  document.getElementById('bt-som').onclick = () => { prog.som = !prog.som; salvaProg(); pintaBotaoSom(); if (prog.som) { Som.liga(); Som.pop(3); } };
+  document.getElementById('bt-som').onclick = () => {
+    prog.som = !prog.som; salvaProg(); pintaBotaoSom();
+    if (prog.som) { Som.liga(); Som.pop(3); Musica.liga(document.body.classList.contains('em-jogo') ? 'jogo' : 'menu', mundoAtual); }
+    else Musica.para();
+  };
 
   document.getElementById('veu').addEventListener('click', e => {
     const b = e.target.closest('[data-ac]');
