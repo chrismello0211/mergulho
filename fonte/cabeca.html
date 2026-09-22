@@ -236,6 +236,7 @@ body:not(.em-jogo) #cena{display:none}
 .hud-linha > * + *{margin-left:10px}
 .objetivo{flex:1;min-width:0;display:flex;align-items:center;gap:10px;min-height:50px}
 .objetivo .rotulo{font-size:12px;font-weight:800;color:rgba(243,251,255,.66);line-height:1.2}
+.objetivo .rotulo.feito{color:var(--biolum)}
 .objetivo .valor{font-family:var(--display);font-weight:800;font-size:18px;line-height:1.15}
 .alvos{display:flex;align-items:center;flex-wrap:wrap;margin:-3px}
 .alvos > *{margin:3px}
@@ -281,7 +282,7 @@ body:not(.em-jogo) #cena{display:none}
 .casa i{width:calc(var(--cel) - 4px);height:calc(var(--cel) - 4px);border-radius:11px;background:rgba(255,255,255,.08)}
 [data-mundo="2"] .casa i{background:rgba(0,0,0,.16)}
 [data-mundo="3"] .casa i{background:rgba(176,132,255,.07);box-shadow:inset 0 0 0 1px rgba(176,132,255,.14)}
-[data-mundo="4"] .casa i{background:rgba(107,255,224,.14);box-shadow:inset 0 0 0 1px rgba(107,255,224,.4),inset 0 0 12px rgba(107,255,224,.2)}
+[data-mundo="4"] .casa i{background:rgba(107,255,224,.22);box-shadow:inset 0 0 0 2px rgba(107,255,224,.7),inset 0 0 16px rgba(107,255,224,.35)}
 
 /* o que cobre o fundo: areia, alga, rede, lodo, breu (a escura precisa de duas) */
 [data-mundo="0"] .casa.papel i{background:radial-gradient(circle,rgba(150,110,50,.4) 0 1px,transparent 1.6px) 0 0/7px 7px,linear-gradient(180deg,#F3E2B8,#E0C792);box-shadow:inset 0 2px 0 rgba(255,255,255,.45),0 2px 3px rgba(80,60,20,.3)}
@@ -292,8 +293,8 @@ body:not(.em-jogo) #cena{display:none}
 [data-mundo="2"] .casa.papel2 i{background:repeating-linear-gradient(45deg,rgba(255,150,90,.95) 0 2.4px,transparent 2.4px 6.5px),repeating-linear-gradient(-45deg,rgba(255,150,90,.95) 0 2.4px,transparent 2.4px 6.5px),rgba(0,0,0,.28)}
 [data-mundo="3"] .casa.papel i{background:radial-gradient(ellipse at 30% 35%,rgba(170,160,200,.55),transparent 60%),radial-gradient(ellipse at 70% 72%,rgba(140,130,170,.5),transparent 55%),rgba(96,88,128,.62)}
 [data-mundo="3"] .casa.papel2 i{background:radial-gradient(ellipse at 30% 35%,rgba(120,110,150,.6),transparent 60%),rgba(58,52,84,.94);box-shadow:inset 0 0 0 1.5px rgba(176,132,255,.3)}
-[data-mundo="4"] .casa.papel i{background:#000;box-shadow:inset 0 0 0 1.5px rgba(154,92,255,.5)}
-[data-mundo="4"] .casa.papel2 i{background:radial-gradient(circle,#000 55%,rgba(154,92,255,.3));box-shadow:inset 0 0 0 3px rgba(154,92,255,.85)}
+[data-mundo="4"] .casa.papel i{background:#000;box-shadow:inset 0 0 0 2px rgba(150,150,170,.35);border:2px dashed rgba(180,180,200,.35)}
+[data-mundo="4"] .casa.papel2 i{background:#000;box-shadow:inset 0 0 0 3px rgba(154,92,255,.9),0 0 0 1px rgba(154,92,255,.4);border:2px solid rgba(200,180,255,.5)}
 .casa.rasga i{animation:rasga .34s ease forwards}
 @keyframes rasga{0%{transform:scale(1);opacity:1}45%{transform:scale(1.18)}100%{transform:scale(.55);opacity:0}}
 [data-mundo="4"] .casa.rasga i{animation-name:acende}
@@ -503,16 +504,16 @@ body.aperto #vinheta{opacity:1;animation:vinheta 1.05s ease-in-out infinite}
 #fx-tela{position:fixed;inset:0;z-index:30;pointer-events:none;overflow:hidden}
 .fx-raio{position:absolute;pointer-events:none;border-radius:999px;
   background:linear-gradient(90deg,rgba(255,255,255,0),#fff 12%,#BFF5EE 50%,#fff 88%,rgba(255,255,255,0));
-  box-shadow:0 0 26px 10px rgba(191,245,238,.85);animation:fx-raio .62s cubic-bezier(.1,.8,.3,1) forwards}
+  box-shadow:0 0 26px 10px rgba(191,245,238,.85);animation:fx-raio .95s cubic-bezier(.1,.8,.3,1) forwards}
 .fx-raio.v{background:linear-gradient(180deg,rgba(255,255,255,0),#fff 12%,#BFF5EE 50%,#fff 88%,rgba(255,255,255,0));animation-name:fx-raio-v}
-@keyframes fx-raio{0%{transform:scaleX(.05) scaleY(.35);opacity:0}18%{transform:scaleX(1) scaleY(1);opacity:1}100%{transform:scaleX(1) scaleY(.15);opacity:0}}
-@keyframes fx-raio-v{0%{transform:scaleY(.05) scaleX(.35);opacity:0}18%{transform:scaleY(1) scaleX(1);opacity:1}100%{transform:scaleY(1) scaleX(.15);opacity:0}}
+@keyframes fx-raio{0%{transform:scaleX(.05) scaleY(.35);opacity:0}14%{transform:scaleX(1) scaleY(1);opacity:1}55%{transform:scaleX(1) scaleY(1);opacity:1}100%{transform:scaleX(1) scaleY(.15);opacity:0}}
+@keyframes fx-raio-v{0%{transform:scaleY(.05) scaleX(.35);opacity:0}14%{transform:scaleY(1) scaleX(1);opacity:1}55%{transform:scaleY(1) scaleX(1);opacity:1}100%{transform:scaleY(1) scaleX(.15);opacity:0}}
 .fx-onda{position:absolute;border-radius:50%;border:4px solid #FFE7A3;pointer-events:none;
-  box-shadow:0 0 30px rgba(255,231,163,.7),inset 0 0 24px rgba(255,231,163,.45);animation:fx-onda .66s cubic-bezier(.1,.7,.3,1) forwards}
+  box-shadow:0 0 30px rgba(255,231,163,.7),inset 0 0 24px rgba(255,231,163,.45);animation:fx-onda 1s cubic-bezier(.1,.7,.3,1) forwards}
 @keyframes fx-onda{0%{transform:scale(.15);opacity:1;border-width:7px}100%{transform:scale(1.15);opacity:0;border-width:1px}}
 .fx-feixe{position:absolute;height:4px;transform-origin:0 50%;border-radius:999px;pointer-events:none;
-  background:linear-gradient(90deg,#fff,#CFE9FF);box-shadow:0 0 14px 4px rgba(207,233,255,.8);animation:fx-feixe .54s ease-out forwards}
-@keyframes fx-feixe{0%{transform:scaleX(0) rotate(var(--g,0deg));opacity:1}60%{opacity:1}100%{opacity:0}}
+  background:linear-gradient(90deg,#fff,#CFE9FF);box-shadow:0 0 14px 4px rgba(207,233,255,.8);animation:fx-feixe .84s ease-out forwards}
+@keyframes fx-feixe{0%{transform:scaleX(0);opacity:1}30%{opacity:1}70%{opacity:1}100%{opacity:0}}
 .estilhaco{position:absolute;border-radius:2px;pointer-events:none;box-shadow:0 0 8px rgba(255,255,255,.35)}
 #mesa.treme2{animation:treme2 .42s cubic-bezier(.36,.07,.19,.97)}
 #mesa.treme3{animation:treme3 .46s cubic-bezier(.36,.07,.19,.97)}
@@ -521,14 +522,14 @@ body.aperto #vinheta{opacity:1;animation:vinheta 1.05s ease-in-out infinite}
 .combo{position:absolute;left:50%;top:13%;transform:translate(-50%,-50%) scale(.3);z-index:9;pointer-events:none;opacity:0;
   font-family:var(--display);font-weight:800;font-size:clamp(40px,13vw,68px);color:#FFE7A3;
   text-shadow:0 4px 0 rgba(120,40,0,.45),0 0 26px rgba(255,211,92,.8)}
-.combo.mostra{animation:combo .95s cubic-bezier(.2,1.6,.35,1) forwards}
+.combo.mostra{animation:combo 1.2s cubic-bezier(.2,1.6,.35,1) forwards}
 .combo.n3{color:#FFD35C}.combo.n4{color:#FF9A5C}.combo.n5{color:#FF6B9D}.combo.n6{color:#6BFFE0}
 @keyframes combo{0%{opacity:0;transform:translate(-50%,-50%) scale(.3) rotate(-12deg)}
   22%{opacity:1;transform:translate(-50%,-50%) scale(1.25) rotate(4deg)}
   38%{transform:translate(-50%,-50%) scale(1) rotate(0)}
   75%{opacity:1}100%{opacity:0;transform:translate(-50%,-90%) scale(.9)}}
 .ponto-voa.grande{font-size:29px;color:#FFD35C;text-shadow:0 3px 0 rgba(120,40,0,.5),0 0 20px rgba(255,211,92,.8)}
-.peca.some .corpo{animation:some .26s ease-in forwards}
+.peca.some .corpo{animation:some .34s ease-in forwards}
 @keyframes some{0%{transform:scale(1)}30%{transform:scale(1.45) rotate(8deg);filter:brightness(2.4) saturate(1.4)}100%{transform:scale(.1) rotate(-14deg);opacity:0}}
 .barra .marca.ganhou svg{animation:estrela-pop .6s cubic-bezier(.2,1.8,.4,1)}
 @keyframes estrela-pop{0%{transform:scale(1)}40%{transform:scale(2.1) rotate(18deg)}100%{transform:scale(1)}}
@@ -544,6 +545,38 @@ body.aperto #vinheta{opacity:1;animation:vinheta 1.05s ease-in-out infinite}
 @keyframes titulo-bal{0%,100%{transform:translateX(-50%) translateY(0) rotate(-.4deg)}50%{transform:translateX(-50%) translateY(-6px) rotate(.4deg)}}
 #bt-jogar{animation:pulsa-bt 2.6s ease-in-out infinite}
 @keyframes pulsa-bt{0%,100%{transform:scale(1)}50%{transform:scale(1.045)}}
+
+/* ── cada fase mexe um pouco no cenário ─────────────────────── */
+#cena.v1 .chao{transform:scaleX(-1)}
+#cena.v2 .chao{transform:scale(1.18);transform-origin:bottom center}
+#cena.v1 .raios{opacity:.8;transform:translateX(-6%)}
+#cena.v2 .causticas{opacity:.24}
+
+/* ── descida de uma fase para outra ─────────────────────────── */
+#descida{position:fixed;top:0;right:0;bottom:0;left:0;z-index:25;pointer-events:none;display:grid;place-items:center;
+  background:linear-gradient(180deg,#0B4F7A,#061F38);opacity:0;transform:translateY(-100%)}
+#descida span{font-family:var(--display);font-weight:800;font-size:clamp(34px,11vw,54px);color:var(--espuma);
+  text-shadow:0 0 26px rgba(107,255,224,.5)}
+#descida.roda{animation:descida 1s cubic-bezier(.5,0,.3,1) forwards}
+@keyframes descida{
+  0%{opacity:1;transform:translateY(-100%)}
+  32%{opacity:1;transform:translateY(0)}
+  58%{opacity:1;transform:translateY(0)}
+  100%{opacity:0;transform:translateY(100%)}
+}
+body.leve #descida.roda{animation-duration:.45s}
+
+/* ── conta e backup ─────────────────────────────────────────── */
+.campo{
+  width:100%;margin:10px 0 0;padding:12px 14px;border-radius:14px;border:0;font-family:Nunito,sans-serif;font-size:15px;font-weight:700;
+  color:var(--tinta);background:rgba(10,108,122,.1);box-shadow:inset 0 0 0 2px rgba(10,108,122,.22)
+}
+.campo.alto{min-height:92px;resize:vertical;font-size:13px}
+.campo:focus{outline:none;box-shadow:inset 0 0 0 2px var(--boia)}
+.cartao p.codigo{font-family:var(--display);font-weight:800;font-size:clamp(22px,7vw,30px);letter-spacing:.06em;color:var(--tinta);
+  background:rgba(10,108,122,.09);border-radius:16px;padding:12px 8px;margin:10px 0;user-select:all;-webkit-user-select:all}
+[data-mundo="3"] .campo,[data-mundo="4"] .campo{color:var(--espuma);background:rgba(107,255,224,.08);box-shadow:inset 0 0 0 2px rgba(107,255,224,.25)}
+[data-mundo="3"] .cartao p.codigo,[data-mundo="4"] .cartao p.codigo{color:var(--espuma);background:rgba(107,255,224,.08)}
 
 /* ── ajustes ────────────────────────────────────────────────── */
 .canto-som{display:flex}

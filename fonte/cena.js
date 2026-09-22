@@ -105,8 +105,13 @@ function cena(m) {
 /* troca tudo que depende do mundo: peças, cenário, som e cor da barra do navegador */
 let mundoAtual = -1;
 const COR_TOPO = ['#9BE9E0', '#3FC0C6', '#1A6E98', '#123067', '#0A0F28'];
-function instalaMundo(m) {
-  if (m === mundoAtual) return;
+let varianteAtual = -1;
+function instalaMundo(m, variante) {
+  const v = ((variante || 0) % 3 + 3) % 3;
+  const cx = document.getElementById('cena');
+  if (m === mundoAtual) { if (v !== varianteAtual) { varianteAtual = v; cx.className = 'v' + v; } return; }
+  varianteAtual = v;
+  cx.className = 'v' + v;
   mundoAtual = m;
   document.body.dataset.mundo = m;
   document.getElementById('defs-pecas').innerHTML = simbolos(m, '');

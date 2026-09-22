@@ -21,6 +21,7 @@ function faltaObjetivo() {
   if (f.obj.tipo === 'pontos') return Math.max(0, f.marcas[0] - J.pontos);
   if (f.obj.tipo === 'coletar') return f.obj.itens.reduce((a, it) => a + Math.max(0, it[1] - J.coletado[it[0]]), 0);
   if (f.obj.tipo === 'bau') return Math.max(0, f.obj.n - J.bauFeito);
+  if (f.obj.tipo === 'especiais') return Math.max(0, f.obj.n - (J.criados || 0));
   return Math.max(0, J.papelTotal - J.papelFeito);
 }
 function objetivoFeito() { return faltaObjetivo() === 0; }
@@ -51,9 +52,24 @@ function atualizaHud() {
   document.getElementById('fase-nome').textContent = f.nome;
   document.getElementById('fase-prof').textContent = f.desafio ? f.semana : metros(f.prof);
 
+  /* na fase de pontuação a partida vai até a última jogada: avisa quando o objetivo cai */
+  if (f.obj.tipo === 'pontos' && !f.desafio && !J.objBatido && J.pontos >= f.marcas[0] && !J.fim) {
+    J.objBatido = true;
+    faixaTexto('Objetivo batido!');
+    Som.liga(); Som.sobe(1); vibra(TREMIDA.estrela);
+    clarao('rgba(107,255,224,.3)');
+  }
   const o = document.getElementById('objetivo');
   if (f.desafio) {
     o.innerHTML = '<div><div class="rotulo">Objetivo</div><div class="valor">o máximo de pontos</div></div>';
+  } else if (f.obj.tipo === 'pontos' && J.pontos >= f.marcas[0]) {
+    const falta2 = J.pontos < f.marcas[1] ? f.marcas[1] - J.pontos : (J.pontos < f.marcas[2] ? f.marcas[2] - J.pontos : 0);
+    o.innerHTML = '<div><div class="rotulo feito">Objetivo batido ✓</div><div class="valor">' +
+      (falta2 ? 'faltam ' + nf(falta2) + ' para a próxima estrela' : 'jogue até acabar as jogadas') + '</div></div>';
+  } else if (f.obj.tipo === 'especiais') {
+    const falta = Math.max(0, f.obj.n - (J.criados || 0));
+    o.innerHTML = '<div><div class="rotulo">Criar especiais</div></div><div class="alvos">' +
+      '<div class="alvo' + (falta ? '' : ' feito') + '"><svg class="ic" viewBox="0 0 100 100"><use href="#i-faisca"/></svg><b>' + (falta || '✓') + '</b></div></div>';
   } else if (f.obj.tipo === 'bau') {
     const falta = Math.max(0, f.obj.n - J.bauFeito);
     o.innerHTML = '<div><div class="rotulo">Descer até o fundo</div></div><div class="alvos">' +
@@ -128,6 +144,7 @@ async function venceu() {
   const ganho = moedasDaFase(e, primeira);
   prog.moedas += ganho;
   salvaProg();
+  if (prog.conta) nuvemSalva();
   pintaMoedas();
 
   const frases = ['Passou, mas no último fôlego.', 'Mergulho bonito.', 'Impecável. Nem levantou areia.'];
@@ -167,6 +184,7 @@ async function perdeu() {
   if (f.obj.tipo === 'pontos') falta = 'Faltaram ' + nf(f.marcas[0] - J.pontos) + ' pontos.';
   else if (f.obj.tipo === 'coletar') { const n = faltaObjetivo(); falta = 'Faltou juntar ' + n + (n === 1 ? ' peça.' : ' peças.'); }
   else if (f.obj.tipo === 'bau') { const n = faltaObjetivo(); falta = n === 1 ? 'Faltou um baú chegar no fundo.' : 'Faltaram ' + n + ' baús chegarem no fundo.'; }
+  else if (f.obj.tipo === 'especiais') { const n = faltaObjetivo(); falta = n === 1 ? 'Faltou criar um especial.' : 'Faltou criar ' + n + ' especiais.'; }
   else { const n = casasCobertas(papel); falta = (n === 1 ? 'Sobrou ' : 'Sobraram ') + nomeBloq(f, n) + '.'; }
   await espera(400);
   cartao(
@@ -332,13 +350,13 @@ function compra(id) {
 function mostraBau() {
   cartao(
     '<h3>Baú do dia</h3>' +
-    '<p class="bau-premio">' + moedaSvg + '+60</p>' +
+    '<p class="bau-premio">' + moedaSvg + '+40</p>' +
     '<p>Volte amanhã que tem outro.</p>' +
     '<div class="bts"><button class="bt" data-ac="bau">Pegar</button></div>'
   );
 }
 function pegaBau() {
-  prog.moedas += 60;
+  prog.moedas += 40;
   prog.dia = hoje();
   salvaProg();
   pintaMoedas();
@@ -383,10 +401,11 @@ function abreDesafio() {
   const f = faseDesafio();
   desafioAtual = f;
   semeiaJogo(f.semana);
-  instalaMundo(f.m);
+  instalaMundo(f.m, 1);
+  descida('Desafio da semana');
   J = { fase: -1, desafio: true, mov: f.mov, pontos: 0, coletado: [0, 0, 0, 0, 0, 0],
         papelTotal: 0, papelFeito: 0, ocupado: true, fim: false, cascata: 1,
-        bauFeito: 0, bauNaTela: 0, bauPendentes: 0, contaCresce: 0, alvoCresce: null };
+        bauFeito: 0, bauNaTela: 0, bauPendentes: 0, criados: 0, objBatido: false, contaCresce: 0, alvoCresce: null };
   papel = Array.from({ length: H }, () => Array(W).fill(0));
   J.papelBase = papel.map(l => l.slice());
   pontosNaTela = 0;
@@ -471,6 +490,9 @@ function mostraAjustes() {
       '<div class="ajuste"><div class="txt"><b>' + a.nome + '</b><small>' + a.texto + '</small></div>' +
       '<button class="chave' + (valorAjuste(a.k) ? ' on' : '') + '" data-ac="mudar" data-k="' + a.k + '" ' +
       'role="switch" aria-checked="' + valorAjuste(a.k) + '" aria-label="' + a.nome + '"><span></span></button></div>').join('') +
+    '<div class="ajuste"><div class="txt"><b>Progresso</b><small>' +
+      (prog.conta ? 'Código ' + prog.conta : 'Ainda só neste aparelho') + '</small></div>' +
+      '<button class="bt-compra" data-ac="conta">' + (prog.conta ? 'Ver' : 'Proteger') + '</button></div>' +
     '<p class="versao-cartao">versão ' + VERSAO_JOGO + '</p>' +
     '<div class="bts"><button class="bt" data-ac="fecha">Fechar</button></div>');
 }
@@ -486,6 +508,133 @@ function mudaAjuste(k) {
   if (prog.som) { Som.liga(); Som.toque(); }
   if (k === 'vibrar' && prog.vibrar) vibra(TREMIDA.especial);
   mostraAjustes();
+}
+
+
+/* ═══ CONTA E BACKUP ════════════════════════════════════════════
+   Ninguém pode perder o que já jogou. Duas redes de segurança:
+   1. código de backup, que funciona sem internet nenhuma;
+   2. conta na nuvem, que liga quando a URL do banco estiver aqui.
+   Em qualquer volta os dois progressos se juntam pelo melhor de
+   cada um, então entrar com um código nunca apaga nada.          */
+const NUVEM = { url: '' };   /* ex.: https://seu-projeto-default-rtdb.firebaseio.com */
+
+function codigoNovo() {
+  const letras = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let s = '';
+  for (let i = 0; i < 12; i++) s += letras[Math.floor(Math.random() * letras.length)];
+  return s.slice(0, 4) + '-' + s.slice(4, 8) + '-' + s.slice(8, 12);
+}
+function juntaProg(a, b) {
+  if (!b) return a;
+  const r = JSON.parse(JSON.stringify(a));
+  r.max = Math.max(a.max || 0, b.max || 0);
+  r.moedas = Math.max(a.moedas || 0, b.moedas || 0);
+  r.estrelas = Object.assign({}, b.estrelas || {});
+  for (const k in (a.estrelas || {})) r.estrelas[k] = Math.max(a.estrelas[k] || 0, r.estrelas[k] || 0);
+  r.poderes = {};
+  ['arpao', 'troca', 'giro', 'folego'].forEach(k => r.poderes[k] = Math.max((a.poderes || {})[k] || 0, (b.poderes || {})[k] || 0));
+  r.vistos = Object.assign({}, b.vistos || {}, a.vistos || {});
+  const da = a.desafio || {}, db = b.desafio || {};
+  r.desafio = { semana: da.semana === db.semana ? da.semana : (da.melhor >= db.melhor ? da.semana : db.semana),
+                melhor: Math.max(da.melhor || 0, db.melhor || 0), nome: da.nome || db.nome || '' };
+  r.conta = a.conta || b.conta || '';
+  r.apelido = a.apelido || b.apelido || '';
+  return r;
+}
+function aplicaProg(novo) { prog = juntaProg(novo, prog); salvaProg(); pintaMoedas(); pintaPoderes(); pintaBotaoSom(); aplicaLeve(); }
+
+const paraTexto = () => 'MERGULHO1:' + btoa(unescape(encodeURIComponent(JSON.stringify(prog))));
+function doTexto(txt) {
+  try {
+    const cru = String(txt).trim().replace(/^MERGULHO1:/, '');
+    const d = JSON.parse(decodeURIComponent(escape(atob(cru))));
+    return (d && typeof d.max === 'number') ? d : null;
+  } catch (e) { return null; }
+}
+async function copia(txt, botao, rotulo) {
+  try { await navigator.clipboard.writeText(txt); }
+  catch (e) { try { const t = document.createElement('textarea'); t.value = txt; document.body.appendChild(t); t.select(); document.execCommand('copy'); t.remove(); } catch (e2) { return; } }
+  if (botao) { const antes = botao.textContent; botao.textContent = 'Copiado!'; setTimeout(() => botao.textContent = rotulo || antes, 1800); }
+}
+async function nuvemSalva() {
+  if (!NUVEM.url || !prog.conta) return false;
+  try {
+    const r = await fetch(NUVEM.url + '/mergulho/contas/' + prog.conta.replace(/-/g, '') + '.json',
+      { method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ apelido: prog.apelido || '', quando: Date.now(), prog: prog }) });
+    return r.ok;
+  } catch (e) { return false; }
+}
+async function nuvemLe(codigo) {
+  if (!NUVEM.url) return null;
+  try {
+    const r = await fetch(NUVEM.url + '/mergulho/contas/' + codigo.replace(/-/g, '').toUpperCase() + '.json');
+    const d = await r.json();
+    return d && d.prog ? d.prog : null;
+  } catch (e) { return null; }
+}
+
+function mostraConta() {
+  const temNuvem = !!NUVEM.url;
+  if (!prog.conta) {
+    cartao('<h3>Seu progresso</h3>' +
+      '<p>Hoje ele fica só neste aparelho. Crie um código e guarde: com ele você recupera tudo se trocar de celular ou limpar o navegador.</p>' +
+      '<input class="campo" id="campo-apelido" maxlength="18" placeholder="Seu apelido (opcional)">' +
+      '<div class="bts"><button class="bt vidro" data-ac="fecha">Agora não</button>' +
+      '<button class="bt" data-ac="criaconta">Criar meu código</button></div>');
+    return;
+  }
+  cartao('<h3>Seu código</h3>' +
+    '<p class="codigo">' + prog.conta + '</p>' +
+    '<p>' + (prog.apelido ? prog.apelido + ', guarde' : 'Guarde') + ' esse código em algum lugar seguro. ' +
+    (temNuvem ? 'Ele também sincroniza pela internet: é só entrar com ele em outro aparelho.'
+              : 'Ele vem junto no backup abaixo, que funciona sem internet.') + '</p>' +
+    '<div class="bts">' +
+      '<button class="bt vidro" data-ac="copiacodigo">Copiar código</button>' +
+      '<button class="bt vidro" data-ac="copiabackup">Copiar backup</button>' +
+    '</div>' +
+    '<div class="bts">' +
+      '<button class="bt vidro" data-ac="colar">Restaurar backup</button>' +
+      (temNuvem ? '<button class="bt" data-ac="salvanuvem">Salvar na nuvem</button>' : '<button class="bt" data-ac="fecha">Fechar</button>') +
+    '</div>');
+}
+function criaConta() {
+  const campo = document.getElementById('campo-apelido');
+  prog.apelido = campo ? campo.value.trim().slice(0, 18) : '';
+  prog.conta = codigoNovo();
+  if (prog.desafio && !prog.desafio.nome) prog.desafio.nome = prog.apelido;
+  salvaProg();
+  nuvemSalva();
+  mostraConta();
+}
+function mostraColar() {
+  cartao('<h3>Restaurar</h3>' +
+    '<p>Cole aqui o backup que você copiou' + (NUVEM.url ? ', ou digite o código da sua conta' : '') + '. Nada é apagado: o jogo fica com o melhor dos dois progressos.</p>' +
+    '<textarea class="campo alto" id="campo-backup" placeholder="MERGULHO1:... ou ABCD-1234-EFGH"></textarea>' +
+    '<div class="bts"><button class="bt vidro" data-ac="conta">Voltar</button>' +
+    '<button class="bt" data-ac="restaura">Restaurar</button></div>');
+}
+async function restaura() {
+  const campo = document.getElementById('campo-backup');
+  const txt = campo ? campo.value.trim() : '';
+  if (!txt) return;
+  let novo = doTexto(txt);
+  if (!novo && NUVEM.url && /^[A-Za-z0-9-]{8,20}$/.test(txt)) novo = await nuvemLe(txt);
+  if (!novo) {
+    cartao('<h3>Não deu</h3><p>Esse texto não parece um backup nem um código válido. Confira se veio inteiro.</p>' +
+      '<div class="bts"><button class="bt" data-ac="colar">Tentar de novo</button></div>');
+    return;
+  }
+  aplicaProg(novo);
+  Som.liga(); Som.vitoria();
+  cartao('<h3>Pronto</h3><p>Progresso restaurado: fase ' + (prog.max + 1) + ', ' + totalEstrelas() + ' estrelas e ' + nf(prog.moedas) + ' moedas.</p>' +
+    '<div class="bts"><button class="bt" data-ac="mapa">Ver o mapa</button></div>');
+}
+async function salvaNaNuvem(botao) {
+  if (botao) botao.textContent = 'Salvando...';
+  const ok = await nuvemSalva();
+  if (botao) { botao.textContent = ok ? 'Salvo!' : 'Falhou'; setTimeout(() => botao.textContent = 'Salvar na nuvem', 1800); }
 }
 
 /* ═══ TELAS ═════════════════════════════════════════════════════ */
@@ -600,13 +749,22 @@ function rolaAteAtual() {
   requestAnimationFrame(() => trilha.scrollTo({ top: Math.max(0, alvo), behavior: 'smooth' }));
 }
 
+/* a descida entre fases: o mar passa por cima e revela o tabuleiro novo */
+function descida(texto) {
+  const d = document.getElementById('descida');
+  if (!d) return;
+  d.querySelector('span').textContent = texto;
+  d.classList.remove('roda'); void d.offsetWidth; d.classList.add('roda');
+}
+
 /* ═══ ABRIR UMA FASE ════════════════════════════════════════════ */
 function retomaPartida(d) {
   const f = fase(d.f);
-  instalaMundo(f.m);
+  instalaMundo(f.m, d.f);
+  descida(metros(f.prof));
   J = { fase: d.f, mov: d.mov, pontos: d.pontos, coletado: d.col,
         papelTotal: d.pt, papelFeito: d.pf, ocupado: true, fim: false, cascata: 1,
-        bauFeito: d.bf, bauNaTela: d.bn, bauPendentes: d.bp, contaCresce: d.cc, alvoCresce: d.ac,
+        bauFeito: d.bf, bauNaTela: d.bn, bauPendentes: d.bp, criados: d.cr || 0, objBatido: false, contaCresce: d.cc, alvoCresce: d.ac,
         papelBase: d.base };
   papel = d.papel;
   uid = 0;
@@ -635,11 +793,12 @@ function retomaPartida(d) {
 function abreFase(i) {
   limpaPartida();
   const f = fase(i);
-  instalaMundo(f.m);
+  instalaMundo(f.m, i);
+  descida(f.desafio ? 'Desafio' : metros(f.prof));
   soltaSemente();
   J = { fase: i, mov: f.mov, pontos: 0, coletado: [0, 0, 0, 0, 0, 0],
         papelTotal: 0, papelFeito: 0, ocupado: true, fim: false, cascata: 1,
-        bauFeito: 0, bauNaTela: 0, bauPendentes: f.obj.tipo === 'bau' ? f.obj.n : 0,
+        bauFeito: 0, bauNaTela: 0, bauPendentes: f.obj.tipo === 'bau' ? f.obj.n : 0, criados: 0, objBatido: false,
         contaCresce: 0, alvoCresce: null };
   papel = (f.obj.tipo === 'papel') ? fazPapel(f.obj.padrao, f.obj.camadas)
                                    : Array.from({ length: H }, () => Array(W).fill(0));
@@ -663,7 +822,7 @@ function abreFase(i) {
 function comecaFase() {
   const f = faseAtual();
   if (!prog.vistos.bau && f.obj.tipo === 'bau') { prog.vistos.bau = true; salvaProg(); return mostraAviso('O baú', '#i-bau',
-    'O baú só quer chegar na última fileira. Ele não combina com nada e especial nenhum leva ele embora. Estoure as peças debaixo dele, ou empurre ele de lado, que ele afunda sozinho.'); }
+    'O baú só quer chegar na última fileira. Ele não combina com nada e nenhum especial leva ele embora. Estoure as peças debaixo dele para ele descer, e empurre ele de lado para escolher a coluna. Ele também é pesado: a cada quatro jogadas afunda uma casa sozinho.'); }
   if (!prog.vistos.cresce && f.obj.cresce) { prog.vistos.cresce = true; salvaProg(); return mostraAviso('A alga volta', null,
     'Nesta fase a alga cresce de novo se você demorar. A casa que vai voltar pisca antes, então dá pra chegar na frente. Nas últimas jogadas ela para de crescer.'); }
   J.ocupado = false;
@@ -706,7 +865,7 @@ function iniciar() {
   pintaBotaoSom();
   pintaMoedas();
   pintaPoderes();
-  instalaMundo(fase(prog.max).m);
+  instalaMundo(fase(prog.max).m, prog.max);
   tela('tela-inicio');
 
   document.getElementById('bt-jogar').onclick = () => { Som.liga(); montaMapa(); tela('tela-mapa'); };
@@ -737,6 +896,13 @@ function iniciar() {
     else if (ac === 'desafio') abreDesafio();
     else if (ac === 'compartilha') compartilhaDesafio(b);
     else if (ac === 'mudar') mudaAjuste(b.dataset.k);
+    else if (ac === 'conta') mostraConta();
+    else if (ac === 'criaconta') criaConta();
+    else if (ac === 'copiacodigo') copia(prog.conta, b, 'Copiar código');
+    else if (ac === 'copiabackup') copia(paraTexto(), b, 'Copiar backup');
+    else if (ac === 'colar') mostraColar();
+    else if (ac === 'restaura') restaura();
+    else if (ac === 'salvanuvem') salvaNaNuvem(b);
     else if (ac === 'retoma') { const d = lePartida(); limpaPartida(); if (d) retomaPartida(d); else fechaCartao(); }
     else if (ac === 'descarta') { limpaPartida(); fechaCartao(); if (prog.dia !== hoje()) setTimeout(mostraBau, 300); }
     else if (ac === 'folego') usaFolegoNoCartao();

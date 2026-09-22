@@ -151,7 +151,7 @@ function raioLinha(r, c, deitado) {
   d.className = 'fx-raio' + (deitado ? '' : ' v');
   if (deitado) { d.style.left = '0px'; d.style.top = (r * CEL) + 'px'; d.style.width = (W * CEL) + 'px'; d.style.height = CEL + 'px'; }
   else { d.style.top = '0px'; d.style.left = (c * CEL) + 'px'; d.style.height = (H * CEL) + 'px'; d.style.width = CEL + 'px'; }
-  solta(d, 640);
+  solta(d, 980);
 }
 function ondaChoque(r, c, tam, cor) {
   const d = document.createElement('div'), s = tam * CEL;
@@ -160,7 +160,7 @@ function ondaChoque(r, c, tam, cor) {
   d.style.left = (c * CEL + CEL / 2 - s / 2) + 'px';
   d.style.top = (r * CEL + CEL / 2 - s / 2) + 'px';
   if (cor) d.style.borderColor = cor;
-  solta(d, 660);
+  solta(d, 1020);
 }
 function feixePerola(r, c, alvos) {
   for (const k of alvos.slice(0, 14)) {
@@ -172,7 +172,7 @@ function feixePerola(r, c, alvos) {
     d.style.left = x1 + 'px'; d.style.top = (y1 - 2) + 'px';
     d.style.width = Math.hypot(dx, dy) + 'px';
     d.style.transform = 'rotate(' + (Math.atan2(dy, dx) * 180 / Math.PI) + 'deg)';
-    solta(d, 540);
+    solta(d, 860);
   }
 }
 function estilhacos(r, c, cor, n) {
@@ -326,7 +326,7 @@ async function limpar(conj, novos) {
     }
   }
   if (vivas.length >= 6) ganho += (vivas.length - 5) * 90;
-  if (novos) for (const n of novos) ganho += VALOR_NASCE[n.sp] || 0;   /* criar especial já paga */
+  if (novos) for (const n of novos) { ganho += VALOR_NASCE[n.sp] || 0; J.criados = (J.criados || 0) + 1; }   /* criar especial paga e conta objetivo */
   const bonus = bonusEspeciais;
   bonusEspeciais = 0;
   ganho += bonus;
@@ -342,7 +342,7 @@ async function limpar(conj, novos) {
     else if (e.sp === BOMBA) { ondaChoque(e.r, e.c, e.tam || 5.4, '#FFE7A3'); Som.bomba(); clarao('rgba(255,231,163,.45)'); peso = 3; }
     else if (e.sp === 'tudo') {
       Som.combo(); clarao('rgba(255,255,255,.6)');
-      [0, 120, 240].forEach((d, i) => setTimeout(() => ondaChoque(3 + i, 3, 7 + i * 2, ['#fff', '#6BFFE0', '#FFD35C'][i]), d));
+      [0, 200, 400].forEach((d, i) => setTimeout(() => ondaChoque(3 + i, 3, 7 + i * 2, ['#fff', '#6BFFE0', '#FFD35C'][i]), d));
       faixaTexto('Tudo!');
       peso = 3;
     }
@@ -369,7 +369,7 @@ async function limpar(conj, novos) {
   if (J.cascata >= 5) faixaTexto(ELOGIOS[4 + (J.cascata >= 7 ? 1 : 0)]);
 
   atualizaHud();
-  await espera(210);
+  await espera(peso >= 3 ? 470 : peso >= 2 ? 360 : 230);
 
   for (const k of vivas) {
     const r = linha(k), c = coluna(k), p = grid[r][c];
@@ -387,11 +387,11 @@ async function limpar(conj, novos) {
     if (el) { el.classList.add('nasce'); setTimeout(() => el.classList.remove('nasce'), 320); }
     Som.especial();
   }
-  await espera(70);
+  await espera(peso >= 2 ? 170 : 90);
   gravidade();
   sincroniza('cai');
   Som.cai(Math.min(J.cascata, 6));
-  await espera(270);
+  await espera(peso >= 2 ? 340 : 280);
   return true;
 }
 
@@ -510,7 +510,7 @@ async function tentaTroca(a, b) {
 
   const especial = (pa.sp === ARCO || pb.sp === ARCO) || (pa.sp && pb.sp);
   const virouCombo = temCorridaEm(a.r, a.c) || temCorridaEm(b.r, b.c);
-  const temBau = pa.bau || pb.bau;   /* empurrar o baú de lado é jogada válida */
+  const temBau = (pa.bau || pb.bau) && a.r === b.r;   /* empurrar o baú de lado vale; descer na mão, não */
   /* especial não precisa de combinação: trocar ele com qualquer vizinha já dispara */
   const soltaEsp = !especial && !virouCombo && !temBau && !!(pa.sp || pb.sp);
 
@@ -542,6 +542,7 @@ async function tentaTroca(a, b) {
   }
   await resolver(conj, [chave(b.r, b.c), chave(a.r, a.c)]);
   passoCrescer();
+  await passoBau();
   salvaPartida();
   J.ocupado = false;
   await confere();
@@ -559,6 +560,7 @@ async function disparaEspecial(cel) {
   expandir(conj, null);
   await resolver(conj, [chave(cel.r, cel.c)]);
   passoCrescer();
+  await passoBau();
   salvaPartida();
   J.ocupado = false;
   await confere();
@@ -572,10 +574,35 @@ function salvaPartida() {
     localStorage.setItem(CHAVE_PARTIDA, JSON.stringify({
       f: J.fase, mov: J.mov, pontos: J.pontos, col: J.coletado,
       pt: J.papelTotal, pf: J.papelFeito, bf: J.bauFeito, bn: J.bauNaTela, bp: J.bauPendentes,
-      cc: J.contaCresce, ac: J.alvoCresce, papel: papel, base: J.papelBase,
+      cc: J.contaCresce, ac: J.alvoCresce, cr: J.criados, papel: papel, base: J.papelBase,
       g: grid.map(l => l.map(p => p ? (p.bau ? 'b' : p.t + '.' + p.sp) : ''))
     }));
   } catch (e) { /* sem espaço: só não guarda */ }
+}
+
+/* o baú é pesado: a cada 4 jogadas ele afunda uma casa sozinho.
+   Sem isso ele encalha na penúltima fileira, que quase nunca limpa. */
+async function passoBau() {
+  const f = faseAtual();
+  if (f.obj.tipo !== 'bau' || J.fim) return false;
+  J.contaBau = (J.contaBau || 0) + 1;
+  if (J.contaBau % 4 !== 0) return false;
+  let afundou = false;
+  for (let r = H - 2; r >= 0; r--) for (let c = 0; c < W; c++) {
+    const p = grid[r][c], baixo = grid[r + 1][c];
+    if (!p || !p.bau || !baixo || baixo.bau) continue;
+    grid[r + 1][c] = p; grid[r][c] = baixo;
+    posiciona(els.get(p.id), r + 1, c); posiciona(els.get(baixo.id), r, c);
+    respingos(r, c, '#FFD35C', 4);
+    afundou = true;
+  }
+  if (afundou) {
+    Som.liga(); Som.cai(3); vibra(TREMIDA.toque);
+    faixaTexto('O baú afunda');
+    await espera(340);
+    await resolver(null, null);
+  }
+  return afundou;
 }
 
 /* ═══ ALGA QUE VOLTA A CRESCER ══════════════════════════════════
