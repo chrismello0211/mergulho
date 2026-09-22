@@ -2,7 +2,7 @@
    MERGULHO · combinar 3 da beira da praia até 4.000 metros
    ═══════════════════════════════════════════════════════════════ */
 
-const VERSAO_JOGO = '2026.09.29';
+const VERSAO_JOGO = '2026.09.30';
 const W = 7, H = 8, TIPOS = 6;
 const NADA = 0, LH = 1, LV = 2, BOMBA = 3, ARCO = 4;
 

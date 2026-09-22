@@ -201,11 +201,30 @@ async function perdeu() {
 }
 
 /* ═══ CARTÕES ═══════════════════════════════════════════════════ */
-function cartao(html) {
-  document.getElementById('cartao').innerHTML = html;
+function cartao(html, fechavel) {
+  const c = document.getElementById('cartao');
+  c.className = 'cartao' + (fechavel ? ' fechavel' : '');
+  c.innerHTML = html;
   document.getElementById('veu').classList.add('aberto');
 }
-function fechaCartao() { document.getElementById('veu').classList.remove('aberto'); }
+
+/* ── fila de cartões da abertura ────────────────────────────────
+   Retomar partida e baú do dia chegavam juntos e um cobria o
+   outro. Agora entram um de cada vez.                            */
+let filaCartoes = [];
+function enfileira(fn) {
+  filaCartoes.push(fn);
+  if (!document.getElementById('veu').classList.contains('aberto')) tocaFila();
+}
+function tocaFila() {
+  if (document.body.classList.contains('em-jogo')) { filaCartoes.length = 0; return; }
+  const f = filaCartoes.shift();
+  if (f) f();
+}
+function fechaCartao() {
+  document.getElementById('veu').classList.remove('aberto');
+  if (filaCartoes.length) setTimeout(tocaFila, 300);
+}
 
 function amostra(base, capa) {
   return '<span class="par"><svg viewBox="0 0 100 100"><use href="#' + base + '"/></svg>' +
@@ -248,7 +267,7 @@ function mostraAjuda() {
     '<h4>Estrelas</h4>' +
     '<p>Cumprir o objetivo vale uma estrela. As outras duas vêm da pontuação, e ponto bom vem de reação em cadeia e de sobrar jogada no fim.</p>' +
     '</div>' +
-    '<div class="bts"><button class="bt" data-ac="fecha">Entendi</button></div>'
+    '<div class="bts"><button class="bt" data-ac="fecha">Entendi</button></div>', true
   );
 }
 
@@ -333,7 +352,7 @@ function mostraLoja() {
         '<div class="txt"><b>' + p.nome + '</b><small>' + p.texto + '</small><span class="tem">você tem ' + tem + '</span></div>' +
         '<button class="bt-compra" data-ac="compra" data-id="' + p.id + '"' + (pode ? '' : ' disabled') + '>' + moedaSvg + p.preco + '</button></div>';
     }).join('') +
-    '<div class="bts"><button class="bt" data-ac="fecha">Fechar</button></div>'
+    '<div class="bts"><button class="bt" data-ac="fecha">Fechar</button></div>', true
   );
 }
 function compra(id) {
@@ -394,7 +413,7 @@ function mostraDesafio() {
     '<p>O mesmo tabuleiro para todo mundo até domingo. São 25 jogadas e vale quem fizer mais ponto.</p>' +
     '<p class="melhor">' + (melhor ? 'Seu melhor: ' + nf(melhor) : 'Você ainda não jogou esta semana.') + '</p>' +
     '<div class="bts"><button class="bt vidro" data-ac="fecha">Agora não</button>' +
-    '<button class="bt" data-ac="desafio">Jogar</button></div>');
+    '<button class="bt" data-ac="desafio">Jogar</button></div>', true);
 }
 function abreDesafio() {
   const f = faseDesafio();
@@ -493,7 +512,7 @@ function mostraAjustes() {
       (Conta.dentro ? Conta.sessao.email : Conta.ligada ? 'Ainda só neste aparelho' : 'Guardado neste aparelho') + '</small></div>' +
       '<button class="bt-compra" data-ac="conta">' + (Conta.dentro ? 'Ver' : 'Guardar') + '</button></div>' +
     '<p class="versao-cartao">versão ' + VERSAO_JOGO + '</p>' +
-    '<div class="bts"><button class="bt" data-ac="fecha">Fechar</button></div>');
+    '<div class="bts"><button class="bt" data-ac="fecha">Fechar</button></div>', true);
 }
 function mudaAjuste(k) {
   if (k === 'cheio') { prog.leve = !prog.leve; aplicaLeve(); }
@@ -623,13 +642,6 @@ function juntaProg(a, b) {
 }
 function aplicaProg(novo) { prog = juntaProg(novo, prog); salvaProg(); pintaMoedas(); pintaPoderes(); pintaBotaoSom(); aplicaLeve(); }
 
-const paraTexto = () => 'MERGULHO1:' + btoa(unescape(encodeURIComponent(JSON.stringify(prog))));
-function doTexto(txt) {
-  try {
-    const d = JSON.parse(decodeURIComponent(escape(atob(String(txt).trim().replace(/^MERGULHO1:/, '')))));
-    return (d && typeof d.max === 'number') ? d : null;
-  } catch (e) { return null; }
-}
 async function copia(txt, botao, rotulo) {
   try { await navigator.clipboard.writeText(txt); }
   catch (e) { try { const t = document.createElement('textarea'); t.value = txt; document.body.appendChild(t); t.select(); document.execCommand('copy'); t.remove(); } catch (e2) { return; } }
@@ -640,30 +652,29 @@ async function copia(txt, botao, rotulo) {
 function mostraConta(aviso) {
   if (!Conta.ligada) {
     cartao('<h3>Seu progresso</h3>' +
-      '<p>A conta por e-mail ainda não está ligada neste site. Por enquanto o progresso fica neste aparelho, e a rede de segurança é o backup abaixo: copie e guarde em algum lugar seu.</p>' +
-      '<div class="bts"><button class="bt vidro" data-ac="copiabackup">Copiar backup</button>' +
-      '<button class="bt" data-ac="colar">Restaurar backup</button></div>');
+      '<p>A conta ainda não está ligada neste site, então o progresso fica guardado só neste aparelho.</p>' +
+      '<div class="bts"><button class="bt" data-ac="fecha">Fechar</button></div>', true);
     return;
   }
   if (!Conta.dentro) {
     cartao('<h3>Guardar meu progresso</h3>' +
-      '<p>Crie uma conta com e-mail e senha. O que você já jogou continua: ao entrar, o jogo junta o progresso do aparelho com o da conta.</p>' +
+      '<p>Crie uma conta com e-mail e senha. O que você já jogou continua: ao entrar, o jogo junta o progresso deste aparelho com o da conta.</p>' +
       (aviso ? '<p class="aviso">' + aviso + '</p>' : '') +
       '<input class="campo" id="campo-email" type="email" inputmode="email" autocomplete="email" placeholder="seu@email.com">' +
       '<input class="campo" id="campo-senha" type="password" autocomplete="current-password" placeholder="senha (mínimo 6)">' +
       '<div class="bts"><button class="bt vidro" data-ac="criaconta">Criar conta</button>' +
       '<button class="bt" data-ac="entrar">Entrar</button></div>' +
       '<div class="bts"><button class="bt-texto" data-ac="esqueci">Esqueci a senha</button>' +
-      '<button class="bt-texto" data-ac="copiabackup">Copiar backup</button></div>');
+      '<button class="bt-texto" data-ac="fecha">Agora não</button></div>', true);
     return;
   }
   cartao('<h3>Conta</h3>' +
     '<p class="codigo">' + (Conta.sessao.email || 'conectado') + '</p>' +
-    '<p>Progresso salvo na nuvem a cada fase. Pra jogar em outro aparelho, é só entrar com esse e-mail.</p>' +
+    '<p>Progresso salvo na nuvem a cada fase. Pra jogar em outro aparelho, entre com esse mesmo e-mail.</p>' +
     (aviso ? '<p class="aviso">' + aviso + '</p>' : '') +
-    '<div class="bts"><button class="bt vidro" data-ac="copiabackup">Copiar backup</button>' +
-    '<button class="bt" data-ac="sincroniza">Sincronizar agora</button></div>' +
-    '<div class="bts"><button class="bt-texto" data-ac="sair">Sair desta conta</button></div>');
+    '<div class="bts"><button class="bt vidro" data-ac="sincroniza">Sincronizar agora</button>' +
+    '<button class="bt" data-ac="fecha">Fechar</button></div>' +
+    '<div class="bts"><button class="bt-texto" data-ac="sair">Sair desta conta</button></div>', true);
 }
 async function contaEntrar(criar, botao) {
   const email = (document.getElementById('campo-email') || {}).value || '';
@@ -680,12 +691,13 @@ async function contaEntrar(criar, botao) {
   cartao('<h3>' + (criar ? 'Conta criada' : 'Bem-vindo de volta') + '</h3>' +
     '<p>Progresso ' + (ok ? 'guardado na nuvem' : 'salvo aqui e vai subir assim que a internet voltar') + '. Você está na fase ' + (prog.max + 1) +
     ' com ' + totalEstrelas() + (totalEstrelas() === 1 ? ' estrela' : ' estrelas') + ' e ' + nf(prog.moedas) + ' moedas.</p>' +
-    '<div class="bts"><button class="bt" data-ac="mapa">Jogar</button></div>');
+    '<div class="bts"><button class="bt" data-ac="fecha">Fechar</button>' +
+    '<button class="bt" data-ac="mapa">Jogar</button></div>', true);
 }
 async function contaEsqueci() {
   const email = (document.getElementById('campo-email') || {}).value || '';
-  if (!email.trim()) { mostraConta('Escreva o e-mail primeiro.'); return; }
-  try { await Conta.esqueci(email.trim()); mostraConta('Mandei um e-mail para trocar a senha.'); }
+  if (!email.trim()) { mostraConta('Escreva o e-mail primeiro, aí eu mando o link de trocar a senha.'); return; }
+  try { await Conta.esqueci(email.trim()); mostraConta('Pronto: olhe o e-mail para criar uma senha nova.'); }
   catch (e) { mostraConta(recado(e)); }
 }
 async function contaSincroniza(botao) {
@@ -696,27 +708,6 @@ async function contaSincroniza(botao) {
 function contaSair() {
   Conta.sai();
   mostraConta('Saí da conta. O progresso continua guardado neste aparelho.');
-}
-function mostraColar() {
-  cartao('<h3>Restaurar backup</h3>' +
-    '<p>Cole o texto do backup que você copiou. Nada é apagado: o jogo fica com o melhor dos dois progressos.</p>' +
-    '<textarea class="campo alto" id="campo-backup" placeholder="MERGULHO1:..."></textarea>' +
-    '<div class="bts"><button class="bt vidro" data-ac="conta">Voltar</button>' +
-    '<button class="bt" data-ac="restaura">Restaurar</button></div>');
-}
-function restaura() {
-  const campo = document.getElementById('campo-backup');
-  const novo = doTexto(campo ? campo.value : '');
-  if (!novo) {
-    cartao('<h3>Não deu</h3><p>Esse texto não parece um backup do Mergulho. Confira se ele veio inteiro, começando com MERGULHO1.</p>' +
-      '<div class="bts"><button class="bt" data-ac="colar">Tentar de novo</button></div>');
-    return;
-  }
-  aplicaProg(novo);
-  salvaNaNuvemDepois();
-  Som.liga(); Som.vitoria();
-  cartao('<h3>Pronto</h3><p>Progresso restaurado: fase ' + (prog.max + 1) + ', ' + totalEstrelas() + ' estrelas e ' + nf(prog.moedas) + ' moedas.</p>' +
-    '<div class="bts"><button class="bt" data-ac="mapa">Ver o mapa</button></div>');
 }
 
 /* ═══ TELAS ═════════════════════════════════════════════════════ */
@@ -971,7 +962,7 @@ function iniciar() {
 
   document.getElementById('veu').addEventListener('click', e => {
     const b = e.target.closest('[data-ac]');
-    if (!b) { if (e.target.id === 'veu' && document.querySelector('#cartao .ajuda')) fechaCartao(); return; }
+    if (!b) { if (e.target.id === 'veu' && document.getElementById('cartao').classList.contains('fechavel')) fechaCartao(); return; }
     const ac = b.dataset.ac;
     Som.liga();
     if (ac === 'fecha') fechaCartao();
@@ -986,11 +977,9 @@ function iniciar() {
     else if (ac === 'esqueci') contaEsqueci();
     else if (ac === 'sincroniza') contaSincroniza(b);
     else if (ac === 'sair') contaSair();
-    else if (ac === 'copiabackup') copia(paraTexto(), b, 'Copiar backup');
-    else if (ac === 'colar') mostraColar();
-    else if (ac === 'restaura') restaura();
+
     else if (ac === 'retoma') { const d = lePartida(); limpaPartida(); if (d) retomaPartida(d); else fechaCartao(); }
-    else if (ac === 'descarta') { limpaPartida(); fechaCartao(); if (prog.dia !== hoje()) setTimeout(mostraBau, 300); }
+    else if (ac === 'descarta') { limpaPartida(); fechaCartao(); }
     else if (ac === 'folego') usaFolegoNoCartao();
     else if (ac === 'comeca') { fechaCartao(); comecaFase(); }
     else if (ac === 'mapa') { fechaCartao(); montaMapa(); tela('tela-mapa'); }
@@ -1022,12 +1011,13 @@ function iniciar() {
   });
 
   const parada = lePartida();
-  if (parada && fase(parada.f)) {
-    setTimeout(() => cartao('<h3>Você parou no meio</h3>' +
+  setTimeout(() => {
+    if (parada && fase(parada.f)) enfileira(() => cartao('<h3>Você parou no meio</h3>' +
       '<p>A fase ' + (parada.f + 1) + ' ficou pela metade, com ' + parada.mov + (parada.mov === 1 ? ' jogada' : ' jogadas') + ' e ' + nf(parada.pontos) + ' pontos. Quer voltar pra ela?</p>' +
       '<div class="bts"><button class="bt vidro" data-ac="descarta">Começar de novo</button>' +
-      '<button class="bt" data-ac="retoma">Continuar</button></div>'), 500);
-  } else if (prog.dia !== hoje()) setTimeout(mostraBau, 700);
+      '<button class="bt" data-ac="retoma">Continuar</button></div>'));
+    if (prog.dia !== hoje()) enfileira(mostraBau);
+  }, 600);
 }
 
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', iniciar);
