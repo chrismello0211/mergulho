@@ -2,7 +2,7 @@
    MERGULHO · combinar 3 da beira da praia até 4.000 metros
    ═══════════════════════════════════════════════════════════════ */
 
-const VERSAO_JOGO = '2026.10.05';
+const VERSAO_JOGO = '2026.10.06';
 const W = 7, H = 8, TIPOS = 6;
 const NADA = 0, LH = 1, LV = 2, BOMBA = 3, ARCO = 4, ONDA = 5, ONDAV = 6, CARDUME = 7;
 
@@ -61,35 +61,35 @@ const BLOQUEIOS = {
    expedição acontece numa região diferente, então a fase 200 não
    parece a fase 20.                                              */
 const REGIOES = [
-  { nome:'Litoral', texto:'Água clara de beira de praia.',
+  { nome:'Litoral', trato:'limpo', texto:'Água clara de beira de praia.',
     agua:['#9BE9E0','#3FC0C6','#1A6E98','#123067','#0A0F28','#03050F'], moldura:'#EEDCAE', acento:'#6BFFE0',
     bandas:['Raso','Recife','Naufrágio','Crepúsculo','Abismo'],
     chao:['duna','coral','casco','longe','pedra'], bloq:['areia','alga','rede','lodo','breu'] },
-  { nome:'Mangue', texto:'Água turva de raiz e folha.',
+  { nome:'Mangue', trato:'limo', texto:'Água turva de raiz e folha.',
     agua:['#B6E8B0','#57B184','#1C7A69','#123F4C','#0A1A24','#03070A'], moldura:'#C9A06A', acento:'#9CFF8A',
     bandas:['Baixio','Raizal','Canal turvo','Água parada','Poço negro'],
     chao:['raizes','kelp','tubulacao','longe','esponjas'], bloq:['limo','raiz','rede','lodo','breu'] },
-  { nome:'Mar Polar', texto:'Água gelada e leitosa.',
+  { nome:'Mar Polar', trato:'geada', texto:'Água gelada e leitosa.',
     agua:['#E2F7FF','#93D6F0','#3E86C4','#17306B','#080F2A','#02040E'], moldura:'#CFEAFF', acento:'#8FE9FF',
     bandas:['Banco de gelo','Jardim de kelp','Navio preso','Água leitosa','Fossa polar'],
     chao:['gelo','kelp','casco','longe','pedra'], bloq:['gelo','alga','rede','lodo','breu'] },
-  { nome:'Cordilheira', texto:'Montanha submersa, parede de pedra.',
+  { nome:'Cordilheira', trato:'mineral', texto:'Montanha submersa, parede de pedra.',
     agua:['#84E3D2','#23A89C','#116A70','#0E2148','#060A1C','#02040C'], moldura:'#A8C4B8', acento:'#5CFFD6',
     bandas:['Laje','Pico submerso','Desfiladeiro','Encosta funda','Fenda'],
     chao:['pedra','anemonas','pedra','longe','cristal'], bloq:['areia','coralmorto','craca','lodo','breu'] },
-  { nome:'Boca do Vulcão', texto:'Areia preta e água morna.',
+  { nome:'Boca do Vulcão', trato:'brasa', texto:'Areia preta e água morna.',
     agua:['#BCEAD2','#31AC90','#0F6F72','#2C1B40','#190A16','#0A0206'], moldura:'#E08A5C', acento:'#FF9A5C',
     bandas:['Praia preta','Recife novo','Lava velha','Fumaça','Caldeira'],
     chao:['duna','esponjas','pedra','longe','fumarola'], bloq:['areiapreta','alga','craca','cinza','breu'] },
-  { nome:'Ruínas', texto:'Alguém morou aqui antes do mar subir.',
+  { nome:'Ruínas', trato:'patina', texto:'Alguém morou aqui antes do mar subir.',
     agua:['#DCEBBC','#69B69C','#1C6E85','#17204F','#0B0A20','#030309'], moldura:'#D9C08A', acento:'#FFD98A',
     bandas:['Escadaria','Pátio','Coluna caída','Salão fundo','Cripta'],
     chao:['ruinas','anemonas','ruinas','longe','cristal'], bloq:['areia','limo','craca','lodo','breu'] },
-  { nome:'Sargaço', texto:'Um mato flutuante que não acaba.',
+  { nome:'Sargaço', trato:'folha', texto:'Um mato flutuante que não acaba.',
     agua:['#D3EBAC','#73C28D','#2D8B8E','#14264F','#090C22','#02030B'], moldura:'#BBD48C', acento:'#B6FF7A',
     bandas:['Mato flutuante','Tapete verde','Sombra do mato','Fundo escuro','Buraco'],
     chao:['sargaco','kelp','casco','longe','anemonas'], bloq:['alga','limo','rede','lodo','breu'] },
-  { nome:'Fossa', texto:'A água some rápido por aqui.',
+  { nome:'Fossa', trato:'brilho', texto:'A água some rápido por aqui.',
     agua:['#93DAEA','#2E8BAC','#144670','#1A1250','#0B0620','#030109'], moldura:'#A98CD8', acento:'#B07CFF',
     bandas:['Borda','Talude','Degrau','Meia-água','Fundo da fossa'],
     chao:['pedra','esponjas','tubulacao','longe','fumarola'], bloq:['areia','craca','rede','cinza','breu'] }
@@ -295,7 +295,7 @@ function casasCobertas(g) { let n = 0; for (let r = 0; r < H; r++) for (let c = 
 /* ── guardar o progresso ───────────────────────────────────── */
 const CHAVE = 'mergulho-v1';
 let prog = { estrelas: {}, max: 0, som: true, vistos: {}, moedas: 120,
-             musica: true, vibrar: true, leve: null, pecas: 'bichos',
+             musica: true, vibrar: true, leve: null,
              poderes: { arpao: 1, troca: 1, giro: 1, folego: 1 }, dia: '',
              email: '', apelido: '',
              desafio: { semana: '', melhor: 0, nome: '' } };

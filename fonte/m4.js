@@ -555,45 +555,12 @@ const CHAVES_AJUSTE = [
   { k: 'cheio', nome: 'Efeitos cheios', texto: 'Desligue se o aparelho engasgar.' }
 ];
 const valorAjuste = k => k === 'cheio' ? !prog.leve : !!prog[k];
-function amostraConjunto(id) {
-  /* desenha só a primeira peça de cada conjunto, pra escolher olhando */
-  const m = Math.max(0, mundoAtual);
-  let defs = '', uso = '';
-  [0, 4, 5].forEach((t, k) => {
-    const r = CONJUNTOS[id].faz(t, m, 'pv' + id + t);
-    defs += r.defs;
-    uso += '<svg viewBox="0 0 100 100" class="mini"><g>' + r.corpo + '</g></svg>';
-  });
-  return '<svg width="0" height="0" style="position:absolute"><defs>' + defs + '</defs></svg>' + uso;
-}
-function mostraPecas() {
-  cartao('<h3>Peças</h3>' +
-    '<p>A cor e o formato de cada peça continuam os mesmos nos três, só muda o desenho.</p>' +
-    Object.keys(CONJUNTOS).map(id =>
-      '<div class="escolha' + ((prog.pecas || 'bichos') === id ? ' on' : '') + '" data-ac="conjunto" data-id="' + id + '">' +
-      '<div class="mostra-pecas">' + amostraConjunto(id) + '</div>' +
-      '<div class="txt"><b>' + CONJUNTOS[id].nome + '</b><small>' + CONJUNTOS[id].desc + '</small></div></div>').join('') +
-    '<div class="bts"><button class="bt" data-ac="ajustes">Pronto</button></div>', true);
-}
-function trocaConjunto(id) {
-  if (!CONJUNTOS[id]) return;
-  prog.pecas = id;
-  salvaProg();
-  mundoAtual = -1;                       /* força redesenhar os símbolos */
-  instalaMundo(ambAtual ? ambAtual.banda : 0, J && J.fase >= 0 ? J.fase : prog.max);
-  if (document.body.classList.contains('em-jogo') && grid && grid[0] && grid[0][0]) montaPecas();
-  Som.liga(); Som.pop(5);
-  mostraPecas();
-}
-
 function mostraAjustes() {
   cartao('<h3>Ajustes</h3>' +
     CHAVES_AJUSTE.map(a =>
       '<div class="ajuste"><div class="txt"><b>' + a.nome + '</b><small>' + a.texto + '</small></div>' +
       '<button class="chave' + (valorAjuste(a.k) ? ' on' : '') + '" data-ac="mudar" data-k="' + a.k + '" ' +
       'role="switch" aria-checked="' + valorAjuste(a.k) + '" aria-label="' + a.nome + '"><span></span></button></div>').join('') +
-    '<div class="ajuste"><div class="txt"><b>Peças</b><small>' + CONJUNTOS[prog.pecas || 'bichos'].nome + '</small></div>' +
-      '<button class="bt-compra" data-ac="pecas">Trocar</button></div>' +
     '<div class="ajuste"><div class="txt"><b>Progresso</b><small>' +
       (Conta.dentro ? Conta.sessao.email : Conta.ligada ? 'Ainda só neste aparelho' : 'Guardado neste aparelho') + '</small></div>' +
       '<button class="bt-compra" data-ac="conta">' + (Conta.dentro ? 'Ver' : 'Guardar') + '</button></div>' +
@@ -1095,9 +1062,6 @@ function iniciar() {
     else if (ac === 'compartilha') compartilhaDesafio(b);
     else if (ac === 'mudar') mudaAjuste(b.dataset.k);
     else if (ac === 'procura') procuraVersao(b);
-    else if (ac === 'pecas') mostraPecas();
-    else if (ac === 'conjunto') trocaConjunto(b.dataset.id);
-    else if (ac === 'ajustes') mostraAjustes();
     else if (ac === 'conta') mostraConta();
     else if (ac === 'criaconta') contaEntrar(true, b);
     else if (ac === 'entrar') contaEntrar(false, b);

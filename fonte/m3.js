@@ -65,7 +65,7 @@ function corpoDaPeca(p) {
   if (p.bau) return '<svg viewBox="0 0 100 100"><use href="#i-bau"/></svg>';
   if (p.sp === ARCO) s = '<svg viewBox="0 0 100 100"><use href="#s-arco"/></svg>';
   else {
-    s = '<svg viewBox="0 0 100 100"><use href="#s' + p.t + '"/></svg>';
+    s = '<svg viewBox="0 0 100 100"><use href="#s' + p.t + ['', 'b', 'c'][p.id % 3] + '"/></svg>';
     if (p.sp === LH) s += '<div class="capa"><svg viewBox="0 0 100 100"><use href="#sp-lh"/></svg></div>';
     else if (p.sp === LV) s += '<div class="capa"><svg viewBox="0 0 100 100"><use href="#sp-lv"/></svg></div>';
     else if (p.sp === BOMBA) s += '<div class="capa"><svg viewBox="0 0 100 100"><use href="#sp-bomba"/></svg></div>';
@@ -737,20 +737,62 @@ async function giroAgora() {
 
 /* ═══ DICA ══════════════════════════════════════════════════════ */
 let dicaTimer = null, dicaAtiva = [];
+let dicaSeta = null;
 function reiniciaDica() {
   apagaDica();
   clearTimeout(dicaTimer);
   if (J.fim) return;
-  dicaTimer = setTimeout(mostraDica, 6000);
+  dicaTimer = setTimeout(mostraDica, 4500);
 }
+
+/* procura a melhor jogada disponível, não a primeira: se existe uma
+   que faz especial, é essa que a dica mostra. É assim que a pessoa
+   aprende a montar combo sem ninguém explicar.                     */
+function achaJogadaBoa() {
+  let melhor = null, nota = -1;
+  const valor = { 5: 7, 6: 7, 7: 6, 4: 5, 3: 4, 1: 3, 2: 3 };
+  const tentar = (r, c, r2, c2) => {
+    if (!dentro(r2, c2)) return;
+    const a = grid[r][c], b = grid[r2][c2];
+    if (!a || !b || a.bau || b.bau) return;
+    grid[r][c] = b; grid[r2][c2] = a;
+    const corridas = acharCorridas();
+    let v = -1;
+    if (corridas.length) {
+      v = 1;
+      for (const g of fazGrupos(corridas)) v = Math.max(v, valor[especialDoGrupo(g)] || 1 + g.cells.length / 20);
+    }
+    grid[r][c] = a; grid[r2][c2] = b;
+    if (v > nota) { nota = v; melhor = [r, c, r2, c2, nota]; }
+  };
+  for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) { tentar(r, c, r, c + 1); tentar(r, c, r + 1, c); }
+  return melhor;
+}
+
 function mostraDica() {
   if (J.ocupado || J.fim) { reiniciaDica(); return; }
-  const j = achaJogada(); if (!j) return;
+  const j = achaJogadaBoa() || achaJogada();
+  if (!j) return;
+  const fazEspecial = j[4] >= 3;
   const alvos = [grid[j[0]][j[1]], grid[j[2]][j[3]]];
   for (const p of alvos) {
     if (!p) continue;
     const el = els.get(p.id);
-    if (el) { el.classList.add('dica'); dicaAtiva.push(el); }
+    if (el) { el.classList.add('dica'); if (fazEspecial) el.classList.add('dica-especial'); dicaAtiva.push(el); }
   }
+  /* seta mostrando pra onde arrastar */
+  const seta = document.createElement('div');
+  seta.className = 'seta-dica' + (fazEspecial ? ' ouro' : '');
+  const meioR = (j[0] + j[2]) / 2, meioC = (j[1] + j[3]) / 2;
+  seta.style.left = (meioC * CEL + CEL / 2) + 'px';
+  seta.style.top = (meioR * CEL + CEL / 2) + 'px';
+  seta.style.transform = 'translate(-50%,-50%) rotate(' + (j[0] === j[2] ? 0 : 90) + 'deg)';
+  seta.innerHTML = '<svg viewBox="0 0 48 24"><path d="M6 12h36M32 3l10 9-10 9M16 3L6 12l10 9" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  faiscasBox.appendChild(seta);
+  dicaSeta = seta;
 }
-function apagaDica() { dicaAtiva.forEach(e => e.classList.remove('dica')); dicaAtiva = []; }
+function apagaDica() {
+  dicaAtiva.forEach(e => e.classList.remove('dica', 'dica-especial'));
+  dicaAtiva = [];
+  if (dicaSeta) { dicaSeta.remove(); dicaSeta = null; }
+}
