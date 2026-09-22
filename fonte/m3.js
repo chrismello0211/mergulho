@@ -81,9 +81,11 @@ function classeEsp(p) {
        : p.sp === ONDA || p.sp === ONDAV ? 'esp-onda' : p.sp === CARDUME ? 'esp-cardume' : '';
 }
 function criaEl(p) {
+  /* cada peça respira num tempo diferente: o tabuleiro fica vivo sem piscar junto */
   const el = document.createElement('div');
   el.className = 'peca ' + classeEsp(p);
   el.dataset.id = p.id;
+  el.style.setProperty('--atraso', (((p.id * 37) % 34) / 10).toFixed(1) + 's');
   el.innerHTML = '<div class="corpo">' + corpoDaPeca(p) + '</div>';
   return el;
 }
@@ -376,7 +378,12 @@ async function limpar(conj, novos) {
     Som.pop(J.cascata); vibra(vivas.length >= 5 ? TREMIDA.grande : TREMIDA.combina);
     if (vivas.length >= 5) tremeTela(1);
   }
-  if (J.cascata >= 2) { chipCombo(J.cascata); Musica.tensao(J.mov <= 5, J.cascata); }
+  if (J.cascata >= 2) {
+    chipCombo(J.cascata);
+    Musica.tensao(J.mov <= 5, J.cascata);
+    mesa.classList.remove('pulsa'); void mesa.offsetWidth; mesa.classList.add('pulsa');
+    setTimeout(() => mesa.classList.remove('pulsa'), 600);
+  }
   if (J.cascata >= 4) { clarao('rgba(255,211,92,.3)'); tremeTela(3); }
 
   if (vivas.length) {

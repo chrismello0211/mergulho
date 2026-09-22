@@ -429,16 +429,103 @@ function perola(m) {
 
 const FAMILIAS = [estrela, caranguejo, concha, ourico, peixe, aguaviva];
 
+/* ═══ CONJUNTOS DE PEÇA ═════════════════════════════════════════
+   Três jeitos de desenhar as mesmas seis peças. A cor e o contorno
+   de cada casa não mudam nunca: quem aprendeu a jogar continua
+   lendo o tabuleiro igual, só que com outra cara.                */
+
+/* ── pedras lapidadas ──────────────────────────────────────── */
+function facetas(pal, m, n, cx, cy, raio) {
+  /* facetas de luz: branco por cima do corpo, alternando forte e fraca */
+  const L = LUZ[m], forte = L === 'sol' ? .34 : L === 'vidro' ? .26 : .2, fraca = forte * .3;
+  let s = '';
+  for (let i = 0; i < n; i++) {
+    const a1 = (i / n) * Math.PI * 2 - Math.PI / 2, a2 = ((i + 1) / n) * Math.PI * 2 - Math.PI / 2;
+    s += '<path d="M' + cx + ' ' + cy + 'L' + f1(cx + raio * Math.cos(a1)) + ' ' + f1(cy + raio * Math.sin(a1)) +
+         'L' + f1(cx + raio * Math.cos(a2)) + ' ' + f1(cy + raio * Math.sin(a2)) + 'Z" fill="#ffffff" opacity="' +
+         (i % 2 === 0 ? forte : fraca).toFixed(2) + '"/>';
+  }
+  return s;
+}
+
+function pedraBase(m, id, pal, pontas, giro, achata) {
+  const cx = 50, cy = 51, ro = 45, ri = pontas > 8 ? 34 : 24;
+  const fr = th => ri + (ro - ri) * Math.pow((1 + Math.cos(pontas * (th - giro))) / 2, pontas > 8 ? 1.6 : 1.1);
+  const pts = polar(cx, cy, 120, th => fr(th) * (achata ? (1 - .22 * Math.abs(Math.cos(th))) : 1));
+  return caminho(pts, true);
+}
+function gema(t, m, id) {
+  const pal = PAL[t][m], L = LUZ[m];
+  const forma = [
+    () => pedraBase(m, id, pal, 5, -Math.PI / 2),
+    () => caminho(polar(50, 51, 6, () => 44, null), true),
+    () => caminho(polar(50, 51, 40, () => 43, null), true),
+    () => pedraBase(m, id, pal, 12, 0),
+    () => caminho([[6, 51], [30, 24], [70, 24], [94, 51], [70, 78], [30, 78]], true),
+    () => caminho([[12, 64], [18, 32], [50, 14], [82, 32], [88, 64], [50, 84]], true)
+  ][t]();
+  const lados = [10, 6, 12, 12, 6, 6][t];
+  const mesa = [
+    () => caminho(polar(50, 51, 110, th => 9 + 11 * Math.pow((1 + Math.cos(5 * (th + Math.PI / 2))) / 2, 1.1)), true),
+    () => caminho(polar(50, 51, 6, () => 20, null), true),
+    () => caminho(polar(50, 51, 24, () => 19, null), true),
+    () => caminho(polar(50, 51, 40, () => 17, null), true),
+    () => caminho([[24, 51], [38, 38], [62, 38], [76, 51], [62, 64], [38, 64]], true),
+    () => caminho([[30, 55], [34, 40], [50, 32], [66, 40], [70, 55], [50, 64]], true)
+  ][t]();
+  return { defs: tinta(id, pal, m),
+    corpo: halo(id, m) + pinta(forma, id, pal, m) +
+      '<g' + (L === 'neon' ? '' : ' style="mix-blend-mode:screen"') + '>' + facetas(pal, m, lados, 50, 51, 46) + '</g>' +
+      '<path d="' + mesa + '" fill="' + (L === 'neon' ? pal.e : pal.c) + '" opacity="' + (L === 'sol' ? .55 : L === 'vidro' ? .45 : .32) + '"/>' +
+      '<path d="' + mesa + '" fill="none" stroke="' + pal.c + '" stroke-width="' + (L === 'neon' ? 2.2 : 1.6) + '" stroke-opacity="' + (L === 'neon' ? .95 : .6) + '" stroke-linejoin="round"/>' +
+      '<path d="' + forma + '" fill="none" stroke="' + pal.c + '" stroke-width="' + (L === 'neon' ? 3 : 2.2) + '" stroke-opacity="' + (L === 'sol' ? .7 : .95) + '" stroke-linejoin="round"/>' +
+      (L === 'sol' ? '<path d="M30 27L45 21L39 35Z" fill="#fff" opacity=".8"/>' : '') +
+      (L === 'neon' ? circ(50, 51, 4.5, 'fill="' + pal.x + '"') + circ(50, 51, 11, 'fill="' + pal.x + '" opacity=".22"') : '') };
+}
+
+/* ── traços: só a forma, bem grossa e limpa ────────────────── */
+function traco(t, m, id) {
+  const pal = PAL[t][m], L = LUZ[m];
+  const forma = [
+    caminho(polar(50, 51, 110, th => 20 + 24 * Math.pow((1 + Math.cos(5 * (th + Math.PI / 2))) / 2, 1.1)), true),
+    caminho(polar(50, 51, 6, () => 42, null), true),
+    caminho(polar(50, 51, 40, () => 40, null), true),
+    caminho(polar(50, 51, 110, th => 26 + 18 * Math.pow((1 + Math.cos(10 * th)) / 2, 1.4)), true),
+    caminho([[10, 51], [32, 28], [70, 28], [90, 51], [70, 74], [32, 74]], true),
+    caminho([[16, 60], [22, 36], [50, 20], [78, 36], [84, 60], [50, 78]], true)
+  ][t];
+  const grosso = L === 'neon' ? 7 : 6;
+  return { defs: tinta(id, pal, m),
+    corpo: halo(id, m) +
+      '<path d="' + forma + '" fill="' + (L === 'sol' ? pal.b : pal.b) + '" fill-opacity="' + (L === 'vidro' ? .45 : 1) + '"/>' +
+      '<path d="' + forma + '" fill="none" stroke="' + (L === 'sol' ? pal.e : pal.c) + '" stroke-width="' + grosso + '" stroke-linejoin="round"/>' +
+      '<circle cx="50" cy="51" r="' + (t === 2 ? 13 : 10) + '" fill="' + (L === 'sol' ? pal.c : pal.x) + '" opacity="' + (L === 'sol' ? .9 : .8) + '"/>' +
+      (L === 'sol' ? '<path d="M32 30q10-8 20-6" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" opacity=".55"/>' : '') };
+}
+
+const CONJUNTOS = {
+  bichos: { nome: 'Bichos', desc: 'Estrela, caranguejo, concha, ouriço, peixe e água-viva.',
+            faz: (t, m, id) => FAMILIAS[t](m, id) },
+  pedras: { nome: 'Pedras', desc: 'Gemas lapidadas, com brilho de facetas.',
+            faz: (t, m, id) => gema(t, m, id) },
+  tracos: { nome: 'Traços', desc: 'Formas limpas e grossas, fáceis de ler correndo.',
+            faz: (t, m, id) => traco(t, m, id) }
+};
+
+
 /* tudo que um mundo precisa: defs + símbolos s0..s5 + especiais.
    pre deixa gerar vários mundos na mesma página (catálogo, testes). */
-function simbolos(m, pre) {
+function simbolos(m, pre, conj, acento) {
   pre = pre || '';
+  const C = CONJUNTOS[conj] || CONJUNTOS.bichos;
   let defs = '', syms = '';
-  FAMILIAS.forEach((fn, t) => {
-    const r = fn(m, pre + 'g' + t);
+  for (let t = 0; t < 6; t++) {
+    const r = C.faz(t, m, pre + 'g' + t);
     defs += r.defs;
-    syms += '<symbol id="' + pre + 's' + t + '" viewBox="0 0 100 100">' + r.corpo + '</symbol>';
-  });
+    /* lembrete da região: um fiozinho da cor do lugar em volta da peça */
+    const marca = acento ? '<circle cx="50" cy="52" r="47" fill="none" stroke="' + acento + '" stroke-width="2.5" opacity="' + (LUZ[m] === 'sol' ? .22 : .3) + '"/>' : '';
+    syms += '<symbol id="' + pre + 's' + t + '" viewBox="0 0 100 100">' + marca + r.corpo + '</symbol>';
+  }
   syms += '<symbol id="' + pre + 'sp-onda" viewBox="0 0 100 100">' + mare(false) + '</symbol>' +
           '<symbol id="' + pre + 'sp-ondav" viewBox="0 0 100 100">' + mare(true) + '</symbol>' +
           '<symbol id="' + pre + 'sp-cardume" viewBox="0 0 100 100">' + cardume() + '</symbol>' +

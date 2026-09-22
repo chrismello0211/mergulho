@@ -231,11 +231,12 @@ function coresBanda(reg, k) {
 /* ═══ TROCA DE AMBIENTE ═════════════════════════════════════════
    A profundidade manda na luz e nas peças; a região pinta a água,
    o chão, a moldura da mesa e o que cobre o fundo.                */
-let mundoAtual = -1, ambAtual = null;
+let mundoAtual = -1, ambAtual = null, conjAtual = '', acentoAtual = '';
 
 function instalaMundo(m, i) {
   const amb = ambiente(i == null ? 0 : i);
-  const igual = (m === mundoAtual && ambAtual && ambAtual.reg === amb.reg && ambAtual.chao === amb.chao);
+  const conj = prog.pecas || 'bichos';
+  const igual = (m === mundoAtual && ambAtual && ambAtual.reg === amb.reg && ambAtual.chao === amb.chao && conj === conjAtual);
   ambAtual = amb;
   const raiz = document.documentElement.style, c = coresBanda(amb.reg, amb.banda);
   c.forEach((cor, k) => raiz.setProperty('--ag' + (k + 1), cor));
@@ -254,7 +255,8 @@ function instalaMundo(m, i) {
   cx.style.filter = amb.tom || '';
   if (igual) return;
   mundoAtual = m;
-  document.getElementById('defs-pecas').innerHTML = simbolos(m, '');
+  conjAtual = conj; acentoAtual = amb.reg.acento;
+  document.getElementById('defs-pecas').innerHTML = simbolos(m, '', conj, amb.reg.acento);
   cx.innerHTML = cena(m, amb);
   Som.m = m;
 }

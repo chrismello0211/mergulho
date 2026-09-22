@@ -317,6 +317,12 @@ body:not(.em-jogo) #cena{display:none}
 .peca{position:absolute;width:var(--cel);height:var(--cel);display:grid;place-items:center;will-change:transform;transition:transform .19s cubic-bezier(.34,1.3,.64,1);z-index:2}
 .peca .corpo{position:relative;width:calc(var(--cel) - 4px);height:calc(var(--cel) - 4px);display:grid;place-items:center}
 .peca svg{width:100%;height:100%;display:block;filter:var(--sombra-peca);pointer-events:none}
+.peca .corpo > svg{animation:respira 3.6s ease-in-out infinite;animation-delay:var(--atraso,0s)}
+@keyframes respira{0%,100%{transform:scale(1)}50%{transform:scale(1.045)}}
+#mesa.pulsa{animation:pulsa-moldura .55s ease-out}
+@keyframes pulsa-moldura{0%{box-shadow:0 0 0 4px var(--moldura),0 0 0 7px rgba(0,0,0,.18),0 18px 34px rgba(0,30,50,.34)}
+  35%{box-shadow:0 0 0 5px var(--acento),0 0 26px 8px var(--acento),0 18px 34px rgba(0,30,50,.34)}
+  100%{box-shadow:0 0 0 4px var(--moldura),0 0 0 7px rgba(0,0,0,.18),0 18px 34px rgba(0,30,50,.34)}}
 .peca .capa{position:absolute;inset:0;pointer-events:none}
 .peca .capa svg{filter:none}
 .peca.cai{transition:transform .26s cubic-bezier(.4,.05,.55,1.35)}
@@ -608,6 +614,20 @@ body.aperto #vinheta{opacity:1;animation:vinheta 1.05s ease-in-out infinite}
 }
 body.leve #descida.roda{animation-duration:.45s}
 
+/* ── escolher o conjunto de peças ───────────────────────────── */
+.escolha{display:flex;align-items:center;text-align:left;gap:12px;background:rgba(10,108,122,.08);border-radius:18px;
+  padding:10px 12px;margin:10px 0;cursor:pointer;box-shadow:inset 0 0 0 2px transparent;transition:box-shadow .15s,background .15s}
+.escolha.on{background:rgba(255,106,61,.12);box-shadow:inset 0 0 0 2px var(--boia)}
+.escolha .txt{flex:1;min-width:0}
+.escolha b{display:block;font-family:var(--display);font-weight:800;font-size:16px;color:var(--tinta)}
+.escolha small{display:block;font-size:12.5px;font-weight:700;line-height:1.35;color:#2E5E6C}
+.mostra-pecas{flex:0 0 auto;display:flex}
+.mostra-pecas .mini{width:34px;height:34px;margin-right:-8px;filter:drop-shadow(0 2px 3px rgba(0,20,40,.35))}
+[data-mundo="3"] .escolha,[data-mundo="4"] .escolha{background:rgba(107,255,224,.07)}
+[data-mundo="3"] .escolha b,[data-mundo="4"] .escolha b{color:var(--espuma)}
+[data-mundo="3"] .escolha small,[data-mundo="4"] .escolha small{color:rgba(243,251,255,.78)}
+[data-mundo="3"] .escolha.on,[data-mundo="4"] .escolha.on{background:rgba(255,106,61,.18)}
+
 /* ── conta e backup ─────────────────────────────────────────── */
 .campo{
   width:100%;max-width:100%;margin:10px 0 0;padding:12px 14px;border-radius:14px;border:0;font-family:Nunito,sans-serif;font-size:15px;font-weight:700;
@@ -682,7 +702,7 @@ body.leve .causticas,body.leve .raios,body.leve .particulas,body.leve .nadador,
 body.leve #vinheta,body.leve .fx-onda,body.leve .fx-feixe{display:none}
 body.leve .fase-titulo,body.leve .painel,body.leve .ico-bt,body.leve .poder,body.leve .topo{-webkit-backdrop-filter:none;backdrop-filter:none;background:rgba(4,30,48,.72)}
 body.leve #veu{-webkit-backdrop-filter:none;backdrop-filter:none;background:rgba(2,22,36,.82)}
-body.leve .peca .corpo,body.leve .titulo,body.leve #bt-jogar{animation:none !important}
+body.leve .peca .corpo,body.leve .peca .corpo > svg,body.leve .titulo,body.leve #bt-jogar{animation:none !important}
 body.leve .no .disco,body.leve #mesa{box-shadow:none}
 body.leve .fx-raio{box-shadow:none}
 body.leve .cartao{animation-duration:.18s}
@@ -865,7 +885,7 @@ body.leve .cartao{animation-duration:.18s}
    MERGULHO · combinar 3 da beira da praia até 4.000 metros
    ═══════════════════════════════════════════════════════════════ */
 
-const VERSAO_JOGO = '2026.10.04';
+const VERSAO_JOGO = '2026.10.05';
 const W = 7, H = 8, TIPOS = 6;
 const NADA = 0, LH = 1, LV = 2, BOMBA = 3, ARCO = 4, ONDA = 5, ONDAV = 6, CARDUME = 7;
 
@@ -1158,7 +1178,7 @@ function casasCobertas(g) { let n = 0; for (let r = 0; r < H; r++) for (let c = 
 /* ── guardar o progresso ───────────────────────────────────── */
 const CHAVE = 'mergulho-v1';
 let prog = { estrelas: {}, max: 0, som: true, vistos: {}, moedas: 120,
-             musica: true, vibrar: true, leve: null,
+             musica: true, vibrar: true, leve: null, pecas: 'bichos',
              poderes: { arpao: 1, troca: 1, giro: 1, folego: 1 }, dia: '',
              email: '', apelido: '',
              desafio: { semana: '', melhor: 0, nome: '' } };
@@ -1751,16 +1771,103 @@ function perola(m) {
 
 const FAMILIAS = [estrela, caranguejo, concha, ourico, peixe, aguaviva];
 
+/* ═══ CONJUNTOS DE PEÇA ═════════════════════════════════════════
+   Três jeitos de desenhar as mesmas seis peças. A cor e o contorno
+   de cada casa não mudam nunca: quem aprendeu a jogar continua
+   lendo o tabuleiro igual, só que com outra cara.                */
+
+/* ── pedras lapidadas ──────────────────────────────────────── */
+function facetas(pal, m, n, cx, cy, raio) {
+  /* facetas de luz: branco por cima do corpo, alternando forte e fraca */
+  const L = LUZ[m], forte = L === 'sol' ? .34 : L === 'vidro' ? .26 : .2, fraca = forte * .3;
+  let s = '';
+  for (let i = 0; i < n; i++) {
+    const a1 = (i / n) * Math.PI * 2 - Math.PI / 2, a2 = ((i + 1) / n) * Math.PI * 2 - Math.PI / 2;
+    s += '<path d="M' + cx + ' ' + cy + 'L' + f1(cx + raio * Math.cos(a1)) + ' ' + f1(cy + raio * Math.sin(a1)) +
+         'L' + f1(cx + raio * Math.cos(a2)) + ' ' + f1(cy + raio * Math.sin(a2)) + 'Z" fill="#ffffff" opacity="' +
+         (i % 2 === 0 ? forte : fraca).toFixed(2) + '"/>';
+  }
+  return s;
+}
+
+function pedraBase(m, id, pal, pontas, giro, achata) {
+  const cx = 50, cy = 51, ro = 45, ri = pontas > 8 ? 34 : 24;
+  const fr = th => ri + (ro - ri) * Math.pow((1 + Math.cos(pontas * (th - giro))) / 2, pontas > 8 ? 1.6 : 1.1);
+  const pts = polar(cx, cy, 120, th => fr(th) * (achata ? (1 - .22 * Math.abs(Math.cos(th))) : 1));
+  return caminho(pts, true);
+}
+function gema(t, m, id) {
+  const pal = PAL[t][m], L = LUZ[m];
+  const forma = [
+    () => pedraBase(m, id, pal, 5, -Math.PI / 2),
+    () => caminho(polar(50, 51, 6, () => 44, null), true),
+    () => caminho(polar(50, 51, 40, () => 43, null), true),
+    () => pedraBase(m, id, pal, 12, 0),
+    () => caminho([[6, 51], [30, 24], [70, 24], [94, 51], [70, 78], [30, 78]], true),
+    () => caminho([[12, 64], [18, 32], [50, 14], [82, 32], [88, 64], [50, 84]], true)
+  ][t]();
+  const lados = [10, 6, 12, 12, 6, 6][t];
+  const mesa = [
+    () => caminho(polar(50, 51, 110, th => 9 + 11 * Math.pow((1 + Math.cos(5 * (th + Math.PI / 2))) / 2, 1.1)), true),
+    () => caminho(polar(50, 51, 6, () => 20, null), true),
+    () => caminho(polar(50, 51, 24, () => 19, null), true),
+    () => caminho(polar(50, 51, 40, () => 17, null), true),
+    () => caminho([[24, 51], [38, 38], [62, 38], [76, 51], [62, 64], [38, 64]], true),
+    () => caminho([[30, 55], [34, 40], [50, 32], [66, 40], [70, 55], [50, 64]], true)
+  ][t]();
+  return { defs: tinta(id, pal, m),
+    corpo: halo(id, m) + pinta(forma, id, pal, m) +
+      '<g' + (L === 'neon' ? '' : ' style="mix-blend-mode:screen"') + '>' + facetas(pal, m, lados, 50, 51, 46) + '</g>' +
+      '<path d="' + mesa + '" fill="' + (L === 'neon' ? pal.e : pal.c) + '" opacity="' + (L === 'sol' ? .55 : L === 'vidro' ? .45 : .32) + '"/>' +
+      '<path d="' + mesa + '" fill="none" stroke="' + pal.c + '" stroke-width="' + (L === 'neon' ? 2.2 : 1.6) + '" stroke-opacity="' + (L === 'neon' ? .95 : .6) + '" stroke-linejoin="round"/>' +
+      '<path d="' + forma + '" fill="none" stroke="' + pal.c + '" stroke-width="' + (L === 'neon' ? 3 : 2.2) + '" stroke-opacity="' + (L === 'sol' ? .7 : .95) + '" stroke-linejoin="round"/>' +
+      (L === 'sol' ? '<path d="M30 27L45 21L39 35Z" fill="#fff" opacity=".8"/>' : '') +
+      (L === 'neon' ? circ(50, 51, 4.5, 'fill="' + pal.x + '"') + circ(50, 51, 11, 'fill="' + pal.x + '" opacity=".22"') : '') };
+}
+
+/* ── traços: só a forma, bem grossa e limpa ────────────────── */
+function traco(t, m, id) {
+  const pal = PAL[t][m], L = LUZ[m];
+  const forma = [
+    caminho(polar(50, 51, 110, th => 20 + 24 * Math.pow((1 + Math.cos(5 * (th + Math.PI / 2))) / 2, 1.1)), true),
+    caminho(polar(50, 51, 6, () => 42, null), true),
+    caminho(polar(50, 51, 40, () => 40, null), true),
+    caminho(polar(50, 51, 110, th => 26 + 18 * Math.pow((1 + Math.cos(10 * th)) / 2, 1.4)), true),
+    caminho([[10, 51], [32, 28], [70, 28], [90, 51], [70, 74], [32, 74]], true),
+    caminho([[16, 60], [22, 36], [50, 20], [78, 36], [84, 60], [50, 78]], true)
+  ][t];
+  const grosso = L === 'neon' ? 7 : 6;
+  return { defs: tinta(id, pal, m),
+    corpo: halo(id, m) +
+      '<path d="' + forma + '" fill="' + (L === 'sol' ? pal.b : pal.b) + '" fill-opacity="' + (L === 'vidro' ? .45 : 1) + '"/>' +
+      '<path d="' + forma + '" fill="none" stroke="' + (L === 'sol' ? pal.e : pal.c) + '" stroke-width="' + grosso + '" stroke-linejoin="round"/>' +
+      '<circle cx="50" cy="51" r="' + (t === 2 ? 13 : 10) + '" fill="' + (L === 'sol' ? pal.c : pal.x) + '" opacity="' + (L === 'sol' ? .9 : .8) + '"/>' +
+      (L === 'sol' ? '<path d="M32 30q10-8 20-6" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" opacity=".55"/>' : '') };
+}
+
+const CONJUNTOS = {
+  bichos: { nome: 'Bichos', desc: 'Estrela, caranguejo, concha, ouriço, peixe e água-viva.',
+            faz: (t, m, id) => FAMILIAS[t](m, id) },
+  pedras: { nome: 'Pedras', desc: 'Gemas lapidadas, com brilho de facetas.',
+            faz: (t, m, id) => gema(t, m, id) },
+  tracos: { nome: 'Traços', desc: 'Formas limpas e grossas, fáceis de ler correndo.',
+            faz: (t, m, id) => traco(t, m, id) }
+};
+
+
 /* tudo que um mundo precisa: defs + símbolos s0..s5 + especiais.
    pre deixa gerar vários mundos na mesma página (catálogo, testes). */
-function simbolos(m, pre) {
+function simbolos(m, pre, conj, acento) {
   pre = pre || '';
+  const C = CONJUNTOS[conj] || CONJUNTOS.bichos;
   let defs = '', syms = '';
-  FAMILIAS.forEach((fn, t) => {
-    const r = fn(m, pre + 'g' + t);
+  for (let t = 0; t < 6; t++) {
+    const r = C.faz(t, m, pre + 'g' + t);
     defs += r.defs;
-    syms += '<symbol id="' + pre + 's' + t + '" viewBox="0 0 100 100">' + r.corpo + '</symbol>';
-  });
+    /* lembrete da região: um fiozinho da cor do lugar em volta da peça */
+    const marca = acento ? '<circle cx="50" cy="52" r="47" fill="none" stroke="' + acento + '" stroke-width="2.5" opacity="' + (LUZ[m] === 'sol' ? .22 : .3) + '"/>' : '';
+    syms += '<symbol id="' + pre + 's' + t + '" viewBox="0 0 100 100">' + marca + r.corpo + '</symbol>';
+  }
   syms += '<symbol id="' + pre + 'sp-onda" viewBox="0 0 100 100">' + mare(false) + '</symbol>' +
           '<symbol id="' + pre + 'sp-ondav" viewBox="0 0 100 100">' + mare(true) + '</symbol>' +
           '<symbol id="' + pre + 'sp-cardume" viewBox="0 0 100 100">' + cardume() + '</symbol>' +
@@ -2004,11 +2111,12 @@ function coresBanda(reg, k) {
 /* ═══ TROCA DE AMBIENTE ═════════════════════════════════════════
    A profundidade manda na luz e nas peças; a região pinta a água,
    o chão, a moldura da mesa e o que cobre o fundo.                */
-let mundoAtual = -1, ambAtual = null;
+let mundoAtual = -1, ambAtual = null, conjAtual = '', acentoAtual = '';
 
 function instalaMundo(m, i) {
   const amb = ambiente(i == null ? 0 : i);
-  const igual = (m === mundoAtual && ambAtual && ambAtual.reg === amb.reg && ambAtual.chao === amb.chao);
+  const conj = prog.pecas || 'bichos';
+  const igual = (m === mundoAtual && ambAtual && ambAtual.reg === amb.reg && ambAtual.chao === amb.chao && conj === conjAtual);
   ambAtual = amb;
   const raiz = document.documentElement.style, c = coresBanda(amb.reg, amb.banda);
   c.forEach((cor, k) => raiz.setProperty('--ag' + (k + 1), cor));
@@ -2027,7 +2135,8 @@ function instalaMundo(m, i) {
   cx.style.filter = amb.tom || '';
   if (igual) return;
   mundoAtual = m;
-  document.getElementById('defs-pecas').innerHTML = simbolos(m, '');
+  conjAtual = conj; acentoAtual = amb.reg.acento;
+  document.getElementById('defs-pecas').innerHTML = simbolos(m, '', conj, amb.reg.acento);
   cx.innerHTML = cena(m, amb);
   Som.m = m;
 }
@@ -2444,9 +2553,11 @@ function classeEsp(p) {
        : p.sp === ONDA || p.sp === ONDAV ? 'esp-onda' : p.sp === CARDUME ? 'esp-cardume' : '';
 }
 function criaEl(p) {
+  /* cada peça respira num tempo diferente: o tabuleiro fica vivo sem piscar junto */
   const el = document.createElement('div');
   el.className = 'peca ' + classeEsp(p);
   el.dataset.id = p.id;
+  el.style.setProperty('--atraso', (((p.id * 37) % 34) / 10).toFixed(1) + 's');
   el.innerHTML = '<div class="corpo">' + corpoDaPeca(p) + '</div>';
   return el;
 }
@@ -2739,7 +2850,12 @@ async function limpar(conj, novos) {
     Som.pop(J.cascata); vibra(vivas.length >= 5 ? TREMIDA.grande : TREMIDA.combina);
     if (vivas.length >= 5) tremeTela(1);
   }
-  if (J.cascata >= 2) { chipCombo(J.cascata); Musica.tensao(J.mov <= 5, J.cascata); }
+  if (J.cascata >= 2) {
+    chipCombo(J.cascata);
+    Musica.tensao(J.mov <= 5, J.cascata);
+    mesa.classList.remove('pulsa'); void mesa.offsetWidth; mesa.classList.add('pulsa');
+    setTimeout(() => mesa.classList.remove('pulsa'), 600);
+  }
   if (J.cascata >= 4) { clarao('rgba(255,211,92,.3)'); tremeTela(3); }
 
   if (vivas.length) {
@@ -3668,12 +3784,45 @@ const CHAVES_AJUSTE = [
   { k: 'cheio', nome: 'Efeitos cheios', texto: 'Desligue se o aparelho engasgar.' }
 ];
 const valorAjuste = k => k === 'cheio' ? !prog.leve : !!prog[k];
+function amostraConjunto(id) {
+  /* desenha só a primeira peça de cada conjunto, pra escolher olhando */
+  const m = Math.max(0, mundoAtual);
+  let defs = '', uso = '';
+  [0, 4, 5].forEach((t, k) => {
+    const r = CONJUNTOS[id].faz(t, m, 'pv' + id + t);
+    defs += r.defs;
+    uso += '<svg viewBox="0 0 100 100" class="mini"><g>' + r.corpo + '</g></svg>';
+  });
+  return '<svg width="0" height="0" style="position:absolute"><defs>' + defs + '</defs></svg>' + uso;
+}
+function mostraPecas() {
+  cartao('<h3>Peças</h3>' +
+    '<p>A cor e o formato de cada peça continuam os mesmos nos três, só muda o desenho.</p>' +
+    Object.keys(CONJUNTOS).map(id =>
+      '<div class="escolha' + ((prog.pecas || 'bichos') === id ? ' on' : '') + '" data-ac="conjunto" data-id="' + id + '">' +
+      '<div class="mostra-pecas">' + amostraConjunto(id) + '</div>' +
+      '<div class="txt"><b>' + CONJUNTOS[id].nome + '</b><small>' + CONJUNTOS[id].desc + '</small></div></div>').join('') +
+    '<div class="bts"><button class="bt" data-ac="ajustes">Pronto</button></div>', true);
+}
+function trocaConjunto(id) {
+  if (!CONJUNTOS[id]) return;
+  prog.pecas = id;
+  salvaProg();
+  mundoAtual = -1;                       /* força redesenhar os símbolos */
+  instalaMundo(ambAtual ? ambAtual.banda : 0, J && J.fase >= 0 ? J.fase : prog.max);
+  if (document.body.classList.contains('em-jogo') && grid && grid[0] && grid[0][0]) montaPecas();
+  Som.liga(); Som.pop(5);
+  mostraPecas();
+}
+
 function mostraAjustes() {
   cartao('<h3>Ajustes</h3>' +
     CHAVES_AJUSTE.map(a =>
       '<div class="ajuste"><div class="txt"><b>' + a.nome + '</b><small>' + a.texto + '</small></div>' +
       '<button class="chave' + (valorAjuste(a.k) ? ' on' : '') + '" data-ac="mudar" data-k="' + a.k + '" ' +
       'role="switch" aria-checked="' + valorAjuste(a.k) + '" aria-label="' + a.nome + '"><span></span></button></div>').join('') +
+    '<div class="ajuste"><div class="txt"><b>Peças</b><small>' + CONJUNTOS[prog.pecas || 'bichos'].nome + '</small></div>' +
+      '<button class="bt-compra" data-ac="pecas">Trocar</button></div>' +
     '<div class="ajuste"><div class="txt"><b>Progresso</b><small>' +
       (Conta.dentro ? Conta.sessao.email : Conta.ligada ? 'Ainda só neste aparelho' : 'Guardado neste aparelho') + '</small></div>' +
       '<button class="bt-compra" data-ac="conta">' + (Conta.dentro ? 'Ver' : 'Guardar') + '</button></div>' +
@@ -4175,6 +4324,9 @@ function iniciar() {
     else if (ac === 'compartilha') compartilhaDesafio(b);
     else if (ac === 'mudar') mudaAjuste(b.dataset.k);
     else if (ac === 'procura') procuraVersao(b);
+    else if (ac === 'pecas') mostraPecas();
+    else if (ac === 'conjunto') trocaConjunto(b.dataset.id);
+    else if (ac === 'ajustes') mostraAjustes();
     else if (ac === 'conta') mostraConta();
     else if (ac === 'criaconta') contaEntrar(true, b);
     else if (ac === 'entrar') contaEntrar(false, b);

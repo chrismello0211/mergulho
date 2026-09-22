@@ -2,7 +2,7 @@
    MERGULHO · combinar 3 da beira da praia até 4.000 metros
    ═══════════════════════════════════════════════════════════════ */
 
-const VERSAO_JOGO = '2026.10.04';
+const VERSAO_JOGO = '2026.10.05';
 const W = 7, H = 8, TIPOS = 6;
 const NADA = 0, LH = 1, LV = 2, BOMBA = 3, ARCO = 4, ONDA = 5, ONDAV = 6, CARDUME = 7;
 
@@ -295,7 +295,7 @@ function casasCobertas(g) { let n = 0; for (let r = 0; r < H; r++) for (let c = 
 /* ── guardar o progresso ───────────────────────────────────── */
 const CHAVE = 'mergulho-v1';
 let prog = { estrelas: {}, max: 0, som: true, vistos: {}, moedas: 120,
-             musica: true, vibrar: true, leve: null,
+             musica: true, vibrar: true, leve: null, pecas: 'bichos',
              poderes: { arpao: 1, troca: 1, giro: 1, folego: 1 }, dia: '',
              email: '', apelido: '',
              desafio: { semana: '', melhor: 0, nome: '' } };
