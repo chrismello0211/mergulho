@@ -1,13 +1,28 @@
 
 <script>
-/* service worker: só no https (ou localhost), nunca em file:// */
+/* Service worker com aviso de versão nova. Nada recarrega sozinho no
+   meio de uma partida: o jogo avisa e você decide quando trocar.   */
+window.Atualizacao = { reg: null, pronta: false, aplicando: false };
 if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
   addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js').catch(() => {});
-    let recarregou = false;
+    navigator.serviceWorker.register('./sw.js').then(reg => {
+      Atualizacao.reg = reg;
+      const olha = () => {
+        if (reg.waiting) { Atualizacao.pronta = true; if (window.avisaVersao) window.avisaVersao(); }
+      };
+      olha();
+      reg.addEventListener('updatefound', () => {
+        const novo = reg.installing;
+        if (!novo) return;
+        novo.addEventListener('statechange', () => { if (novo.state === 'installed' && navigator.serviceWorker.controller) olha(); });
+      });
+      /* procura versão nova ao voltar pro app e de tempos em tempos */
+      const procura = () => { try { reg.update(); } catch (e) {} };
+      document.addEventListener('visibilitychange', () => { if (!document.hidden) procura(); });
+      setInterval(procura, 15 * 60 * 1000);
+    }).catch(() => {});
     navigator.serviceWorker.addEventListener('controllerchange', () => {
-      if (recarregou) return;
-      recarregou = true;
+      if (!Atualizacao.aplicando) return;
       location.reload();
     });
   });

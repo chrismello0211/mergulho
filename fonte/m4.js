@@ -83,6 +83,11 @@ function atualizaHud() {
       s += '<div class="alvo' + (falta ? '' : ' feito') + '">' + icone(it[0]) + '<b>' + (falta || '✓') + '</b></div>';
     }
     o.innerHTML = s + '</div>';
+    o.querySelectorAll('.alvo').forEach((el, k) => {
+      const v = el.querySelector('b').textContent;
+      if (o.dataset['v' + k] !== undefined && o.dataset['v' + k] !== v) { el.classList.remove('bateu'); void el.offsetWidth; el.classList.add('bateu'); }
+      o.dataset['v' + k] = v;
+    });
   } else {
     const falta = casasCobertas(papel);
     o.innerHTML = '<div><div class="rotulo">' + ambiente(J.desafio ? 0 : J.fase).bloq.verbo + '</div>' +
@@ -247,6 +252,14 @@ function mostraAjuda() {
     '<h4>Cinco em linha viram pérola</h4>' +
     '<div class="regra"><div class="amostra">' + amostra('s3') + '<span class="seta">›</span>' + amostra('s-arco') + '</div>' +
     '<div>Troque a pérola com qualquer peça e somem todas daquela cor.</div></div>' +
+
+    '<h4>Seis em linha viram maré</h4>' +
+    '<div class="regra"><div class="amostra">' + amostra('s0', 'sp-onda') + '</div>' +
+    '<div>A maré leva três fileiras de uma vez. Se veio de uma fila em pé, leva três colunas.</div></div>' +
+
+    '<h4>Montes grandes viram cardume</h4>' +
+    '<div class="regra"><div class="amostra">' + amostra('s3', 'sp-cardume') + '</div>' +
+    '<div>Quando uma jogada junta sete peças ou mais, nasce um cardume: ele sai caçando a própria cor pelo tabuleiro.</div></div>' +
 
     '<h4>Especial estoura sozinho</h4>' +
     '<p>Não precisa combinar: troque o especial com qualquer peça do lado, ou toque duas vezes nele, que ele dispara na hora. Gasta uma jogada.</p>' +
@@ -460,6 +473,27 @@ async function compartilhaDesafio(botao) {
   const txt = 'Fiz ' + nf(prog.desafio.melhor) + ' pontos no desafio da semana do Mergulho (' + desafioAtual.semana + '). Bora bater?\n' + location.href;
   try { if (navigator.share) { await navigator.share({ text: txt }); return; } } catch (e) { return; }
   try { await navigator.clipboard.writeText(txt); botao.textContent = 'Copiado!'; setTimeout(() => botao.textContent = 'Mandar pro grupo', 2000); } catch (e) {}
+}
+
+/* ═══ VERSÃO NOVA ══════════════════════════════════════════════
+   O service worker avisa quando baixou uma versão nova. Nada
+   recarrega no meio da partida: aparece uma faixa e você decide.
+   Antes de trocar, a partida em andamento é guardada.            */
+window.avisaVersao = function () {
+  const el = document.getElementById('aviso-versao');
+  if (!el) return;
+  el.hidden = false;
+  requestAnimationFrame(() => el.classList.add('mostra'));
+};
+function aplicaVersao() {
+  const A = window.Atualizacao;
+  salvaPartida();
+  if (!A || !A.reg || !A.reg.waiting) { location.reload(); return; }
+  A.aplicando = true;
+  const el = document.getElementById('bt-atualiza');
+  if (el) el.textContent = 'Atualizando...';
+  try { A.reg.waiting.postMessage('atualiza-agora'); } catch (e) {}
+  setTimeout(() => location.reload(), 1500);
 }
 
 /* ═══ AJUSTES E DESEMPENHO ═════════════════════════════════════
@@ -723,7 +757,7 @@ function tela(id) {
 /* ═══ MAPA: a coluna d'água, da superfície ao fundo ═════════════ */
 const CADEADO = '<svg viewBox="0 0 24 24" class="cadeado"><rect x="5" y="11" width="14" height="10" rx="2.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
 
-let mapaIni = 0;
+let mapaIni = 0, paradaEm = -1;
 
 function superficieMapa(exp, reg) {
   return '<div class="superficie" aria-hidden="true"><div class="sol"></div>' +
@@ -739,12 +773,14 @@ function leitoMapa() {
 }
 function noDoMapa(i) {
   const f = fase(i), desloc = Math.sin(i * 0.82) * 70, travada = i > prog.max, est = prog.estrelas[i] || 0;
+  const parada = paradaEm === i;
   const trio = (!travada && est) ? '<span class="trio">' + [0, 1, 2].map(q => '<svg viewBox="0 0 100 100"><use href="#' + (q < est ? 'i-estrela' : 'i-estrela-off') + '"/></svg>').join('') + '</span>' : '';
   const lado = desloc < 0 ? 'left:calc(50% + ' + (desloc + 52).toFixed(1) + 'px);text-align:left'
                           : 'right:calc(50% - ' + (desloc - 52).toFixed(1) + 'px);text-align:right';
   return '<div class="no-linha">' +
     '<button class="no' + (travada ? ' travada' : '') + (i === prog.max && !travada ? ' atual' : '') + '" data-i="' + i + '" style="transform:translateX(' + desloc.toFixed(1) + 'px);--dx:' + desloc.toFixed(1) + 'px;animation-delay:' + (((i - mapaIni) % 24) * 26) + 'ms" aria-label="Fase ' + (i + 1) + ': ' + f.nome + (travada ? ', ainda fechada' : '') + '">' +
-      '<span class="disco"></span><span class="num">' + (travada ? CADEADO : (i + 1)) + '</span>' + trio + '</button>' +
+      '<span class="disco"></span><span class="num">' + (travada ? CADEADO : (i + 1)) + '</span>' + trio +
+      (parada ? '<span class="marca-parada" aria-label="partida pela metade">⏸</span>' : '') + '</button>' +
     '<span class="no-rotulo' + (travada ? ' apagado' : '') + '" style="' + lado + '"><b>' + f.nome + '</b><small>' + metros(f.prof) + '</small></span>' +
   '</div>';
 }
@@ -752,6 +788,8 @@ function noDoMapa(i) {
 /* o mapa mostra uma janela de fases: com dez mil nós na tela o
    celular não aguentaria, então desenha em volta de onde você está */
 function montaMapa(mantem) {
+  const pp = lePartida();
+  paradaEm = pp ? pp.f : -1;
   const col = document.getElementById('coluna'), trilha = document.getElementById('trilha');
   const altaAntes = col.scrollHeight;
   if (!mantem) mapaIni = Math.max(0, prog.max - 17);
@@ -865,7 +903,15 @@ function retomaPartida(d) {
   });
 }
 
-function abreFase(i) {
+function abreFase(i, ignoraParada) {
+  const parada = lePartida();
+  if (!ignoraParada && parada && parada.f === i) {
+    cartao('<h3>Você parou aqui</h3>' +
+      '<p>Esta fase ficou pela metade, com ' + parada.mov + (parada.mov === 1 ? ' jogada' : ' jogadas') + ' e ' + nf(parada.pontos) + ' pontos.</p>' +
+      '<div class="bts"><button class="bt vidro" data-ac="descarta">Começar de novo</button>' +
+      '<button class="bt" data-ac="retoma">Continuar daqui</button></div>');
+    return;
+  }
   limpaPartida();
   const f = fase(i);
   instalaMundo(f.m, i);
@@ -938,7 +984,15 @@ function iniciar() {
   aplicaLeve();
   document.getElementById('versao').textContent = 'v' + VERSAO_JOGO;
   document.addEventListener('pointerdown', e => {
-    if (e.target.closest('.bt, .ico-bt, .poder, .no, .bt-compra, .subir')) { Som.liga(); Som.toque(); }
+    const alvo = e.target.closest('.bt, .ico-bt, .poder, .no, .bt-compra, .subir, .bt-att');
+    if (!alvo) return;
+    Som.liga(); Som.toque();
+    const r = alvo.getBoundingClientRect(), o = document.createElement('span');
+    o.className = 'ondinha';
+    o.style.left = (e.clientX - r.left) + 'px';
+    o.style.top = (e.clientY - r.top) + 'px';
+    alvo.appendChild(o);
+    setTimeout(() => o.remove(), 620);
   }, true);
   pintaBotaoSom();
   pintaMoedas();
@@ -950,6 +1004,8 @@ function iniciar() {
   document.getElementById('bt-ajuda').onclick = () => { Som.liga(); mostraAjuda(); };
   document.getElementById('bt-mapa-volta').onclick = () => { instalaMundo(fase(prog.max).m); tela('tela-inicio'); };
   document.getElementById('bt-jogo-volta').onclick = () => { soltaSemente(); fechaCartao(); montaMapa(); tela('tela-mapa'); };
+  document.getElementById('bt-atualiza').onclick = aplicaVersao;
+  if (window.Atualizacao && window.Atualizacao.pronta) avisaVersao();
   document.getElementById('bt-ajustes').onclick = () => { Som.liga(); mostraAjustes(); };
   document.getElementById('bt-desafio').onclick = () => { Som.liga(); mostraDesafio(); };
   document.getElementById('bt-loja').onclick = () => { Som.liga(); mostraLoja(); };
@@ -982,7 +1038,7 @@ function iniciar() {
     else if (ac === 'sair') contaSair();
 
     else if (ac === 'retoma') { const d = lePartida(); limpaPartida(); if (d) retomaPartida(d); else fechaCartao(); }
-    else if (ac === 'descarta') { limpaPartida(); fechaCartao(); }
+    else if (ac === 'descarta') { const d = lePartida(); limpaPartida(); if (d) abreFase(d.f, true); else fechaCartao(); }
     else if (ac === 'folego') usaFolegoNoCartao();
     else if (ac === 'comeca') { fechaCartao(); comecaFase(); }
     else if (ac === 'mapa') { fechaCartao(); montaMapa(); tela('tela-mapa'); }
@@ -1013,14 +1069,9 @@ function iniciar() {
     else if (prog.som && prog.musica) Musica.liga(document.body.classList.contains('em-jogo') ? 'jogo' : 'menu', mundoAtual);
   });
 
-  const parada = lePartida();
-  setTimeout(() => {
-    if (parada && fase(parada.f)) enfileira(() => cartao('<h3>Você parou no meio</h3>' +
-      '<p>A fase ' + (parada.f + 1) + ' ficou pela metade, com ' + parada.mov + (parada.mov === 1 ? ' jogada' : ' jogadas') + ' e ' + nf(parada.pontos) + ' pontos. Quer voltar pra ela?</p>' +
-      '<div class="bts"><button class="bt vidro" data-ac="descarta">Começar de novo</button>' +
-      '<button class="bt" data-ac="retoma">Continuar</button></div>'));
-    if (prog.dia !== hoje()) enfileira(mostraBau);
-  }, 600);
+  /* a partida parada não atropela mais a abertura: ela espera você
+     tocar naquela fase no mapa */
+  setTimeout(() => { if (prog.dia !== hoje()) enfileira(mostraBau); }, 700);
 }
 
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', iniciar);

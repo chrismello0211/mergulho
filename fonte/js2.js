@@ -3,8 +3,8 @@ let efeitosPendentes = [];
 /* ponto extra por disparar especial e por juntar dois deles:
    é o que faz valer a pena montar a jogada em vez de só combinar 3 */
 let bonusEspeciais = 0;
-const VALOR_ESP = { 1: 300, 2: 300, 3: 900, 4: 900 };     /* correnteza, correnteza em pé, bolha, pérola */
-const VALOR_NASCE = { 1: 150, 2: 150, 3: 250, 4: 400 };   /* por criar cada um deles */
+const VALOR_ESP = { 1: 300, 2: 300, 3: 900, 4: 900, 5: 1400, 6: 1400, 7: 1100 };     /* correnteza, correnteza em pé, bolha, pérola */
+const VALOR_NASCE = { 1: 150, 2: 150, 3: 250, 4: 400, 5: 600, 6: 600, 7: 500 };   /* por criar cada um deles */
 
 /* ═══ ESTADO ════════════════════════════════════════════════════ */
 let grid = [], papel = [], uid = 0;
@@ -102,6 +102,9 @@ function fazGrupos(corridas) {
 }
 
 function especialDoGrupo(g) {
+  if (g.maxH >= 6) return ONDA;          /* seis deitadas: maré, leva três fileiras */
+  if (g.maxV >= 6) return ONDAV;         /* seis em pé: maré de través */
+  if (g.cells.length >= 7) return CARDUME;  /* aglomerado grande: cardume */
   if (g.maxH >= 5 || g.maxV >= 5) return ARCO;
   if (g.maxH >= 3 && g.maxV >= 3) return BOMBA;
   if (g.maxH >= 4) return LH;
@@ -139,6 +142,18 @@ function areaEspecial(r, c, p, corAlvo) {
     /* bomba é bomba: leva tudo em volta, 5x5 cheio */
     for (let dr = -2; dr <= 2; dr++) for (let dc = -2; dc <= 2; dc++)
       if (dentro(r + dr, c + dc)) out.push(chave(r + dr, c + dc));
+  } else if (p.sp === ONDA) {
+    for (let dr = -1; dr <= 1; dr++) if (dentro(r + dr, 0)) for (let x = 0; x < W; x++) out.push(chave(r + dr, x));
+  } else if (p.sp === ONDAV) {
+    for (let dc = -1; dc <= 1; dc++) if (dentro(0, c + dc)) for (let y = 0; y < H; y++) out.push(chave(y, c + dc));
+  } else if (p.sp === CARDUME) {
+    /* o cardume sai caçando a própria cor pelo tabuleiro */
+    const iguais = [];
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++)
+      if (grid[y][x] && !grid[y][x].bau && grid[y][x].t === p.t && !(y === r && x === c)) iguais.push(chave(y, x));
+    for (let k = iguais.length - 1; k > 0; k--) { const j = Math.floor(rnd() * (k + 1)); const t = iguais[k]; iguais[k] = iguais[j]; iguais[j] = t; }
+    out.push(chave(r, c));
+    for (const k of iguais.slice(0, 9)) out.push(k);
   } else if (p.sp === ARCO) {
     const t = (corAlvo != null) ? corAlvo : corMaisComum();
     for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (grid[y][x] && grid[y][x].t === t) out.push(chave(y, x));
@@ -158,7 +173,7 @@ function expandir(conj, corAlvo) {
     const area = areaEspecial(r, c, p, corAlvo);
     const vale = VALOR_ESP[p.sp] || 0;
     bonusEspeciais += vale;
-    efeitosPendentes.push({ r: r, c: c, sp: p.sp, vale: vale, alvos: p.sp === ARCO ? area.slice() : null });
+    efeitosPendentes.push({ r: r, c: c, sp: p.sp, vale: vale, alvos: (p.sp === ARCO || p.sp === CARDUME) ? area.slice() : null });
     for (const a of area) {
       if (!conj.has(a)) conj.add(a);
       if (!feitos.has(a)) fila.push(a);
@@ -211,6 +226,15 @@ function comboTroca(ra, ca, rb, cb) {
     a.sp = b.sp = NADA;
     for (let d = -2; d <= 2; d++) { if (dentro(rb + d, 0)) linhaToda(rb + d); if (dentro(0, cb + d)) colunaToda(cb + d); }
     conj.add(ka);
+  } else if (sa === ONDA || sa === ONDAV || sa === CARDUME || sb === ONDA || sb === ONDAV || sb === CARDUME) {
+    /* maré ou cardume no combo: os dois especiais estouram juntos */
+    for (const k of areaEspecial(rb, cb, b, null)) conj.add(k);
+    for (const k of areaEspecial(ra, ca, a, null)) conj.add(k);
+    efeitosPendentes.push({ r: rb, c: cb, sp: sb, vale: 1800 });
+    efeitosPendentes.push({ r: ra, c: ca, sp: sa, vale: 0 });
+    bonusEspeciais += 1800;
+    a.sp = b.sp = NADA;
+    conj.add(ka); conj.add(kb);
   } else if (sa === BOMBA && sb === BOMBA) {
     a.sp = b.sp = NADA;
     efeitosPendentes.push({ r: rb, c: cb, sp: BOMBA, tam: 9, vale: 3500 });

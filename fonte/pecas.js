@@ -381,6 +381,30 @@ function correnteza(vertical) {
     '<path d="' + setas + '" fill="none" stroke="#F3FBFF" stroke-width="3.8" stroke-linecap="round" stroke-linejoin="round"/>' +
     '</g>';
 }
+function mare(vertical) {
+  /* maré: três faixas de água varrendo a peça */
+  const g = vertical ? ' transform="rotate(90 50 50)"' : '';
+  const setas = 'M20 26L8 50L20 74M32 26L20 50L32 74M80 26L92 50L80 74M68 26L80 50L68 74';
+  let linhas = '';
+  for (const y of [26, 50, 74]) linhas += 'M2 ' + y + 'Q14 ' + (y - 7) + ' 26 ' + y + 'T50 ' + y + 'T74 ' + y + 'T98 ' + y;
+  return '<g' + g + '>' +
+    '<path d="' + linhas + '" fill="none" stroke="#062638" stroke-width="9" stroke-linecap="round" opacity=".35"/>' +
+    '<path d="' + linhas + '" fill="none" stroke="#BFF5EE" stroke-width="4.4" stroke-linecap="round">' +
+      '<animate attributeName="stroke-dasharray" values="0 0;26 8;0 0" dur="1.1s" repeatCount="indefinite"/></path>' +
+    '<path d="' + setas + '" fill="none" stroke="#062638" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" opacity=".5"/>' +
+    '<path d="' + setas + '" fill="none" stroke="#FFFFFF" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>' +
+    '</g>';
+}
+function cardume() {
+  /* cardume: peixinhos em volta, prontos pra sair caçando a cor */
+  const peixe = (x, y, e, a) => '<g transform="translate(' + x + ' ' + y + ') scale(' + e + ') rotate(' + a + ')">' +
+    '<path d="M-12 0C-8 -7 2 -9 9 -4L16 -9L16 9L9 4C2 9 -8 7 -12 0Z" fill="#F3FBFF" stroke="#062638" stroke-width="2.6" stroke-linejoin="round"/>' +
+    '<circle cx="-5" cy="-1.5" r="1.8" fill="#062638"/></g>';
+  return '<g>' +
+    '<path d="M6 26q16 10 32 0M62 74q16-10 32 0" fill="none" stroke="#BFF5EE" stroke-width="3" stroke-linecap="round" opacity=".8"/>' +
+    peixe(24, 22, 1, -12) + peixe(70, 30, .85, 14) + peixe(28, 74, .85, 8) + peixe(74, 70, 1, -8) +
+    '</g>';
+}
 function bolha() {
   return rad('bolha-g', [[0, '#fff', 0], [.72, '#DFF8FF', .08], [.93, '#DFF8FF', .45], [1, '#fff', .9]], 50, 50, 47) +
     circ(50, 50, 46, 'fill="url(#bolha-g)" stroke="#F3FBFF" stroke-width="2.6"') +
@@ -415,7 +439,10 @@ function simbolos(m, pre) {
     defs += r.defs;
     syms += '<symbol id="' + pre + 's' + t + '" viewBox="0 0 100 100">' + r.corpo + '</symbol>';
   });
-  syms += '<symbol id="' + pre + 'sp-lh" viewBox="0 0 100 100">' + correnteza(false) + '</symbol>' +
+  syms += '<symbol id="' + pre + 'sp-onda" viewBox="0 0 100 100">' + mare(false) + '</symbol>' +
+          '<symbol id="' + pre + 'sp-ondav" viewBox="0 0 100 100">' + mare(true) + '</symbol>' +
+          '<symbol id="' + pre + 'sp-cardume" viewBox="0 0 100 100">' + cardume() + '</symbol>' +
+          '<symbol id="' + pre + 'sp-lh" viewBox="0 0 100 100">' + correnteza(false) + '</symbol>' +
           '<symbol id="' + pre + 'sp-lv" viewBox="0 0 100 100">' + correnteza(true) + '</symbol>' +
           '<symbol id="' + pre + 'sp-bomba" viewBox="0 0 100 100">' + bolha().replace(/bolha-g/g, pre + 'bolha-g') + '</symbol>' +
           '<symbol id="' + pre + 's-arco" viewBox="0 0 100 100">' + perola(m).replace(/per-([ghi])/g, pre + 'per-$1') + '</symbol>';

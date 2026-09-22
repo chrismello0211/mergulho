@@ -323,6 +323,10 @@ body:not(.em-jogo) #cena{display:none}
 .peca.esp-bomba .corpo{animation:pisca 1.1s ease-in-out infinite}
 @keyframes pisca{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}
 .peca.esp-arco .corpo{animation:gira 6s linear infinite}
+.peca.esp-onda .capa{animation:onda-esp 1.6s ease-in-out infinite}
+@keyframes onda-esp{0%,100%{opacity:.85;transform:translateX(-2px)}50%{opacity:1;transform:translateX(2px)}}
+.peca.esp-cardume .capa{animation:cardume-esp 2.2s ease-in-out infinite}
+@keyframes cardume-esp{0%,100%{transform:rotate(-4deg) scale(1)}50%{transform:rotate(4deg) scale(1.06)}}
 @keyframes gira{to{transform:rotate(360deg)}}
 .peca.escolhida{z-index:4}
 .peca.escolhida .corpo{animation:escolhe .55s ease-in-out infinite}
@@ -506,6 +510,39 @@ body:not(.em-jogo) #cena{display:none}
 @keyframes nada{0%{transform:translateX(-22vw) translateY(0)}50%{transform:translateX(50vw) translateY(-14px)}100%{transform:translateX(122vw) translateY(0)}}
 .nadador.volta{animation-name:nada-volta}
 @keyframes nada-volta{0%{transform:translateX(122vw) scaleX(-1)}50%{transform:translateX(50vw) translateY(12px) scaleX(-1)}100%{transform:translateX(-22vw) scaleX(-1)}}
+
+/* ── aviso de versão nova ───────────────────────────────────── */
+#aviso-versao{
+  position:fixed;left:50%;bottom:calc(var(--safe-b) + 12px);transform:translate(-50%,180%);z-index:40;
+  display:flex;align-items:center;gap:10px;padding:9px 10px 9px 16px;border-radius:999px;
+  background:rgba(4,30,48,.92);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
+  box-shadow:0 8px 22px rgba(0,20,40,.5),inset 0 0 0 1px rgba(107,255,224,.35);
+  font-size:13.5px;font-weight:800;color:var(--espuma);transition:transform .4s cubic-bezier(.2,1.4,.4,1);max-width:92vw
+}
+#aviso-versao.mostra{transform:translate(-50%,0)}
+body.em-jogo #aviso-versao{bottom:calc(var(--safe-b) + 86px)}
+.bt-att{border:0;cursor:pointer;border-radius:999px;padding:8px 14px;font-family:var(--display);font-weight:800;font-size:13.5px;
+  color:#fff;background:linear-gradient(180deg,#FF8A5C,var(--boia));box-shadow:0 3px 0 var(--boia-2);position:relative;overflow:hidden}
+
+/* ── toque com ondinha ──────────────────────────────────────── */
+.bt,.ico-bt,.poder,.no,.bt-compra,.subir{position:relative;overflow:hidden}
+.ondinha{position:absolute;width:12px;height:12px;margin:-6px 0 0 -6px;border-radius:50%;pointer-events:none;
+  background:rgba(255,255,255,.55);animation:ondinha .6s ease-out forwards}
+@keyframes ondinha{0%{transform:scale(0);opacity:.7}100%{transform:scale(14);opacity:0}}
+.no .ondinha{background:rgba(255,255,255,.7)}
+
+/* ── barra de pontos viva ───────────────────────────────────── */
+.barra .cheio::after{content:"";position:absolute;top:0;right:0;bottom:0;width:36px;border-radius:999px;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.75));animation:brilha-barra 2.4s ease-in-out infinite}
+@keyframes brilha-barra{0%,100%{opacity:.25}50%{opacity:.8}}
+.alvo.bateu{animation:alvo-bateu .5s cubic-bezier(.2,1.7,.4,1)}
+@keyframes alvo-bateu{0%{transform:scale(1)}45%{transform:scale(1.25)}100%{transform:scale(1)}}
+
+/* ── trilha do mapa correndo ────────────────────────────────── */
+.trilha-svg path:last-child{animation:corre-trilha 1.8s linear infinite}
+@keyframes corre-trilha{to{stroke-dashoffset:-15}}
+.marca-parada{position:absolute;top:-6px;left:-8px;width:22px;height:22px;border-radius:50%;background:var(--boia);
+  color:#fff;font-size:11px;display:grid;place-items:center;box-shadow:0 2px 6px rgba(0,20,40,.4)}
 
 /* ── efeitos: luz, onda, estilhaço, tremor, combo ───────────── */
 #clarao{position:fixed;inset:0;z-index:9;pointer-events:none;opacity:0}
@@ -728,6 +765,7 @@ body.leve .cartao{animation-duration:.18s}
   <div id="vinheta" aria-hidden="true"></div>
   <div id="fx-tela" aria-hidden="true"></div>
   <div id="descida" aria-hidden="true"><span></span></div>
+  <div id="aviso-versao" hidden><span>Tem versão nova do jogo</span><button class="bt-att" id="bt-atualiza">Atualizar</button></div>
 
   <!-- ══ INÍCIO: o título boiando na linha d'água ══════════════ -->
   <section class="tela ativa" id="tela-inicio">
@@ -837,9 +875,9 @@ body.leve .cartao{animation-duration:.18s}
    MERGULHO · combinar 3 da beira da praia até 4.000 metros
    ═══════════════════════════════════════════════════════════════ */
 
-const VERSAO_JOGO = '2026.10.01';
+const VERSAO_JOGO = '2026.10.02';
 const W = 7, H = 8, TIPOS = 6;
-const NADA = 0, LH = 1, LV = 2, BOMBA = 3, ARCO = 4;
+const NADA = 0, LH = 1, LV = 2, BOMBA = 3, ARCO = 4, ONDA = 5, ONDAV = 6, CARDUME = 7;
 
 const $ = s => document.querySelector(s);
 /* todo sorteio do jogo passa por aqui: no desafio da semana a gente
@@ -903,7 +941,7 @@ const REGIOES = [
   { nome:'Mangue', texto:'Água turva de raiz e folha.',
     agua:['#B6E8B0','#57B184','#1C7A69','#123F4C','#0A1A24','#03070A'], moldura:'#C9A06A', acento:'#9CFF8A',
     bandas:['Baixio','Raizal','Canal turvo','Água parada','Poço negro'],
-    chao:['raizes','kelp','casco','longe','pedra'], bloq:['limo','raiz','rede','lodo','breu'] },
+    chao:['raizes','kelp','tubulacao','longe','esponjas'], bloq:['limo','raiz','rede','lodo','breu'] },
   { nome:'Mar Polar', texto:'Água gelada e leitosa.',
     agua:['#E2F7FF','#93D6F0','#3E86C4','#17306B','#080F2A','#02040E'], moldura:'#CFEAFF', acento:'#8FE9FF',
     bandas:['Banco de gelo','Jardim de kelp','Navio preso','Água leitosa','Fossa polar'],
@@ -911,23 +949,23 @@ const REGIOES = [
   { nome:'Cordilheira', texto:'Montanha submersa, parede de pedra.',
     agua:['#84E3D2','#23A89C','#116A70','#0E2148','#060A1C','#02040C'], moldura:'#A8C4B8', acento:'#5CFFD6',
     bandas:['Laje','Pico submerso','Desfiladeiro','Encosta funda','Fenda'],
-    chao:['pedra','coral','pedra','longe','cristal'], bloq:['areia','coralmorto','craca','lodo','breu'] },
+    chao:['pedra','anemonas','pedra','longe','cristal'], bloq:['areia','coralmorto','craca','lodo','breu'] },
   { nome:'Boca do Vulcão', texto:'Areia preta e água morna.',
     agua:['#BCEAD2','#31AC90','#0F6F72','#2C1B40','#190A16','#0A0206'], moldura:'#E08A5C', acento:'#FF9A5C',
     bandas:['Praia preta','Recife novo','Lava velha','Fumaça','Caldeira'],
-    chao:['duna','coral','pedra','longe','fumarola'], bloq:['areiapreta','alga','craca','cinza','breu'] },
+    chao:['duna','esponjas','pedra','longe','fumarola'], bloq:['areiapreta','alga','craca','cinza','breu'] },
   { nome:'Ruínas', texto:'Alguém morou aqui antes do mar subir.',
     agua:['#DCEBBC','#69B69C','#1C6E85','#17204F','#0B0A20','#030309'], moldura:'#D9C08A', acento:'#FFD98A',
     bandas:['Escadaria','Pátio','Coluna caída','Salão fundo','Cripta'],
-    chao:['ruinas','coral','ruinas','longe','cristal'], bloq:['areia','limo','craca','lodo','breu'] },
+    chao:['ruinas','anemonas','ruinas','longe','cristal'], bloq:['areia','limo','craca','lodo','breu'] },
   { nome:'Sargaço', texto:'Um mato flutuante que não acaba.',
     agua:['#D3EBAC','#73C28D','#2D8B8E','#14264F','#090C22','#02030B'], moldura:'#BBD48C', acento:'#B6FF7A',
     bandas:['Mato flutuante','Tapete verde','Sombra do mato','Fundo escuro','Buraco'],
-    chao:['sargaco','kelp','casco','longe','pedra'], bloq:['alga','limo','rede','lodo','breu'] },
+    chao:['sargaco','kelp','casco','longe','anemonas'], bloq:['alga','limo','rede','lodo','breu'] },
   { nome:'Fossa', texto:'A água some rápido por aqui.',
     agua:['#93DAEA','#2E8BAC','#144670','#1A1250','#0B0620','#030109'], moldura:'#A98CD8', acento:'#B07CFF',
     bandas:['Borda','Talude','Degrau','Meia-água','Fundo da fossa'],
-    chao:['pedra','pedra','casco','longe','fumarola'], bloq:['areia','craca','rede','cinza','breu'] }
+    chao:['pedra','esponjas','tubulacao','longe','fumarola'], bloq:['areia','craca','rede','cinza','breu'] }
 ];
 
 /* de que lugar é esta fase, e com que cara */
@@ -959,40 +997,40 @@ const MUNDOS = [
              'papel'    limpar tudo que cobre o fundo (areia, alga, rede, lodo, breu)
    marcas: pontuação de 1, 2 e 3 estrelas (medidas por simulação) */
 const BASE = [
-  { m:0, prof:2,    nome:'Primeiro fôlego',    mov:23, obj:{tipo:'pontos'},                                        marcas:[10500,15000,19400] },
-  { m:0, prof:4,    nome:'Pé na areia',        mov:25, obj:{tipo:'coletar', itens:[[0,14]]},                       marcas:[4900,7100,9900] },
-  { m:0, prof:6,    nome:'Maré baixa',         mov:27, obj:{tipo:'papel', padrao:'bandeja', camadas:1},            marcas:[5800,8300,11600] },
-  { m:0, prof:8,    nome:'Poça de maré',       mov:23, obj:{tipo:'especiais', n:3},                                        marcas:[3700,5300,7400] },
-  { m:0, prof:10,   nome:'Água morna',         mov:27, obj:{tipo:'coletar', itens:[[1,15],[4,15]]},                marcas:[5800,8300,11600] },
-  { m:0, prof:12,   nome:'Onde o sol alcança', mov:29, obj:{tipo:'papel', padrao:'xadrez', camadas:1},             marcas:[5800,8200,11500] },
+  { m:0, prof:2,    nome:'Primeiro fôlego',    mov:23, obj:{tipo:'pontos'},                                        marcas:[10400,14800,19100] },
+  { m:0, prof:4,    nome:'Pé na areia',        mov:25, obj:{tipo:'coletar', itens:[[0,14]]},                       marcas:[5300,7600,10600] },
+  { m:0, prof:6,    nome:'Maré baixa',         mov:27, obj:{tipo:'papel', padrao:'bandeja', camadas:1},            marcas:[5400,7700,10700] },
+  { m:0, prof:8,    nome:'Poça de maré',       mov:23, obj:{tipo:'especiais', n:3},                                        marcas:[3800,5400,7500] },
+  { m:0, prof:10,   nome:'Água morna',         mov:27, obj:{tipo:'coletar', itens:[[1,15],[4,15]]},                marcas:[5900,8500,11900] },
+  { m:0, prof:12,   nome:'Onde o sol alcança', mov:29, obj:{tipo:'papel', padrao:'xadrez', camadas:1},             marcas:[6000,8600,12100] },
 
-  { m:1, prof:15,   nome:'Porta do recife',    mov:24, obj:{tipo:'pontos'},                                        marcas:[15300,21000,26600] },
-  { m:1, prof:18,   nome:'Jardim de coral',    mov:26, obj:{tipo:'papel', padrao:'faixas', camadas:1},             marcas:[5000,8200,11300] },
-  { m:1, prof:22,   nome:'Cardume',            mov:24, obj:{tipo:'coletar', itens:[[3,16],[5,16]]},                marcas:[6100,10100,13900] },
-  { m:1, prof:26,   nome:'Correnteza',         mov:28, obj:{tipo:'bau', n:2},                                        marcas:[5500,9100,12500] },
-  { m:1, prof:30,   nome:'Toca do polvo',      mov:23, obj:{tipo:'coletar', itens:[[0,13],[2,13],[4,13]]},         marcas:[5800,9600,13300] },
-  { m:1, prof:35,   nome:'Parede de coral',    mov:31, obj:{tipo:'papel', padrao:'losango', camadas:2, cresce:4},            marcas:[8500,14200,19500] },
+  { m:1, prof:15,   nome:'Porta do recife',    mov:36, obj:{tipo:'pontos'},                                        marcas:[19900,27200,34500] },
+  { m:1, prof:18,   nome:'Jardim de coral',    mov:25, obj:{tipo:'papel', padrao:'faixas', camadas:1},             marcas:[4500,7400,10200] },
+  { m:1, prof:22,   nome:'Cardume',            mov:23, obj:{tipo:'coletar', itens:[[3,16],[5,16]]},                marcas:[5600,9300,12800] },
+  { m:1, prof:26,   nome:'Correnteza',         mov:22, obj:{tipo:'bau', n:2},                                        marcas:[4600,7600,10500] },
+  { m:1, prof:30,   nome:'Toca do polvo',      mov:22, obj:{tipo:'coletar', itens:[[0,13],[2,13],[4,13]]},         marcas:[5000,8200,11400] },
+  { m:1, prof:35,   nome:'Parede de coral',    mov:34, obj:{tipo:'papel', padrao:'losango', camadas:2, cresce:4},            marcas:[8200,13500,18700] },
 
-  { m:2, prof:45,   nome:'O casco',            mov:36, obj:{tipo:'pontos'},                                        marcas:[21400,27800,34200] },
-  { m:2, prof:60,   nome:'Convés tombado',     mov:30, obj:{tipo:'papel', padrao:'colunas', camadas:1},            marcas:[6500,10700,14800] },
-  { m:2, prof:75,   nome:'Porão',              mov:23, obj:{tipo:'coletar', itens:[[1,18],[2,18]]},                marcas:[6100,10100,13900] },
-  { m:2, prof:90,   nome:'Âncora perdida',     mov:22, obj:{tipo:'bau', n:2},                                        marcas:[5700,9400,13000] },
-  { m:2, prof:110,  nome:'Rede fantasma',      mov:33, obj:{tipo:'papel', padrao:'bandejao', camadas:1},           marcas:[7500,12400,17000] },
-  { m:2, prof:130,  nome:'Proa na areia',      mov:20, obj:{tipo:'coletar', itens:[[3,14],[4,14],[5,14]]},         marcas:[5300,8800,12200] },
+  { m:2, prof:45,   nome:'O casco',            mov:48, obj:{tipo:'pontos'},                                        marcas:[29300,38100,46900] },
+  { m:2, prof:60,   nome:'Convés tombado',     mov:30, obj:{tipo:'papel', padrao:'colunas', camadas:1},            marcas:[7600,12600,17400] },
+  { m:2, prof:75,   nome:'Porão',              mov:23, obj:{tipo:'coletar', itens:[[1,18],[2,18]]},                marcas:[6400,10600,14700] },
+  { m:2, prof:90,   nome:'Âncora perdida',     mov:22, obj:{tipo:'bau', n:2},                                        marcas:[5000,8300,11500] },
+  { m:2, prof:110,  nome:'Rede fantasma',      mov:35, obj:{tipo:'papel', padrao:'bandejao', camadas:1},           marcas:[8200,13500,18700] },
+  { m:2, prof:130,  nome:'Proa na areia',      mov:20, obj:{tipo:'coletar', itens:[[3,14],[4,14],[5,14]]},         marcas:[5500,9100,12500] },
 
-  { m:3, prof:200,  nome:'Último azul',        mov:23, obj:{tipo:'especiais', n:5},                                        marcas:[6300,10500,14400] },
-  { m:3, prof:350,  nome:'Neve marinha',       mov:31, obj:{tipo:'papel', padrao:'cruz', camadas:2, cresce:5},               marcas:[7700,12800,17700] },
-  { m:3, prof:500,  nome:'Luz de lanterna',    mov:24, obj:{tipo:'coletar', itens:[[4,22]]},                       marcas:[6800,11300,15500] },
-  { m:3, prof:650,  nome:'Migração',           mov:21, obj:{tipo:'papel', padrao:'ondas', camadas:1},              marcas:[4600,7700,10600] },
-  { m:3, prof:800,  nome:'Sem sol',            mov:25, obj:{tipo:'bau', n:3},                                        marcas:[6700,11200,15400] },
-  { m:3, prof:1000, nome:'Mil metros',         mov:26, obj:{tipo:'papel', padrao:'alvo', camadas:1},               marcas:[6300,10400,14400] },
+  { m:3, prof:200,  nome:'Último azul',        mov:23, obj:{tipo:'especiais', n:5},                                        marcas:[6300,10400,14300] },
+  { m:3, prof:350,  nome:'Neve marinha',       mov:31, obj:{tipo:'papel', padrao:'cruz', camadas:2, cresce:5},               marcas:[7500,12500,17200] },
+  { m:3, prof:500,  nome:'Luz de lanterna',    mov:24, obj:{tipo:'coletar', itens:[[4,22]]},                       marcas:[6700,11100,15300] },
+  { m:3, prof:650,  nome:'Migração',           mov:21, obj:{tipo:'papel', padrao:'ondas', camadas:1},              marcas:[4500,7400,10200] },
+  { m:3, prof:800,  nome:'Sem sol',            mov:23, obj:{tipo:'bau', n:3},                                        marcas:[5900,9800,13500] },
+  { m:3, prof:1000, nome:'Mil metros',         mov:26, obj:{tipo:'papel', padrao:'alvo', camadas:1},               marcas:[6300,10500,14500] },
 
-  { m:4, prof:1500, nome:'Breu',               mov:32, obj:{tipo:'papel', padrao:'bandeja', camadas:2},            marcas:[8000,13300,18300] },
-  { m:4, prof:2000, nome:'Isca de luz',        mov:23, obj:{tipo:'coletar', itens:[[4,17],[5,17]]},                marcas:[5800,9700,13300] },
-  { m:4, prof:2500, nome:'Chaminé quente',     mov:30, obj:{tipo:'bau', n:4},                                        marcas:[8200,13500,18700] },
-  { m:4, prof:3000, nome:'Gigantes lentos',    mov:44, obj:{tipo:'papel', padrao:'xadrez', camadas:2, cresce:4},             marcas:[11600,19200,26500] },
-  { m:4, prof:3500, nome:'Pressão',            mov:22, obj:{tipo:'coletar', itens:[[0,14],[1,14],[2,14],[3,14]]},  marcas:[5900,9800,13500] },
-  { m:4, prof:4000, nome:'O fundo',            mov:42, obj:{tipo:'papel', padrao:'bandejao', camadas:2},           marcas:[11400,18900,26100] }
+  { m:4, prof:1500, nome:'Breu',               mov:30, obj:{tipo:'papel', padrao:'bandeja', camadas:2},            marcas:[7400,12300,17000] },
+  { m:4, prof:2000, nome:'Isca de luz',        mov:22, obj:{tipo:'coletar', itens:[[4,17],[5,17]]},                marcas:[6600,11000,15100] },
+  { m:4, prof:2500, nome:'Chaminé quente',     mov:30, obj:{tipo:'bau', n:4},                                        marcas:[8000,13300,18300] },
+  { m:4, prof:3000, nome:'Gigantes lentos',    mov:44, obj:{tipo:'papel', padrao:'xadrez', camadas:2, cresce:4},             marcas:[11500,19100,26300] },
+  { m:4, prof:3500, nome:'Pressão',            mov:22, obj:{tipo:'coletar', itens:[[0,14],[1,14],[2,14],[3,14]]},  marcas:[6100,10100,14000] },
+  { m:4, prof:4000, nome:'O fundo',            mov:42, obj:{tipo:'papel', padrao:'bandejao', camadas:2},           marcas:[11100,18300,25300] }
 ];
 const POR_MUNDO = 6;
 const CICLO = 30;   /* uma expedição inteira: do raso ao fundo */
@@ -1052,7 +1090,10 @@ function fase(i) {
     if (r() < .18 + .3 * dif) { obj.cresce = 4 + Math.floor(r() * 2); mov = Math.round(mov * 1.22); }
   }
   /* pontos por jogada medidos com o bot: sobem junto com o aperto da fase */
-  const p50 = Math.round(mov * (tipo === 'pontos' ? 950 + 450 * dif : tipo === 'bau' ? 570 + 110 * dif : tipo === 'especiais' ? 800 + 200 * dif : 640 + 220 * dif));
+  /* pontos por jogada medidos com o bot, por tipo de objetivo */
+  const porJogada = tipo === 'pontos' ? 950 + 450 * dif : tipo === 'bau' ? 640 + 140 * dif
+                  : tipo === 'especiais' ? 800 + 200 * dif : tipo === 'papel' ? 560 + 100 * dif : 640 + 220 * dif;
+  const p50 = Math.round(mov * porJogada);
   let marcas;
   if (tipo === 'pontos') { const m0 = r100(p50 * (.44 + .06 * dif)), m2 = r100(p50 * .8); marcas = [m0, r100((m0 + m2) / 2), m2]; }
   else marcas = [r100(p50 * .35), r100(p50 * .58), r100(p50 * .8)];
@@ -1672,6 +1713,30 @@ function correnteza(vertical) {
     '<path d="' + setas + '" fill="none" stroke="#F3FBFF" stroke-width="3.8" stroke-linecap="round" stroke-linejoin="round"/>' +
     '</g>';
 }
+function mare(vertical) {
+  /* maré: três faixas de água varrendo a peça */
+  const g = vertical ? ' transform="rotate(90 50 50)"' : '';
+  const setas = 'M20 26L8 50L20 74M32 26L20 50L32 74M80 26L92 50L80 74M68 26L80 50L68 74';
+  let linhas = '';
+  for (const y of [26, 50, 74]) linhas += 'M2 ' + y + 'Q14 ' + (y - 7) + ' 26 ' + y + 'T50 ' + y + 'T74 ' + y + 'T98 ' + y;
+  return '<g' + g + '>' +
+    '<path d="' + linhas + '" fill="none" stroke="#062638" stroke-width="9" stroke-linecap="round" opacity=".35"/>' +
+    '<path d="' + linhas + '" fill="none" stroke="#BFF5EE" stroke-width="4.4" stroke-linecap="round">' +
+      '<animate attributeName="stroke-dasharray" values="0 0;26 8;0 0" dur="1.1s" repeatCount="indefinite"/></path>' +
+    '<path d="' + setas + '" fill="none" stroke="#062638" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" opacity=".5"/>' +
+    '<path d="' + setas + '" fill="none" stroke="#FFFFFF" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>' +
+    '</g>';
+}
+function cardume() {
+  /* cardume: peixinhos em volta, prontos pra sair caçando a cor */
+  const peixe = (x, y, e, a) => '<g transform="translate(' + x + ' ' + y + ') scale(' + e + ') rotate(' + a + ')">' +
+    '<path d="M-12 0C-8 -7 2 -9 9 -4L16 -9L16 9L9 4C2 9 -8 7 -12 0Z" fill="#F3FBFF" stroke="#062638" stroke-width="2.6" stroke-linejoin="round"/>' +
+    '<circle cx="-5" cy="-1.5" r="1.8" fill="#062638"/></g>';
+  return '<g>' +
+    '<path d="M6 26q16 10 32 0M62 74q16-10 32 0" fill="none" stroke="#BFF5EE" stroke-width="3" stroke-linecap="round" opacity=".8"/>' +
+    peixe(24, 22, 1, -12) + peixe(70, 30, .85, 14) + peixe(28, 74, .85, 8) + peixe(74, 70, 1, -8) +
+    '</g>';
+}
 function bolha() {
   return rad('bolha-g', [[0, '#fff', 0], [.72, '#DFF8FF', .08], [.93, '#DFF8FF', .45], [1, '#fff', .9]], 50, 50, 47) +
     circ(50, 50, 46, 'fill="url(#bolha-g)" stroke="#F3FBFF" stroke-width="2.6"') +
@@ -1706,7 +1771,10 @@ function simbolos(m, pre) {
     defs += r.defs;
     syms += '<symbol id="' + pre + 's' + t + '" viewBox="0 0 100 100">' + r.corpo + '</symbol>';
   });
-  syms += '<symbol id="' + pre + 'sp-lh" viewBox="0 0 100 100">' + correnteza(false) + '</symbol>' +
+  syms += '<symbol id="' + pre + 'sp-onda" viewBox="0 0 100 100">' + mare(false) + '</symbol>' +
+          '<symbol id="' + pre + 'sp-ondav" viewBox="0 0 100 100">' + mare(true) + '</symbol>' +
+          '<symbol id="' + pre + 'sp-cardume" viewBox="0 0 100 100">' + cardume() + '</symbol>' +
+          '<symbol id="' + pre + 'sp-lh" viewBox="0 0 100 100">' + correnteza(false) + '</symbol>' +
           '<symbol id="' + pre + 'sp-lv" viewBox="0 0 100 100">' + correnteza(true) + '</symbol>' +
           '<symbol id="' + pre + 'sp-bomba" viewBox="0 0 100 100">' + bolha().replace(/bolha-g/g, pre + 'bolha-g') + '</symbol>' +
           '<symbol id="' + pre + 's-arco" viewBox="0 0 100 100">' + perola(m).replace(/per-([ghi])/g, pre + 'per-$1') + '</symbol>';
@@ -1819,6 +1887,32 @@ const PROPS = {
     }
     return s;
   },
+  anemonas: p => {
+    let s = '<path d="M0 130Q80 118 170 126T400 122V170H0Z" fill="' + hex(p.fundo, -.2) + '"/>';
+    for (let i = 0; i < 6; i++) {
+      const x = 30 + i * 66, alt = 22 + ((i * 29) % 20), cor = i % 2 ? p.acento : p.vida;
+      s += '<ellipse cx="' + x + '" cy="' + (126 - alt * .3) + '" rx="' + (14 + alt * .2) + '" ry="' + (alt * .5) + '" fill="' + cor + '" opacity=".45"/>';
+      for (let j = 0; j < 9; j++) {
+        const a = -Math.PI + (j / 8) * Math.PI;
+        s += '<path d="M' + x + ' ' + (126 - alt * .3) + 'q' + (Math.cos(a) * 10).toFixed(1) + ' ' + (-alt * .7).toFixed(1) + ' ' + (Math.cos(a) * 18).toFixed(1) + ' ' + (-alt).toFixed(1) +
+             '" fill="none" stroke="' + cor + '" stroke-width="3" stroke-linecap="round" opacity=".8"/>';
+      }
+    }
+    return s;
+  },
+  esponjas: p =>
+    '<path d="M0 132Q90 120 190 128T400 124V170H0Z" fill="' + hex(p.fundo, -.22) + '"/>' +
+    '<g fill="' + p.vida + '" opacity=".75">' +
+    '<path d="M50 130V96q0-14 16-14t16 14v34Z"/><ellipse cx="66" cy="96" rx="16" ry="6" fill="' + hex(p.vida, -.3) + '"/>' +
+    '<path d="M300 128V84q0-16 18-16t18 16v44Z"/><ellipse cx="318" cy="84" rx="18" ry="7" fill="' + hex(p.vida, -.3) + '"/>' +
+    '<path d="M180 130V106q0-10 12-10t12 10v24Z"/></g>' +
+    '<g fill="' + p.acento + '" opacity=".5"><circle cx="120" cy="124" r="7"/><circle cx="240" cy="126" r="5"/><circle cx="360" cy="122" r="6"/></g>',
+  tubulacao: p =>
+    '<path d="M0 134Q100 124 200 132T400 128V170H0Z" fill="' + hex(p.fundo, -.25) + '"/>' +
+    '<g fill="' + hex(p.pedra, -.4) + '"><rect x="0" y="108" width="400" height="16" rx="8"/>' +
+    '<rect x="96" y="100" width="16" height="32" rx="4"/><rect x="250" y="100" width="16" height="32" rx="4"/></g>' +
+    '<g fill="' + p.vida + '" opacity=".55"><path d="M30 108q10-12 22 0Z"/><path d="M180 108q12-14 26 0Z"/><path d="M330 108q10-12 22 0Z"/></g>' +
+    '<g fill="' + p.acento + '" opacity=".4"><circle cx="150" cy="116" r="5"/><circle cx="300" cy="116" r="4"/></g>',
   longe: p =>
     '<g opacity=".2" fill="' + p.acento + '"><path d="M60 60c0-14 10-22 22-22s22 8 22 22c-4 2-40 2-44 0Z"/>' +
     '<path d="M66 62q-3 16 2 30M78 62q2 18-2 34M92 62q4 14 0 28" stroke="' + p.acento + '" stroke-width="2" fill="none"/>' +
@@ -1855,14 +1949,42 @@ function particulas(m, acento) {
   return s;
 }
 
-function nadadores(m) {
-  const bicho = m === 4 ? 's5' : 's4';
+/* bicho passeando no fundo do cenário, desenhado em silhueta */
+const NADANTES = {
+  tartaruga: c => '<path d="M50 20c16 0 28 12 28 28S66 76 50 76 22 64 22 48 34 20 50 20Z" fill="' + c + '"/>' +
+    '<path d="M22 40L6 32l2 14 14 2ZM78 40l16-8-2 14-14 2ZM30 66l-8 14 12-4ZM70 66l8 14-12-4ZM78 44l14 4-14 6Z" fill="' + c + '"/>' +
+    '<path d="M50 24q12 10 12 24t-12 24q-12-10-12-24t12-24Z" fill="rgba(0,0,0,.18)"/>',
+  arraia: c => '<path d="M50 24c22 0 44 18 44 34 0 8-10 10-20 6-8-4-16-6-24-6s-16 2-24 6c-10 4-20 2-20-6 0-16 22-34 44-34Z" fill="' + c + '"/>' +
+    '<path d="M50 62q4 20 2 34" fill="none" stroke="' + c + '" stroke-width="5" stroke-linecap="round"/>' +
+    '<circle cx="42" cy="38" r="3" fill="rgba(0,0,0,.35)"/><circle cx="58" cy="38" r="3" fill="rgba(0,0,0,.35)"/>',
+  golfinho: c => '<path d="M8 56c14-22 44-34 74-30-4 8-2 14 6 20-10 12-30 20-50 18l-8 12-4-14-18-6Z" fill="' + c + '"/>' +
+    '<path d="M46 26q6-14 16-14-4 10 0 18Z" fill="' + c + '"/>',
+  cardume: c => { let s = ''; for (let i = 0; i < 7; i++) { const x = 10 + (i % 4) * 24, y = 26 + Math.floor(i / 4) * 26;
+      s += '<g transform="translate(' + x + ' ' + y + ') scale(.7)"><path d="M-12 0C-8 -7 2 -9 9 -4L16 -9L16 9L9 4C2 9 -8 7 -12 0Z" fill="' + c + '"/></g>'; } return s; },
+  medusa: c => '<path d="M18 46c0-18 14-30 32-30s32 12 32 30c-6 4-58 4-64 0Z" fill="' + c + '" opacity=".85"/>' +
+    '<path d="M28 48q-4 18 2 34M44 48q-2 20 2 36M58 48q2 20-2 36M72 48q4 18-2 32" fill="none" stroke="' + c + '" stroke-width="3.4" stroke-linecap="round" opacity=".7"/>',
+  polvo: c => '<path d="M50 14c18 0 28 12 28 26S66 62 50 62 22 54 22 40 32 14 50 14Z" fill="' + c + '"/>' +
+    '<path d="M30 56q-8 16-2 28M42 60q-6 18 0 28M58 60q6 18 0 28M70 56q8 16 2 28" fill="none" stroke="' + c + '" stroke-width="5" stroke-linecap="round"/>' +
+    '<circle cx="42" cy="34" r="4" fill="rgba(0,0,0,.35)"/><circle cx="58" cy="34" r="4" fill="rgba(0,0,0,.35)"/>',
+  tubarao: c => '<path d="M4 54c18-18 46-28 78-26l14-14-4 18 8 10-10 8c-24 10-58 10-86 4Z" fill="' + c + '"/>' +
+    '<path d="M44 30q4-18 14-20-4 12 0 22Z" fill="' + c + '"/><path d="M40 62q-4 14-14 18 14-2 22-10Z" fill="' + c + '"/>',
+  lanterna: c => '<path d="M24 50c0-16 14-28 32-28s30 12 30 28-14 26-30 26-32-10-32-26Z" fill="' + c + '"/>' +
+    '<path d="M56 22C48 8 30 6 22 16" fill="none" stroke="' + c + '" stroke-width="3" stroke-linecap="round"/>' +
+    '<circle cx="21" cy="17" r="5" fill="#BFF5EE"/><circle cx="21" cy="17" r="11" fill="#BFF5EE" opacity=".25"/>'
+};
+const BICHOS_BANDA = [['tartaruga','cardume','arraia'], ['cardume','polvo','arraia'], ['tubarao','arraia','golfinho'],
+                      ['medusa','lanterna','arraia'], ['lanterna','medusa','polvo']];
+function nadadores(m, amb) {
+  const pool = BICHOS_BANDA[m], escuro = m >= 3;
   let s = '';
   for (let i = 0; i < 2; i++) {
-    const tam = 30 + acasoCena(i, 7) * 26, topo = 14 + acasoCena(i, 8) * 52;
+    const semente = (amb.banda + 1) * 7 + i * 3 + (amb.reg.nome.length * 5);
+    const nome = pool[Math.floor(acasoCena(semente, 11) * pool.length) % pool.length];
+    const tam = 46 + acasoCena(i, 7) * 40, topo = 12 + acasoCena(semente, 8) * 54;
+    const cor = escuro ? rgba(amb.reg.acento, .5) : rgba('#' + mistura(amb.reg.agua[Math.min(amb.banda + 2, 5)], '#000000', .25), .55);
     s += '<div class="nadador' + (i ? ' volta' : '') + '" style="top:' + topo.toFixed(1) + '%;width:' + tam.toFixed(0) + 'px;height:' + tam.toFixed(0) +
-         'px;animation-duration:' + (26 + acasoCena(i, 9) * 22).toFixed(1) + 's;animation-delay:-' + (acasoCena(i, 10) * 20).toFixed(1) +
-         's"><svg viewBox="0 0 100 100"><use href="#' + bicho + '"/></svg></div>';
+         'px;animation-duration:' + (26 + acasoCena(i, 9) * 24).toFixed(1) + 's;animation-delay:-' + (acasoCena(i, 10) * 22).toFixed(1) +
+         's"><svg viewBox="0 0 100 100">' + NADANTES[nome](cor) + '</svg></div>';
   }
   return s;
 }
@@ -1879,7 +2001,7 @@ function cena(m, amb) {
   if (m <= 2) s += '<div class="raios"><i></i><i></i><i></i><i></i><i></i></div>';
   s += '<svg class="chao" viewBox="0 0 400 170" preserveAspectRatio="xMidYMax slice" aria-hidden="true">' +
        (PROPS[amb.chao] || PROPS.pedra)(paletaChao(amb)) + '</svg>';
-  s += nadadores(m);
+  s += nadadores(m, amb);
   s += '<div class="particulas">' + particulas(m, amb.reg.acento) + '</div>';
   return s;
 }
@@ -1927,8 +2049,8 @@ let efeitosPendentes = [];
 /* ponto extra por disparar especial e por juntar dois deles:
    é o que faz valer a pena montar a jogada em vez de só combinar 3 */
 let bonusEspeciais = 0;
-const VALOR_ESP = { 1: 300, 2: 300, 3: 900, 4: 900 };     /* correnteza, correnteza em pé, bolha, pérola */
-const VALOR_NASCE = { 1: 150, 2: 150, 3: 250, 4: 400 };   /* por criar cada um deles */
+const VALOR_ESP = { 1: 300, 2: 300, 3: 900, 4: 900, 5: 1400, 6: 1400, 7: 1100 };     /* correnteza, correnteza em pé, bolha, pérola */
+const VALOR_NASCE = { 1: 150, 2: 150, 3: 250, 4: 400, 5: 600, 6: 600, 7: 500 };   /* por criar cada um deles */
 
 /* ═══ ESTADO ════════════════════════════════════════════════════ */
 let grid = [], papel = [], uid = 0;
@@ -2026,6 +2148,9 @@ function fazGrupos(corridas) {
 }
 
 function especialDoGrupo(g) {
+  if (g.maxH >= 6) return ONDA;          /* seis deitadas: maré, leva três fileiras */
+  if (g.maxV >= 6) return ONDAV;         /* seis em pé: maré de través */
+  if (g.cells.length >= 7) return CARDUME;  /* aglomerado grande: cardume */
   if (g.maxH >= 5 || g.maxV >= 5) return ARCO;
   if (g.maxH >= 3 && g.maxV >= 3) return BOMBA;
   if (g.maxH >= 4) return LH;
@@ -2063,6 +2188,18 @@ function areaEspecial(r, c, p, corAlvo) {
     /* bomba é bomba: leva tudo em volta, 5x5 cheio */
     for (let dr = -2; dr <= 2; dr++) for (let dc = -2; dc <= 2; dc++)
       if (dentro(r + dr, c + dc)) out.push(chave(r + dr, c + dc));
+  } else if (p.sp === ONDA) {
+    for (let dr = -1; dr <= 1; dr++) if (dentro(r + dr, 0)) for (let x = 0; x < W; x++) out.push(chave(r + dr, x));
+  } else if (p.sp === ONDAV) {
+    for (let dc = -1; dc <= 1; dc++) if (dentro(0, c + dc)) for (let y = 0; y < H; y++) out.push(chave(y, c + dc));
+  } else if (p.sp === CARDUME) {
+    /* o cardume sai caçando a própria cor pelo tabuleiro */
+    const iguais = [];
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++)
+      if (grid[y][x] && !grid[y][x].bau && grid[y][x].t === p.t && !(y === r && x === c)) iguais.push(chave(y, x));
+    for (let k = iguais.length - 1; k > 0; k--) { const j = Math.floor(rnd() * (k + 1)); const t = iguais[k]; iguais[k] = iguais[j]; iguais[j] = t; }
+    out.push(chave(r, c));
+    for (const k of iguais.slice(0, 9)) out.push(k);
   } else if (p.sp === ARCO) {
     const t = (corAlvo != null) ? corAlvo : corMaisComum();
     for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (grid[y][x] && grid[y][x].t === t) out.push(chave(y, x));
@@ -2082,7 +2219,7 @@ function expandir(conj, corAlvo) {
     const area = areaEspecial(r, c, p, corAlvo);
     const vale = VALOR_ESP[p.sp] || 0;
     bonusEspeciais += vale;
-    efeitosPendentes.push({ r: r, c: c, sp: p.sp, vale: vale, alvos: p.sp === ARCO ? area.slice() : null });
+    efeitosPendentes.push({ r: r, c: c, sp: p.sp, vale: vale, alvos: (p.sp === ARCO || p.sp === CARDUME) ? area.slice() : null });
     for (const a of area) {
       if (!conj.has(a)) conj.add(a);
       if (!feitos.has(a)) fila.push(a);
@@ -2135,6 +2272,15 @@ function comboTroca(ra, ca, rb, cb) {
     a.sp = b.sp = NADA;
     for (let d = -2; d <= 2; d++) { if (dentro(rb + d, 0)) linhaToda(rb + d); if (dentro(0, cb + d)) colunaToda(cb + d); }
     conj.add(ka);
+  } else if (sa === ONDA || sa === ONDAV || sa === CARDUME || sb === ONDA || sb === ONDAV || sb === CARDUME) {
+    /* maré ou cardume no combo: os dois especiais estouram juntos */
+    for (const k of areaEspecial(rb, cb, b, null)) conj.add(k);
+    for (const k of areaEspecial(ra, ca, a, null)) conj.add(k);
+    efeitosPendentes.push({ r: rb, c: cb, sp: sb, vale: 1800 });
+    efeitosPendentes.push({ r: ra, c: ca, sp: sa, vale: 0 });
+    bonusEspeciais += 1800;
+    a.sp = b.sp = NADA;
+    conj.add(ka); conj.add(kb);
   } else if (sa === BOMBA && sb === BOMBA) {
     a.sp = b.sp = NADA;
     efeitosPendentes.push({ r: rb, c: cb, sp: BOMBA, tam: 9, vale: 3500 });
@@ -2296,12 +2442,16 @@ function corpoDaPeca(p) {
     if (p.sp === LH) s += '<div class="capa"><svg viewBox="0 0 100 100"><use href="#sp-lh"/></svg></div>';
     else if (p.sp === LV) s += '<div class="capa"><svg viewBox="0 0 100 100"><use href="#sp-lv"/></svg></div>';
     else if (p.sp === BOMBA) s += '<div class="capa"><svg viewBox="0 0 100 100"><use href="#sp-bomba"/></svg></div>';
+    else if (p.sp === ONDA) s += '<div class="capa"><svg viewBox="0 0 100 100"><use href="#sp-onda"/></svg></div>';
+    else if (p.sp === ONDAV) s += '<div class="capa"><svg viewBox="0 0 100 100"><use href="#sp-ondav"/></svg></div>';
+    else if (p.sp === CARDUME) s += '<div class="capa"><svg viewBox="0 0 100 100"><use href="#sp-cardume"/></svg></div>';
   }
   return s;
 }
 function classeEsp(p) {
   if (p.bau) return 'e-bau';
-  return p.sp === LH ? 'esp-lh' : p.sp === LV ? 'esp-lv' : p.sp === BOMBA ? 'esp-bomba' : p.sp === ARCO ? 'esp-arco' : '';
+  return p.sp === LH ? 'esp-lh' : p.sp === LV ? 'esp-lv' : p.sp === BOMBA ? 'esp-bomba' : p.sp === ARCO ? 'esp-arco'
+       : p.sp === ONDA || p.sp === ONDAV ? 'esp-onda' : p.sp === CARDUME ? 'esp-cardume' : '';
 }
 function criaEl(p) {
   const el = document.createElement('div');
@@ -2578,7 +2728,17 @@ async function limpar(conj, novos) {
       faixaTexto('Tudo!');
       peso = 3;
     }
-    else if (e.sp === ARCO && e.alvos) { feixePerola(e.r, e.c, e.alvos); ondaChoque(e.r, e.c, 4, '#CFE9FF'); Som.combo(); clarao('rgba(207,233,255,.5)'); peso = 3; }
+    else if (e.sp === ONDA) {
+      for (let d = -1; d <= 1; d++) if (e.r + d >= 0 && e.r + d < H) setTimeout(() => raioLinha(e.r + d, e.c, true), Math.abs(d) * 90);
+      Som.raio(); setTimeout(() => Som.raio(), 130); clarao('rgba(191,245,238,.4)'); peso = 3;
+    } else if (e.sp === ONDAV) {
+      for (let d = -1; d <= 1; d++) if (e.c + d >= 0 && e.c + d < W) setTimeout(() => raioLinha(e.r, e.c + d, false), Math.abs(d) * 90);
+      Som.raio(); setTimeout(() => Som.raio(), 130); clarao('rgba(191,245,238,.4)'); peso = 3;
+    } else if (e.sp === CARDUME && e.alvos) {
+      feixePerola(e.r, e.c, e.alvos);
+      estilhacos(e.r, e.c, '#BFF5EE', 10);
+      Som.especial(); setTimeout(() => Som.pop(6), 160); peso = Math.max(peso, 2);
+    } else if (e.sp === ARCO && e.alvos) { feixePerola(e.r, e.c, e.alvos); ondaChoque(e.r, e.c, 4, '#CFE9FF'); Som.combo(); clarao('rgba(207,233,255,.5)'); peso = 3; }
   }
   efeitosPendentes.length = 0;
 
@@ -3046,6 +3206,11 @@ function atualizaHud() {
       s += '<div class="alvo' + (falta ? '' : ' feito') + '">' + icone(it[0]) + '<b>' + (falta || '✓') + '</b></div>';
     }
     o.innerHTML = s + '</div>';
+    o.querySelectorAll('.alvo').forEach((el, k) => {
+      const v = el.querySelector('b').textContent;
+      if (o.dataset['v' + k] !== undefined && o.dataset['v' + k] !== v) { el.classList.remove('bateu'); void el.offsetWidth; el.classList.add('bateu'); }
+      o.dataset['v' + k] = v;
+    });
   } else {
     const falta = casasCobertas(papel);
     o.innerHTML = '<div><div class="rotulo">' + ambiente(J.desafio ? 0 : J.fase).bloq.verbo + '</div>' +
@@ -3210,6 +3375,14 @@ function mostraAjuda() {
     '<h4>Cinco em linha viram pérola</h4>' +
     '<div class="regra"><div class="amostra">' + amostra('s3') + '<span class="seta">›</span>' + amostra('s-arco') + '</div>' +
     '<div>Troque a pérola com qualquer peça e somem todas daquela cor.</div></div>' +
+
+    '<h4>Seis em linha viram maré</h4>' +
+    '<div class="regra"><div class="amostra">' + amostra('s0', 'sp-onda') + '</div>' +
+    '<div>A maré leva três fileiras de uma vez. Se veio de uma fila em pé, leva três colunas.</div></div>' +
+
+    '<h4>Montes grandes viram cardume</h4>' +
+    '<div class="regra"><div class="amostra">' + amostra('s3', 'sp-cardume') + '</div>' +
+    '<div>Quando uma jogada junta sete peças ou mais, nasce um cardume: ele sai caçando a própria cor pelo tabuleiro.</div></div>' +
 
     '<h4>Especial estoura sozinho</h4>' +
     '<p>Não precisa combinar: troque o especial com qualquer peça do lado, ou toque duas vezes nele, que ele dispara na hora. Gasta uma jogada.</p>' +
@@ -3423,6 +3596,27 @@ async function compartilhaDesafio(botao) {
   const txt = 'Fiz ' + nf(prog.desafio.melhor) + ' pontos no desafio da semana do Mergulho (' + desafioAtual.semana + '). Bora bater?\n' + location.href;
   try { if (navigator.share) { await navigator.share({ text: txt }); return; } } catch (e) { return; }
   try { await navigator.clipboard.writeText(txt); botao.textContent = 'Copiado!'; setTimeout(() => botao.textContent = 'Mandar pro grupo', 2000); } catch (e) {}
+}
+
+/* ═══ VERSÃO NOVA ══════════════════════════════════════════════
+   O service worker avisa quando baixou uma versão nova. Nada
+   recarrega no meio da partida: aparece uma faixa e você decide.
+   Antes de trocar, a partida em andamento é guardada.            */
+window.avisaVersao = function () {
+  const el = document.getElementById('aviso-versao');
+  if (!el) return;
+  el.hidden = false;
+  requestAnimationFrame(() => el.classList.add('mostra'));
+};
+function aplicaVersao() {
+  const A = window.Atualizacao;
+  salvaPartida();
+  if (!A || !A.reg || !A.reg.waiting) { location.reload(); return; }
+  A.aplicando = true;
+  const el = document.getElementById('bt-atualiza');
+  if (el) el.textContent = 'Atualizando...';
+  try { A.reg.waiting.postMessage('atualiza-agora'); } catch (e) {}
+  setTimeout(() => location.reload(), 1500);
 }
 
 /* ═══ AJUSTES E DESEMPENHO ═════════════════════════════════════
@@ -3686,7 +3880,7 @@ function tela(id) {
 /* ═══ MAPA: a coluna d'água, da superfície ao fundo ═════════════ */
 const CADEADO = '<svg viewBox="0 0 24 24" class="cadeado"><rect x="5" y="11" width="14" height="10" rx="2.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
 
-let mapaIni = 0;
+let mapaIni = 0, paradaEm = -1;
 
 function superficieMapa(exp, reg) {
   return '<div class="superficie" aria-hidden="true"><div class="sol"></div>' +
@@ -3702,12 +3896,14 @@ function leitoMapa() {
 }
 function noDoMapa(i) {
   const f = fase(i), desloc = Math.sin(i * 0.82) * 70, travada = i > prog.max, est = prog.estrelas[i] || 0;
+  const parada = paradaEm === i;
   const trio = (!travada && est) ? '<span class="trio">' + [0, 1, 2].map(q => '<svg viewBox="0 0 100 100"><use href="#' + (q < est ? 'i-estrela' : 'i-estrela-off') + '"/></svg>').join('') + '</span>' : '';
   const lado = desloc < 0 ? 'left:calc(50% + ' + (desloc + 52).toFixed(1) + 'px);text-align:left'
                           : 'right:calc(50% - ' + (desloc - 52).toFixed(1) + 'px);text-align:right';
   return '<div class="no-linha">' +
     '<button class="no' + (travada ? ' travada' : '') + (i === prog.max && !travada ? ' atual' : '') + '" data-i="' + i + '" style="transform:translateX(' + desloc.toFixed(1) + 'px);--dx:' + desloc.toFixed(1) + 'px;animation-delay:' + (((i - mapaIni) % 24) * 26) + 'ms" aria-label="Fase ' + (i + 1) + ': ' + f.nome + (travada ? ', ainda fechada' : '') + '">' +
-      '<span class="disco"></span><span class="num">' + (travada ? CADEADO : (i + 1)) + '</span>' + trio + '</button>' +
+      '<span class="disco"></span><span class="num">' + (travada ? CADEADO : (i + 1)) + '</span>' + trio +
+      (parada ? '<span class="marca-parada" aria-label="partida pela metade">⏸</span>' : '') + '</button>' +
     '<span class="no-rotulo' + (travada ? ' apagado' : '') + '" style="' + lado + '"><b>' + f.nome + '</b><small>' + metros(f.prof) + '</small></span>' +
   '</div>';
 }
@@ -3715,6 +3911,8 @@ function noDoMapa(i) {
 /* o mapa mostra uma janela de fases: com dez mil nós na tela o
    celular não aguentaria, então desenha em volta de onde você está */
 function montaMapa(mantem) {
+  const pp = lePartida();
+  paradaEm = pp ? pp.f : -1;
   const col = document.getElementById('coluna'), trilha = document.getElementById('trilha');
   const altaAntes = col.scrollHeight;
   if (!mantem) mapaIni = Math.max(0, prog.max - 17);
@@ -3828,7 +4026,15 @@ function retomaPartida(d) {
   });
 }
 
-function abreFase(i) {
+function abreFase(i, ignoraParada) {
+  const parada = lePartida();
+  if (!ignoraParada && parada && parada.f === i) {
+    cartao('<h3>Você parou aqui</h3>' +
+      '<p>Esta fase ficou pela metade, com ' + parada.mov + (parada.mov === 1 ? ' jogada' : ' jogadas') + ' e ' + nf(parada.pontos) + ' pontos.</p>' +
+      '<div class="bts"><button class="bt vidro" data-ac="descarta">Começar de novo</button>' +
+      '<button class="bt" data-ac="retoma">Continuar daqui</button></div>');
+    return;
+  }
   limpaPartida();
   const f = fase(i);
   instalaMundo(f.m, i);
@@ -3901,7 +4107,15 @@ function iniciar() {
   aplicaLeve();
   document.getElementById('versao').textContent = 'v' + VERSAO_JOGO;
   document.addEventListener('pointerdown', e => {
-    if (e.target.closest('.bt, .ico-bt, .poder, .no, .bt-compra, .subir')) { Som.liga(); Som.toque(); }
+    const alvo = e.target.closest('.bt, .ico-bt, .poder, .no, .bt-compra, .subir, .bt-att');
+    if (!alvo) return;
+    Som.liga(); Som.toque();
+    const r = alvo.getBoundingClientRect(), o = document.createElement('span');
+    o.className = 'ondinha';
+    o.style.left = (e.clientX - r.left) + 'px';
+    o.style.top = (e.clientY - r.top) + 'px';
+    alvo.appendChild(o);
+    setTimeout(() => o.remove(), 620);
   }, true);
   pintaBotaoSom();
   pintaMoedas();
@@ -3913,6 +4127,8 @@ function iniciar() {
   document.getElementById('bt-ajuda').onclick = () => { Som.liga(); mostraAjuda(); };
   document.getElementById('bt-mapa-volta').onclick = () => { instalaMundo(fase(prog.max).m); tela('tela-inicio'); };
   document.getElementById('bt-jogo-volta').onclick = () => { soltaSemente(); fechaCartao(); montaMapa(); tela('tela-mapa'); };
+  document.getElementById('bt-atualiza').onclick = aplicaVersao;
+  if (window.Atualizacao && window.Atualizacao.pronta) avisaVersao();
   document.getElementById('bt-ajustes').onclick = () => { Som.liga(); mostraAjustes(); };
   document.getElementById('bt-desafio').onclick = () => { Som.liga(); mostraDesafio(); };
   document.getElementById('bt-loja').onclick = () => { Som.liga(); mostraLoja(); };
@@ -3945,7 +4161,7 @@ function iniciar() {
     else if (ac === 'sair') contaSair();
 
     else if (ac === 'retoma') { const d = lePartida(); limpaPartida(); if (d) retomaPartida(d); else fechaCartao(); }
-    else if (ac === 'descarta') { limpaPartida(); fechaCartao(); }
+    else if (ac === 'descarta') { const d = lePartida(); limpaPartida(); if (d) abreFase(d.f, true); else fechaCartao(); }
     else if (ac === 'folego') usaFolegoNoCartao();
     else if (ac === 'comeca') { fechaCartao(); comecaFase(); }
     else if (ac === 'mapa') { fechaCartao(); montaMapa(); tela('tela-mapa'); }
@@ -3976,14 +4192,9 @@ function iniciar() {
     else if (prog.som && prog.musica) Musica.liga(document.body.classList.contains('em-jogo') ? 'jogo' : 'menu', mundoAtual);
   });
 
-  const parada = lePartida();
-  setTimeout(() => {
-    if (parada && fase(parada.f)) enfileira(() => cartao('<h3>Você parou no meio</h3>' +
-      '<p>A fase ' + (parada.f + 1) + ' ficou pela metade, com ' + parada.mov + (parada.mov === 1 ? ' jogada' : ' jogadas') + ' e ' + nf(parada.pontos) + ' pontos. Quer voltar pra ela?</p>' +
-      '<div class="bts"><button class="bt vidro" data-ac="descarta">Começar de novo</button>' +
-      '<button class="bt" data-ac="retoma">Continuar</button></div>'));
-    if (prog.dia !== hoje()) enfileira(mostraBau);
-  }, 600);
+  /* a partida parada não atropela mais a abertura: ela espera você
+     tocar naquela fase no mapa */
+  setTimeout(() => { if (prog.dia !== hoje()) enfileira(mostraBau); }, 700);
 }
 
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', iniciar);
@@ -3992,14 +4203,29 @@ else iniciar();
 </script>
 
 <script>
-/* service worker: só no https (ou localhost), nunca em file:// */
+/* Service worker com aviso de versão nova. Nada recarrega sozinho no
+   meio de uma partida: o jogo avisa e você decide quando trocar.   */
+window.Atualizacao = { reg: null, pronta: false, aplicando: false };
 if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
   addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js').catch(() => {});
-    let recarregou = false;
+    navigator.serviceWorker.register('./sw.js').then(reg => {
+      Atualizacao.reg = reg;
+      const olha = () => {
+        if (reg.waiting) { Atualizacao.pronta = true; if (window.avisaVersao) window.avisaVersao(); }
+      };
+      olha();
+      reg.addEventListener('updatefound', () => {
+        const novo = reg.installing;
+        if (!novo) return;
+        novo.addEventListener('statechange', () => { if (novo.state === 'installed' && navigator.serviceWorker.controller) olha(); });
+      });
+      /* procura versão nova ao voltar pro app e de tempos em tempos */
+      const procura = () => { try { reg.update(); } catch (e) {} };
+      document.addEventListener('visibilitychange', () => { if (!document.hidden) procura(); });
+      setInterval(procura, 15 * 60 * 1000);
+    }).catch(() => {});
     navigator.serviceWorker.addEventListener('controllerchange', () => {
-      if (recarregou) return;
-      recarregou = true;
+      if (!Atualizacao.aplicando) return;
       location.reload();
     });
   });

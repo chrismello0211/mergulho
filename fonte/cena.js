@@ -104,6 +104,32 @@ const PROPS = {
     }
     return s;
   },
+  anemonas: p => {
+    let s = '<path d="M0 130Q80 118 170 126T400 122V170H0Z" fill="' + hex(p.fundo, -.2) + '"/>';
+    for (let i = 0; i < 6; i++) {
+      const x = 30 + i * 66, alt = 22 + ((i * 29) % 20), cor = i % 2 ? p.acento : p.vida;
+      s += '<ellipse cx="' + x + '" cy="' + (126 - alt * .3) + '" rx="' + (14 + alt * .2) + '" ry="' + (alt * .5) + '" fill="' + cor + '" opacity=".45"/>';
+      for (let j = 0; j < 9; j++) {
+        const a = -Math.PI + (j / 8) * Math.PI;
+        s += '<path d="M' + x + ' ' + (126 - alt * .3) + 'q' + (Math.cos(a) * 10).toFixed(1) + ' ' + (-alt * .7).toFixed(1) + ' ' + (Math.cos(a) * 18).toFixed(1) + ' ' + (-alt).toFixed(1) +
+             '" fill="none" stroke="' + cor + '" stroke-width="3" stroke-linecap="round" opacity=".8"/>';
+      }
+    }
+    return s;
+  },
+  esponjas: p =>
+    '<path d="M0 132Q90 120 190 128T400 124V170H0Z" fill="' + hex(p.fundo, -.22) + '"/>' +
+    '<g fill="' + p.vida + '" opacity=".75">' +
+    '<path d="M50 130V96q0-14 16-14t16 14v34Z"/><ellipse cx="66" cy="96" rx="16" ry="6" fill="' + hex(p.vida, -.3) + '"/>' +
+    '<path d="M300 128V84q0-16 18-16t18 16v44Z"/><ellipse cx="318" cy="84" rx="18" ry="7" fill="' + hex(p.vida, -.3) + '"/>' +
+    '<path d="M180 130V106q0-10 12-10t12 10v24Z"/></g>' +
+    '<g fill="' + p.acento + '" opacity=".5"><circle cx="120" cy="124" r="7"/><circle cx="240" cy="126" r="5"/><circle cx="360" cy="122" r="6"/></g>',
+  tubulacao: p =>
+    '<path d="M0 134Q100 124 200 132T400 128V170H0Z" fill="' + hex(p.fundo, -.25) + '"/>' +
+    '<g fill="' + hex(p.pedra, -.4) + '"><rect x="0" y="108" width="400" height="16" rx="8"/>' +
+    '<rect x="96" y="100" width="16" height="32" rx="4"/><rect x="250" y="100" width="16" height="32" rx="4"/></g>' +
+    '<g fill="' + p.vida + '" opacity=".55"><path d="M30 108q10-12 22 0Z"/><path d="M180 108q12-14 26 0Z"/><path d="M330 108q10-12 22 0Z"/></g>' +
+    '<g fill="' + p.acento + '" opacity=".4"><circle cx="150" cy="116" r="5"/><circle cx="300" cy="116" r="4"/></g>',
   longe: p =>
     '<g opacity=".2" fill="' + p.acento + '"><path d="M60 60c0-14 10-22 22-22s22 8 22 22c-4 2-40 2-44 0Z"/>' +
     '<path d="M66 62q-3 16 2 30M78 62q2 18-2 34M92 62q4 14 0 28" stroke="' + p.acento + '" stroke-width="2" fill="none"/>' +
@@ -140,14 +166,42 @@ function particulas(m, acento) {
   return s;
 }
 
-function nadadores(m) {
-  const bicho = m === 4 ? 's5' : 's4';
+/* bicho passeando no fundo do cenário, desenhado em silhueta */
+const NADANTES = {
+  tartaruga: c => '<path d="M50 20c16 0 28 12 28 28S66 76 50 76 22 64 22 48 34 20 50 20Z" fill="' + c + '"/>' +
+    '<path d="M22 40L6 32l2 14 14 2ZM78 40l16-8-2 14-14 2ZM30 66l-8 14 12-4ZM70 66l8 14-12-4ZM78 44l14 4-14 6Z" fill="' + c + '"/>' +
+    '<path d="M50 24q12 10 12 24t-12 24q-12-10-12-24t12-24Z" fill="rgba(0,0,0,.18)"/>',
+  arraia: c => '<path d="M50 24c22 0 44 18 44 34 0 8-10 10-20 6-8-4-16-6-24-6s-16 2-24 6c-10 4-20 2-20-6 0-16 22-34 44-34Z" fill="' + c + '"/>' +
+    '<path d="M50 62q4 20 2 34" fill="none" stroke="' + c + '" stroke-width="5" stroke-linecap="round"/>' +
+    '<circle cx="42" cy="38" r="3" fill="rgba(0,0,0,.35)"/><circle cx="58" cy="38" r="3" fill="rgba(0,0,0,.35)"/>',
+  golfinho: c => '<path d="M8 56c14-22 44-34 74-30-4 8-2 14 6 20-10 12-30 20-50 18l-8 12-4-14-18-6Z" fill="' + c + '"/>' +
+    '<path d="M46 26q6-14 16-14-4 10 0 18Z" fill="' + c + '"/>',
+  cardume: c => { let s = ''; for (let i = 0; i < 7; i++) { const x = 10 + (i % 4) * 24, y = 26 + Math.floor(i / 4) * 26;
+      s += '<g transform="translate(' + x + ' ' + y + ') scale(.7)"><path d="M-12 0C-8 -7 2 -9 9 -4L16 -9L16 9L9 4C2 9 -8 7 -12 0Z" fill="' + c + '"/></g>'; } return s; },
+  medusa: c => '<path d="M18 46c0-18 14-30 32-30s32 12 32 30c-6 4-58 4-64 0Z" fill="' + c + '" opacity=".85"/>' +
+    '<path d="M28 48q-4 18 2 34M44 48q-2 20 2 36M58 48q2 20-2 36M72 48q4 18-2 32" fill="none" stroke="' + c + '" stroke-width="3.4" stroke-linecap="round" opacity=".7"/>',
+  polvo: c => '<path d="M50 14c18 0 28 12 28 26S66 62 50 62 22 54 22 40 32 14 50 14Z" fill="' + c + '"/>' +
+    '<path d="M30 56q-8 16-2 28M42 60q-6 18 0 28M58 60q6 18 0 28M70 56q8 16 2 28" fill="none" stroke="' + c + '" stroke-width="5" stroke-linecap="round"/>' +
+    '<circle cx="42" cy="34" r="4" fill="rgba(0,0,0,.35)"/><circle cx="58" cy="34" r="4" fill="rgba(0,0,0,.35)"/>',
+  tubarao: c => '<path d="M4 54c18-18 46-28 78-26l14-14-4 18 8 10-10 8c-24 10-58 10-86 4Z" fill="' + c + '"/>' +
+    '<path d="M44 30q4-18 14-20-4 12 0 22Z" fill="' + c + '"/><path d="M40 62q-4 14-14 18 14-2 22-10Z" fill="' + c + '"/>',
+  lanterna: c => '<path d="M24 50c0-16 14-28 32-28s30 12 30 28-14 26-30 26-32-10-32-26Z" fill="' + c + '"/>' +
+    '<path d="M56 22C48 8 30 6 22 16" fill="none" stroke="' + c + '" stroke-width="3" stroke-linecap="round"/>' +
+    '<circle cx="21" cy="17" r="5" fill="#BFF5EE"/><circle cx="21" cy="17" r="11" fill="#BFF5EE" opacity=".25"/>'
+};
+const BICHOS_BANDA = [['tartaruga','cardume','arraia'], ['cardume','polvo','arraia'], ['tubarao','arraia','golfinho'],
+                      ['medusa','lanterna','arraia'], ['lanterna','medusa','polvo']];
+function nadadores(m, amb) {
+  const pool = BICHOS_BANDA[m], escuro = m >= 3;
   let s = '';
   for (let i = 0; i < 2; i++) {
-    const tam = 30 + acasoCena(i, 7) * 26, topo = 14 + acasoCena(i, 8) * 52;
+    const semente = (amb.banda + 1) * 7 + i * 3 + (amb.reg.nome.length * 5);
+    const nome = pool[Math.floor(acasoCena(semente, 11) * pool.length) % pool.length];
+    const tam = 46 + acasoCena(i, 7) * 40, topo = 12 + acasoCena(semente, 8) * 54;
+    const cor = escuro ? rgba(amb.reg.acento, .5) : rgba('#' + mistura(amb.reg.agua[Math.min(amb.banda + 2, 5)], '#000000', .25), .55);
     s += '<div class="nadador' + (i ? ' volta' : '') + '" style="top:' + topo.toFixed(1) + '%;width:' + tam.toFixed(0) + 'px;height:' + tam.toFixed(0) +
-         'px;animation-duration:' + (26 + acasoCena(i, 9) * 22).toFixed(1) + 's;animation-delay:-' + (acasoCena(i, 10) * 20).toFixed(1) +
-         's"><svg viewBox="0 0 100 100"><use href="#' + bicho + '"/></svg></div>';
+         'px;animation-duration:' + (26 + acasoCena(i, 9) * 24).toFixed(1) + 's;animation-delay:-' + (acasoCena(i, 10) * 22).toFixed(1) +
+         's"><svg viewBox="0 0 100 100">' + NADANTES[nome](cor) + '</svg></div>';
   }
   return s;
 }
@@ -164,7 +218,7 @@ function cena(m, amb) {
   if (m <= 2) s += '<div class="raios"><i></i><i></i><i></i><i></i><i></i></div>';
   s += '<svg class="chao" viewBox="0 0 400 170" preserveAspectRatio="xMidYMax slice" aria-hidden="true">' +
        (PROPS[amb.chao] || PROPS.pedra)(paletaChao(amb)) + '</svg>';
-  s += nadadores(m);
+  s += nadadores(m, amb);
   s += '<div class="particulas">' + particulas(m, amb.reg.acento) + '</div>';
   return s;
 }

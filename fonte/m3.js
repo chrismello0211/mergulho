@@ -69,12 +69,16 @@ function corpoDaPeca(p) {
     if (p.sp === LH) s += '<div class="capa"><svg viewBox="0 0 100 100"><use href="#sp-lh"/></svg></div>';
     else if (p.sp === LV) s += '<div class="capa"><svg viewBox="0 0 100 100"><use href="#sp-lv"/></svg></div>';
     else if (p.sp === BOMBA) s += '<div class="capa"><svg viewBox="0 0 100 100"><use href="#sp-bomba"/></svg></div>';
+    else if (p.sp === ONDA) s += '<div class="capa"><svg viewBox="0 0 100 100"><use href="#sp-onda"/></svg></div>';
+    else if (p.sp === ONDAV) s += '<div class="capa"><svg viewBox="0 0 100 100"><use href="#sp-ondav"/></svg></div>';
+    else if (p.sp === CARDUME) s += '<div class="capa"><svg viewBox="0 0 100 100"><use href="#sp-cardume"/></svg></div>';
   }
   return s;
 }
 function classeEsp(p) {
   if (p.bau) return 'e-bau';
-  return p.sp === LH ? 'esp-lh' : p.sp === LV ? 'esp-lv' : p.sp === BOMBA ? 'esp-bomba' : p.sp === ARCO ? 'esp-arco' : '';
+  return p.sp === LH ? 'esp-lh' : p.sp === LV ? 'esp-lv' : p.sp === BOMBA ? 'esp-bomba' : p.sp === ARCO ? 'esp-arco'
+       : p.sp === ONDA || p.sp === ONDAV ? 'esp-onda' : p.sp === CARDUME ? 'esp-cardume' : '';
 }
 function criaEl(p) {
   const el = document.createElement('div');
@@ -351,7 +355,17 @@ async function limpar(conj, novos) {
       faixaTexto('Tudo!');
       peso = 3;
     }
-    else if (e.sp === ARCO && e.alvos) { feixePerola(e.r, e.c, e.alvos); ondaChoque(e.r, e.c, 4, '#CFE9FF'); Som.combo(); clarao('rgba(207,233,255,.5)'); peso = 3; }
+    else if (e.sp === ONDA) {
+      for (let d = -1; d <= 1; d++) if (e.r + d >= 0 && e.r + d < H) setTimeout(() => raioLinha(e.r + d, e.c, true), Math.abs(d) * 90);
+      Som.raio(); setTimeout(() => Som.raio(), 130); clarao('rgba(191,245,238,.4)'); peso = 3;
+    } else if (e.sp === ONDAV) {
+      for (let d = -1; d <= 1; d++) if (e.c + d >= 0 && e.c + d < W) setTimeout(() => raioLinha(e.r, e.c + d, false), Math.abs(d) * 90);
+      Som.raio(); setTimeout(() => Som.raio(), 130); clarao('rgba(191,245,238,.4)'); peso = 3;
+    } else if (e.sp === CARDUME && e.alvos) {
+      feixePerola(e.r, e.c, e.alvos);
+      estilhacos(e.r, e.c, '#BFF5EE', 10);
+      Som.especial(); setTimeout(() => Som.pop(6), 160); peso = Math.max(peso, 2);
+    } else if (e.sp === ARCO && e.alvos) { feixePerola(e.r, e.c, e.alvos); ondaChoque(e.r, e.c, 4, '#CFE9FF'); Som.combo(); clarao('rgba(207,233,255,.5)'); peso = 3; }
   }
   efeitosPendentes.length = 0;
 
