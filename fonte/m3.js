@@ -737,12 +737,11 @@ async function giroAgora() {
 
 /* ═══ DICA ══════════════════════════════════════════════════════ */
 let dicaTimer = null, dicaAtiva = [];
-let dicaSeta = null;
 function reiniciaDica() {
   apagaDica();
   clearTimeout(dicaTimer);
   if (J.fim) return;
-  dicaTimer = setTimeout(mostraDica, 4500);
+  dicaTimer = setTimeout(mostraDica, 6000);
 }
 
 /* procura a melhor jogada disponível, não a primeira: se existe uma
@@ -771,28 +770,14 @@ function achaJogadaBoa() {
 
 function mostraDica() {
   if (J.ocupado || J.fim) { reiniciaDica(); return; }
+  /* a jogada sugerida é a melhor do tabuleiro, mas o aviso é discreto:
+     só as duas peças balançando, sem seta nem holofote */
   const j = achaJogadaBoa() || achaJogada();
   if (!j) return;
-  const fazEspecial = j[4] >= 3;
-  const alvos = [grid[j[0]][j[1]], grid[j[2]][j[3]]];
-  for (const p of alvos) {
+  for (const p of [grid[j[0]][j[1]], grid[j[2]][j[3]]]) {
     if (!p) continue;
     const el = els.get(p.id);
-    if (el) { el.classList.add('dica'); if (fazEspecial) el.classList.add('dica-especial'); dicaAtiva.push(el); }
+    if (el) { el.classList.add('dica'); dicaAtiva.push(el); }
   }
-  /* seta mostrando pra onde arrastar */
-  const seta = document.createElement('div');
-  seta.className = 'seta-dica' + (fazEspecial ? ' ouro' : '');
-  const meioR = (j[0] + j[2]) / 2, meioC = (j[1] + j[3]) / 2;
-  seta.style.left = (meioC * CEL + CEL / 2) + 'px';
-  seta.style.top = (meioR * CEL + CEL / 2) + 'px';
-  seta.style.transform = 'translate(-50%,-50%) rotate(' + (j[0] === j[2] ? 0 : 90) + 'deg)';
-  seta.innerHTML = '<svg viewBox="0 0 48 24"><path d="M6 12h36M32 3l10 9-10 9M16 3L6 12l10 9" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-  faiscasBox.appendChild(seta);
-  dicaSeta = seta;
 }
-function apagaDica() {
-  dicaAtiva.forEach(e => e.classList.remove('dica', 'dica-especial'));
-  dicaAtiva = [];
-  if (dicaSeta) { dicaSeta.remove(); dicaSeta = null; }
-}
+function apagaDica() { dicaAtiva.forEach(e => e.classList.remove('dica')); dicaAtiva = []; }

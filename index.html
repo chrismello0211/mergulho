@@ -339,12 +339,6 @@ body:not(.em-jogo) #cena{display:none}
 @keyframes escolhe{0%,100%{transform:scale(1)}50%{transform:scale(1.17)}}
 .peca.dica .corpo{animation:dica .8s ease-in-out infinite}
 @keyframes dica{0%,100%{transform:translateY(0) scale(1)}35%{transform:translateY(-6px) scale(1.09)}}
-.peca.dica-especial .corpo{filter:drop-shadow(0 0 10px var(--sol))}
-.seta-dica{position:absolute;z-index:6;width:46px;height:24px;color:#F3FBFF;pointer-events:none;
-  filter:drop-shadow(0 2px 4px rgba(0,20,40,.6));animation:seta-dica 1.1s ease-in-out infinite}
-.seta-dica.ouro{color:var(--sol);filter:drop-shadow(0 0 8px rgba(255,211,92,.85))}
-.seta-dica svg{width:100%;height:100%}
-@keyframes seta-dica{0%,100%{opacity:.55}50%{opacity:1}}
 .peca.nasce .corpo{animation:nasce .32s cubic-bezier(.2,1.7,.4,1)}
 @keyframes nasce{0%{transform:scale(0)}100%{transform:scale(1)}}
 .peca.nao .corpo{animation:nao .34s ease}
@@ -891,7 +885,7 @@ body.leve .cartao{animation-duration:.18s}
    MERGULHO · combinar 3 da beira da praia até 4.000 metros
    ═══════════════════════════════════════════════════════════════ */
 
-const VERSAO_JOGO = '2026.10.06';
+const VERSAO_JOGO = '2026.10.07';
 const W = 7, H = 8, TIPOS = 6;
 const NADA = 0, LH = 1, LV = 2, BOMBA = 3, ARCO = 4, ONDA = 5, ONDAV = 6, CARDUME = 7;
 
@@ -3167,12 +3161,11 @@ async function giroAgora() {
 
 /* ═══ DICA ══════════════════════════════════════════════════════ */
 let dicaTimer = null, dicaAtiva = [];
-let dicaSeta = null;
 function reiniciaDica() {
   apagaDica();
   clearTimeout(dicaTimer);
   if (J.fim) return;
-  dicaTimer = setTimeout(mostraDica, 4500);
+  dicaTimer = setTimeout(mostraDica, 6000);
 }
 
 /* procura a melhor jogada disponível, não a primeira: se existe uma
@@ -3201,31 +3194,17 @@ function achaJogadaBoa() {
 
 function mostraDica() {
   if (J.ocupado || J.fim) { reiniciaDica(); return; }
+  /* a jogada sugerida é a melhor do tabuleiro, mas o aviso é discreto:
+     só as duas peças balançando, sem seta nem holofote */
   const j = achaJogadaBoa() || achaJogada();
   if (!j) return;
-  const fazEspecial = j[4] >= 3;
-  const alvos = [grid[j[0]][j[1]], grid[j[2]][j[3]]];
-  for (const p of alvos) {
+  for (const p of [grid[j[0]][j[1]], grid[j[2]][j[3]]]) {
     if (!p) continue;
     const el = els.get(p.id);
-    if (el) { el.classList.add('dica'); if (fazEspecial) el.classList.add('dica-especial'); dicaAtiva.push(el); }
+    if (el) { el.classList.add('dica'); dicaAtiva.push(el); }
   }
-  /* seta mostrando pra onde arrastar */
-  const seta = document.createElement('div');
-  seta.className = 'seta-dica' + (fazEspecial ? ' ouro' : '');
-  const meioR = (j[0] + j[2]) / 2, meioC = (j[1] + j[3]) / 2;
-  seta.style.left = (meioC * CEL + CEL / 2) + 'px';
-  seta.style.top = (meioR * CEL + CEL / 2) + 'px';
-  seta.style.transform = 'translate(-50%,-50%) rotate(' + (j[0] === j[2] ? 0 : 90) + 'deg)';
-  seta.innerHTML = '<svg viewBox="0 0 48 24"><path d="M6 12h36M32 3l10 9-10 9M16 3L6 12l10 9" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-  faiscasBox.appendChild(seta);
-  dicaSeta = seta;
 }
-function apagaDica() {
-  dicaAtiva.forEach(e => e.classList.remove('dica', 'dica-especial'));
-  dicaAtiva = [];
-  if (dicaSeta) { dicaSeta.remove(); dicaSeta = null; }
-}
+function apagaDica() { dicaAtiva.forEach(e => e.classList.remove('dica')); dicaAtiva = []; }
 
 
 /* ═══ HUD ═══════════════════════════════════════════════════════ */
