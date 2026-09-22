@@ -161,7 +161,7 @@ body:not(.em-jogo) #cena{display:none}
 .rodape{position:absolute;bottom:calc(var(--safe-b) + 14px);left:0;right:0;margin:0;text-align:center;font-size:12.5px;font-weight:800;color:rgba(243,251,255,.62);z-index:2}
 
 /* ═══ MAPA: a coluna d'água ═════════════════════════════════════ */
-#tela-mapa{background:#0B4F7A}
+#tela-mapa{background:linear-gradient(180deg,#0B4F7A 0%,#0B4F7A 55%,#061F38 82%,#02030A 100%)}
 .topo{
   display:flex;align-items:center;padding:10px 14px;flex:0 0 auto;position:relative;z-index:3;
   background:rgba(4,30,48,.62);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
@@ -513,8 +513,10 @@ body:not(.em-jogo) #cena{display:none}
 }
 #aviso-versao.mostra{transform:translate(-50%,0)}
 body.em-jogo #aviso-versao{bottom:calc(var(--safe-b) + 86px)}
-.bt-att{border:0;cursor:pointer;border-radius:999px;padding:8px 14px;font-family:var(--display);font-weight:800;font-size:13.5px;
-  color:#fff;background:linear-gradient(180deg,#FF8A5C,var(--boia));box-shadow:0 3px 0 var(--boia-2);position:relative;overflow:hidden}
+.bt-att{flex:0 0 auto;white-space:nowrap;border:0;cursor:pointer;border-radius:999px;padding:9px 16px 10px;
+  font-family:var(--display);font-weight:800;font-size:14px;color:#fff;background:linear-gradient(180deg,#FF8A5C,var(--boia));
+  box-shadow:0 3px 0 var(--boia-2);position:relative;overflow:hidden}
+#aviso-versao span{flex:0 1 auto;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2}
 
 /* ── toque com ondinha ──────────────────────────────────────── */
 .bt,.ico-bt,.poder,.no,.bt-compra,.subir{position:relative;overflow:hidden}

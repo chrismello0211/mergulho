@@ -479,19 +479,26 @@ async function compartilhaDesafio(botao) {
    O service worker avisa quando baixou uma versão nova. Nada
    recarrega no meio da partida: aparece uma faixa e você decide.
    Antes de trocar, a partida em andamento é guardada.            */
+const abriuEm = Date.now();
+/* Se a versão nova chegou logo na abertura e ninguém está no meio de
+   uma fase, ela entra sozinha: a pessoa nem vê. A faixa só aparece
+   quando trocar na hora atrapalharia.                              */
 window.avisaVersao = function () {
   const el = document.getElementById('aviso-versao');
   if (!el) return;
+  const jogando = document.body.classList.contains('em-jogo');
+  const cartaoAberto = document.getElementById('veu').classList.contains('aberto');
+  if (!jogando && !cartaoAberto && Date.now() - abriuEm < 15000) { aplicaVersao(true); return; }
   el.hidden = false;
   requestAnimationFrame(() => el.classList.add('mostra'));
 };
-function aplicaVersao() {
+function aplicaVersao(silencioso) {
   const A = window.Atualizacao;
   salvaPartida();
-  if (!A || !A.reg || !A.reg.waiting) { location.reload(); return; }
+  if (!A || !A.reg || !A.reg.waiting) { if (!silencioso) location.reload(); return; }
   A.aplicando = true;
   const el = document.getElementById('bt-atualiza');
-  if (el) el.textContent = 'Atualizando...';
+  if (el && !silencioso) el.textContent = 'Atualizando...';
   try { A.reg.waiting.postMessage('atualiza-agora'); } catch (e) {}
   setTimeout(() => location.reload(), 1500);
 }
