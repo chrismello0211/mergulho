@@ -23,6 +23,47 @@ Depois suba o `VERSAO` no `sw.js` (por exemplo `v2026.09.21` para `v2026.09.22`)
 | `calib.js` | Bot de calibragem das fases |
 | `PLANO.md` | Decisões de design (paleta, tipografia, princípios) |
 
+## Conta na nuvem (Firebase)
+
+Abra o `index.html` e preencha as duas linhas do topo:
+
+    window.MERGULHO_NUVEM = {
+      chave: 'AIza...',                                        // Web API Key
+      banco: 'https://seu-projeto-default-rtdb.firebaseio.com'  // Realtime Database
+    };
+
+Passos no console do Firebase:
+1. Criar projeto.
+2. Authentication → Sign-in method → E-mail/senha → ativar.
+3. Realtime Database → criar (pode começar bloqueado).
+4. Regras: ver abaixo.
+5. Configurações do projeto → Geral → copiar a Web API Key.
+
+Regras do banco:
+
+    {
+      "rules": {
+        "mergulho": {
+          "jogadores": {
+            "$uid": {
+              ".read": "auth != null && auth.uid === $uid",
+              ".write": "auth != null && auth.uid === $uid"
+            }
+          },
+          "desafio": {
+            ".read": true,
+            "$semana": { "$uid": { ".write": "auth != null && auth.uid === $uid" } }
+          }
+        }
+      }
+    }
+
+Com os campos vazios o jogo funciona igual, só sem conta: o progresso fica no
+aparelho e a rede de segurança é o backup em texto, dentro de Ajustes.
+
+Entrar numa conta nunca apaga nada: `juntaProg` fica com o melhor dos dois lados
+(fase mais alta, mais estrelas por fase, mais moedas, mais poderes).
+
 ## Desafio da semana e ranking
 
 O desafio usa a semana como semente (`chaveSemana()` em `m1.js`), então o tabuleiro e a ordem das peças novas saem iguais para todo mundo. O recorde fica no aparelho.

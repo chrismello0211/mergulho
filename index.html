@@ -14,6 +14,17 @@
 <meta name="apple-mobile-web-app-title" content="Mergulho">
 <meta name="mobile-web-app-capable" content="yes">
 
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   CONTA NA NUVEM (Firebase). Preencha os dois campos abaixo e o
+   jogo passa a salvar o progresso por e-mail e senha. Deixando
+   vazio, tudo continua funcionando só neste aparelho.
+   ═══════════════════════════════════════════════════════════════ */
+window.MERGULHO_NUVEM = {
+  chave: 'AIzaSyC4SBDOddZ2yTDbmD7kZwjxNEZ9gy_uxeg',
+  banco: 'https://mergulho-c6230-default-rtdb.firebaseio.com'
+};
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Sniglet:wght@800&family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">
@@ -586,6 +597,12 @@ body.leve #descida.roda{animation-duration:.45s}
 [data-mundo="3"] .campo,[data-mundo="4"] .campo{color:var(--espuma);background:rgba(107,255,224,.08);box-shadow:inset 0 0 0 2px rgba(107,255,224,.25)}
 [data-mundo="3"] .cartao p.codigo,[data-mundo="4"] .cartao p.codigo{color:var(--espuma);background:rgba(107,255,224,.08)}
 
+.bt-texto{background:none;border:0;cursor:pointer;font-family:Nunito,sans-serif;font-weight:800;font-size:13.5px;
+  color:#0A6C7A;text-decoration:underline;padding:6px 8px}
+[data-mundo="3"] .bt-texto,[data-mundo="4"] .bt-texto{color:var(--biolum)}
+.cartao p.aviso{background:rgba(255,106,61,.12);color:#B2430F;border-radius:12px;padding:9px 12px;font-size:13.5px;margin-top:10px}
+[data-mundo="3"] .cartao p.aviso,[data-mundo="4"] .cartao p.aviso{background:rgba(255,106,61,.18);color:#FFC7AC}
+
 /* ── ajustes ────────────────────────────────────────────────── */
 .canto-som{display:flex}
 .canto-som > * + *{margin-left:8px}
@@ -825,7 +842,7 @@ body.leve .cartao{animation-duration:.18s}
    MERGULHO · combinar 3 da beira da praia até 4.000 metros
    ═══════════════════════════════════════════════════════════════ */
 
-const VERSAO_JOGO = '2026.09.27';
+const VERSAO_JOGO = '2026.09.29';
 const W = 7, H = 8, TIPOS = 6;
 const NADA = 0, LH = 1, LV = 2, BOMBA = 3, ARCO = 4;
 
@@ -879,40 +896,40 @@ const MUNDOS = [
              'papel'    limpar tudo que cobre o fundo (areia, alga, rede, lodo, breu)
    marcas: pontuação de 1, 2 e 3 estrelas (medidas por simulação) */
 const BASE = [
-  { m:0, prof:2,    nome:'Primeiro fôlego',    mov:23, obj:{tipo:'pontos'},                                        marcas:[8700,12400,16000] },
-  { m:0, prof:4,    nome:'Pé na areia',        mov:25, obj:{tipo:'coletar', itens:[[0,14]]},                       marcas:[4700,6700,9400] },
-  { m:0, prof:6,    nome:'Maré baixa',         mov:27, obj:{tipo:'papel', padrao:'bandeja', camadas:1},            marcas:[4800,6800,9500] },
-  { m:0, prof:8,    nome:'Poça de maré',       mov:23, obj:{tipo:'especiais', n:3},                                        marcas:[4200,6000,8400] },
-  { m:0, prof:10,   nome:'Água morna',         mov:27, obj:{tipo:'coletar', itens:[[1,15],[4,15]]},                marcas:[5800,8400,11700] },
-  { m:0, prof:12,   nome:'Onde o sol alcança', mov:29, obj:{tipo:'papel', padrao:'xadrez', camadas:1},             marcas:[6100,8700,12200] },
+  { m:0, prof:2,    nome:'Primeiro fôlego',    mov:23, obj:{tipo:'pontos'},                                        marcas:[10500,15000,19400] },
+  { m:0, prof:4,    nome:'Pé na areia',        mov:25, obj:{tipo:'coletar', itens:[[0,14]]},                       marcas:[4900,7100,9900] },
+  { m:0, prof:6,    nome:'Maré baixa',         mov:27, obj:{tipo:'papel', padrao:'bandeja', camadas:1},            marcas:[5800,8300,11600] },
+  { m:0, prof:8,    nome:'Poça de maré',       mov:23, obj:{tipo:'especiais', n:3},                                        marcas:[3700,5300,7400] },
+  { m:0, prof:10,   nome:'Água morna',         mov:27, obj:{tipo:'coletar', itens:[[1,15],[4,15]]},                marcas:[5800,8300,11600] },
+  { m:0, prof:12,   nome:'Onde o sol alcança', mov:29, obj:{tipo:'papel', padrao:'xadrez', camadas:1},             marcas:[5800,8200,11500] },
 
-  { m:1, prof:15,   nome:'Porta do recife',    mov:24, obj:{tipo:'pontos'},                                        marcas:[11300,15500,19700] },
-  { m:1, prof:18,   nome:'Jardim de coral',    mov:26, obj:{tipo:'papel', padrao:'faixas', camadas:1},             marcas:[5000,8300,11500] },
-  { m:1, prof:22,   nome:'Cardume',            mov:24, obj:{tipo:'coletar', itens:[[3,16],[5,16]]},                marcas:[5500,9100,12500] },
-  { m:1, prof:26,   nome:'Correnteza',         mov:28, obj:{tipo:'bau', n:2},                                        marcas:[4900,8100,11200] },
-  { m:1, prof:30,   nome:'Toca do polvo',      mov:23, obj:{tipo:'coletar', itens:[[0,13],[2,13],[4,13]]},         marcas:[5600,9200,12700] },
-  { m:1, prof:35,   nome:'Parede de coral',    mov:31, obj:{tipo:'papel', padrao:'losango', camadas:2, cresce:4},            marcas:[8200,13500,18600] },
+  { m:1, prof:15,   nome:'Porta do recife',    mov:24, obj:{tipo:'pontos'},                                        marcas:[15300,21000,26600] },
+  { m:1, prof:18,   nome:'Jardim de coral',    mov:26, obj:{tipo:'papel', padrao:'faixas', camadas:1},             marcas:[5000,8200,11300] },
+  { m:1, prof:22,   nome:'Cardume',            mov:24, obj:{tipo:'coletar', itens:[[3,16],[5,16]]},                marcas:[6100,10100,13900] },
+  { m:1, prof:26,   nome:'Correnteza',         mov:28, obj:{tipo:'bau', n:2},                                        marcas:[5500,9100,12500] },
+  { m:1, prof:30,   nome:'Toca do polvo',      mov:23, obj:{tipo:'coletar', itens:[[0,13],[2,13],[4,13]]},         marcas:[5800,9600,13300] },
+  { m:1, prof:35,   nome:'Parede de coral',    mov:31, obj:{tipo:'papel', padrao:'losango', camadas:2, cresce:4},            marcas:[8500,14200,19500] },
 
-  { m:2, prof:45,   nome:'O casco',            mov:22, obj:{tipo:'pontos'},                                        marcas:[11100,14500,17800] },
+  { m:2, prof:45,   nome:'O casco',            mov:36, obj:{tipo:'pontos'},                                        marcas:[21400,27800,34200] },
   { m:2, prof:60,   nome:'Convés tombado',     mov:30, obj:{tipo:'papel', padrao:'colunas', camadas:1},            marcas:[6500,10700,14800] },
-  { m:2, prof:75,   nome:'Porão',              mov:24, obj:{tipo:'coletar', itens:[[1,18],[2,18]]},                marcas:[5600,9300,12900] },
-  { m:2, prof:90,   nome:'Âncora perdida',     mov:24, obj:{tipo:'bau', n:2},                                        marcas:[4700,7900,10800] },
-  { m:2, prof:110,  nome:'Rede fantasma',      mov:34, obj:{tipo:'papel', padrao:'bandejao', camadas:1},           marcas:[7400,12200,16800] },
-  { m:2, prof:130,  nome:'Proa na areia',      mov:23, obj:{tipo:'coletar', itens:[[3,14],[4,14],[5,14]]},         marcas:[5300,8800,12100] },
+  { m:2, prof:75,   nome:'Porão',              mov:23, obj:{tipo:'coletar', itens:[[1,18],[2,18]]},                marcas:[6100,10100,13900] },
+  { m:2, prof:90,   nome:'Âncora perdida',     mov:22, obj:{tipo:'bau', n:2},                                        marcas:[5700,9400,13000] },
+  { m:2, prof:110,  nome:'Rede fantasma',      mov:33, obj:{tipo:'papel', padrao:'bandejao', camadas:1},           marcas:[7500,12400,17000] },
+  { m:2, prof:130,  nome:'Proa na areia',      mov:20, obj:{tipo:'coletar', itens:[[3,14],[4,14],[5,14]]},         marcas:[5300,8800,12200] },
 
-  { m:3, prof:200,  nome:'Último azul',        mov:24, obj:{tipo:'especiais', n:5},                                        marcas:[6000,9900,13700] },
-  { m:3, prof:350,  nome:'Neve marinha',       mov:29, obj:{tipo:'papel', padrao:'cruz', camadas:2, cresce:5},               marcas:[6200,10400,14300] },
-  { m:3, prof:500,  nome:'Luz de lanterna',    mov:24, obj:{tipo:'coletar', itens:[[4,22]]},                       marcas:[6200,10200,14100] },
-  { m:3, prof:650,  nome:'Migração',           mov:22, obj:{tipo:'papel', padrao:'ondas', camadas:1},              marcas:[4700,7700,10600] },
-  { m:3, prof:800,  nome:'Sem sol',            mov:30, obj:{tipo:'bau', n:3},                                        marcas:[7000,11500,15900] },
-  { m:3, prof:1000, nome:'Mil metros',         mov:26, obj:{tipo:'papel', padrao:'alvo', camadas:1},               marcas:[5200,8700,12000] },
+  { m:3, prof:200,  nome:'Último azul',        mov:23, obj:{tipo:'especiais', n:5},                                        marcas:[6300,10500,14400] },
+  { m:3, prof:350,  nome:'Neve marinha',       mov:31, obj:{tipo:'papel', padrao:'cruz', camadas:2, cresce:5},               marcas:[7700,12800,17700] },
+  { m:3, prof:500,  nome:'Luz de lanterna',    mov:24, obj:{tipo:'coletar', itens:[[4,22]]},                       marcas:[6800,11300,15500] },
+  { m:3, prof:650,  nome:'Migração',           mov:21, obj:{tipo:'papel', padrao:'ondas', camadas:1},              marcas:[4600,7700,10600] },
+  { m:3, prof:800,  nome:'Sem sol',            mov:25, obj:{tipo:'bau', n:3},                                        marcas:[6700,11200,15400] },
+  { m:3, prof:1000, nome:'Mil metros',         mov:26, obj:{tipo:'papel', padrao:'alvo', camadas:1},               marcas:[6300,10400,14400] },
 
-  { m:4, prof:1500, nome:'Breu',               mov:32, obj:{tipo:'papel', padrao:'bandeja', camadas:2},            marcas:[7300,12100,16600] },
-  { m:4, prof:2000, nome:'Isca de luz',        mov:24, obj:{tipo:'coletar', itens:[[4,17],[5,17]]},                marcas:[5800,9600,13300] },
-  { m:4, prof:2500, nome:'Chaminé quente',     mov:32, obj:{tipo:'bau', n:4},                                        marcas:[8200,13600,18800] },
-  { m:4, prof:3000, nome:'Gigantes lentos',    mov:44, obj:{tipo:'papel', padrao:'xadrez', camadas:2, cresce:4},             marcas:[11000,18200,25100] },
-  { m:4, prof:3500, nome:'Pressão',            mov:22, obj:{tipo:'coletar', itens:[[0,14],[1,14],[2,14],[3,14]]},  marcas:[5600,9300,12800] },
-  { m:4, prof:4000, nome:'O fundo',            mov:43, obj:{tipo:'papel', padrao:'bandejao', camadas:2},           marcas:[10000,16600,22900] }
+  { m:4, prof:1500, nome:'Breu',               mov:32, obj:{tipo:'papel', padrao:'bandeja', camadas:2},            marcas:[8000,13300,18300] },
+  { m:4, prof:2000, nome:'Isca de luz',        mov:23, obj:{tipo:'coletar', itens:[[4,17],[5,17]]},                marcas:[5800,9700,13300] },
+  { m:4, prof:2500, nome:'Chaminé quente',     mov:30, obj:{tipo:'bau', n:4},                                        marcas:[8200,13500,18700] },
+  { m:4, prof:3000, nome:'Gigantes lentos',    mov:44, obj:{tipo:'papel', padrao:'xadrez', camadas:2, cresce:4},             marcas:[11600,19200,26500] },
+  { m:4, prof:3500, nome:'Pressão',            mov:22, obj:{tipo:'coletar', itens:[[0,14],[1,14],[2,14],[3,14]]},  marcas:[5900,9800,13500] },
+  { m:4, prof:4000, nome:'O fundo',            mov:42, obj:{tipo:'papel', padrao:'bandejao', camadas:2},           marcas:[11400,18900,26100] }
 ];
 const POR_MUNDO = 6;
 const CICLO = 30;   /* uma expedição inteira: do raso ao fundo */
@@ -951,28 +968,28 @@ function fase(i) {
     obj = { tipo:'pontos' };
   } else if (tipo === 'coletar') {
     const n = 1 + Math.floor(r() * 4);
-    mov = Math.max(18, Math.round(22 + r() * 5 - dif * 2));
+    mov = Math.max(18, Math.round(21 + r() * 4 - dif * 3));
     const alvo = Math.max(8, Math.round(mov * [.86,.60,.56,.60][n-1] * (.92 + .2 * dif)));
     const cores = [0,1,2,3,4,5];
     for (let k = cores.length - 1; k > 0; k--) { const j = Math.floor(r() * (k + 1)); const t = cores[k]; cores[k] = cores[j]; cores[j] = t; }
     obj = { tipo:'coletar', itens: cores.slice(0, n).sort((a,b)=>a-b).map(c => [c, alvo]) };
   } else if (tipo === 'especiais') {
     const n = 3 + Math.floor(r() * 3 + dif * 2);
-    mov = Math.max(18, Math.round(16 + n * 3.4 - dif * 2));
+    mov = Math.max(18, Math.round(15 + n * 3.2 - dif * 2));
     obj = { tipo:'especiais', n: n };
   } else if (tipo === 'bau') {
     const n = 2 + Math.floor(r() * 2 + dif);
-    mov = Math.max(22, Math.round(22 + n * 5.5 - dif * 2));
+    mov = Math.max(21, Math.round(19 + n * 5 - dif * 2));
     obj = { tipo:'bau', n: n };
   } else {
     const pd = PADROES_GER[Math.floor(r() * PADROES_GER.length)];
     const camadas = r() < .28 + .34 * dif ? 2 : 1;
-    mov = Math.max(18, Math.round(pd[1] * (camadas === 2 ? 1.3 : 1) * (1.08 - .10 * dif)));
+    mov = Math.max(18, Math.round(pd[1] * (camadas === 2 ? 1.3 : 1) * (1.0 - .10 * dif)));
     obj = { tipo:'papel', padrao: pd[0], camadas: camadas };
     if (r() < .18 + .3 * dif) { obj.cresce = 4 + Math.floor(r() * 2); mov = Math.round(mov * 1.22); }
   }
   /* pontos por jogada medidos com o bot: sobem junto com o aperto da fase */
-  const p50 = Math.round(mov * (tipo === 'pontos' ? 890 + 200 * dif : tipo === 'bau' ? 800 + 150 * dif : tipo === 'especiais' ? 780 + 150 * dif : 640 + 140 * dif));
+  const p50 = Math.round(mov * (tipo === 'pontos' ? 950 + 450 * dif : tipo === 'bau' ? 570 + 110 * dif : tipo === 'especiais' ? 800 + 200 * dif : 640 + 220 * dif));
   let marcas;
   if (tipo === 'pontos') { const m0 = r100(p50 * (.44 + .06 * dif)), m2 = r100(p50 * .8); marcas = [m0, r100((m0 + m2) / 2), m2]; }
   else marcas = [r100(p50 * .35), r100(p50 * .58), r100(p50 * .8)];
@@ -1049,7 +1066,7 @@ const CHAVE = 'mergulho-v1';
 let prog = { estrelas: {}, max: 0, som: true, vistos: {}, moedas: 120,
              musica: true, vibrar: true, leve: null,
              poderes: { arpao: 1, troca: 1, giro: 1, folego: 1 }, dia: '',
-             conta: '', apelido: '',
+             email: '', apelido: '',
              desafio: { semana: '', melhor: 0, nome: '' } };
 function carregaProg() {
   try {
@@ -1760,7 +1777,7 @@ let efeitosPendentes = [];
 /* ponto extra por disparar especial e por juntar dois deles:
    é o que faz valer a pena montar a jogada em vez de só combinar 3 */
 let bonusEspeciais = 0;
-const VALOR_ESP = { 1: 300, 2: 300, 3: 600, 4: 900 };     /* correnteza, correnteza em pé, bolha, pérola */
+const VALOR_ESP = { 1: 300, 2: 300, 3: 900, 4: 900 };     /* correnteza, correnteza em pé, bolha, pérola */
 const VALOR_NASCE = { 1: 150, 2: 150, 3: 250, 4: 400 };   /* por criar cada um deles */
 
 /* ═══ ESTADO ════════════════════════════════════════════════════ */
@@ -1893,8 +1910,9 @@ function areaEspecial(r, c, p, corAlvo) {
   if (p.sp === LH) { for (let x = 0; x < W; x++) out.push(chave(r, x)); }
   else if (p.sp === LV) { for (let y = 0; y < H; y++) out.push(chave(y, c)); }
   else if (p.sp === BOMBA) {
+    /* bomba é bomba: leva tudo em volta, 5x5 cheio */
     for (let dr = -2; dr <= 2; dr++) for (let dc = -2; dc <= 2; dc++)
-      if (Math.abs(dr) + Math.abs(dc) <= 2 && dentro(r + dr, c + dc)) out.push(chave(r + dr, c + dc));
+      if (dentro(r + dr, c + dc)) out.push(chave(r + dr, c + dc));
   } else if (p.sp === ARCO) {
     const t = (corAlvo != null) ? corAlvo : corMaisComum();
     for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (grid[y][x] && grid[y][x].t === t) out.push(chave(y, x));
@@ -1946,7 +1964,7 @@ function comboTroca(ra, ca, rb, cb) {
     arco.sp = NADA;
     conj.add(kArco); conj.add(kOutro);
     if (outro.sp === LH || outro.sp === LV || outro.sp === BOMBA) {
-      bonusEspeciais += 2500;
+      bonusEspeciais += 3500;
       const alvo = outro.sp;
       for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
         const p = grid[y][x];
@@ -1961,17 +1979,18 @@ function comboTroca(ra, ca, rb, cb) {
     }
   } else if ((sa === LH || sa === LV) && (sb === LH || sb === LV)) {
     a.sp = b.sp = NADA;
-    linhaToda(rb); colunaToda(cb); conj.add(ka);
+    for (let d = -1; d <= 1; d++) { if (dentro(rb + d, 0)) linhaToda(rb + d); if (dentro(0, cb + d)) colunaToda(cb + d); }
+    conj.add(ka);
   } else if ((sa === BOMBA && (sb === LH || sb === LV)) || (sb === BOMBA && (sa === LH || sa === LV))) {
     a.sp = b.sp = NADA;
-    for (let d = -1; d <= 1; d++) { if (dentro(rb + d, 0)) linhaToda(rb + d); if (dentro(0, cb + d)) colunaToda(cb + d); }
+    for (let d = -2; d <= 2; d++) { if (dentro(rb + d, 0)) linhaToda(rb + d); if (dentro(0, cb + d)) colunaToda(cb + d); }
     conj.add(ka);
   } else if (sa === BOMBA && sb === BOMBA) {
     a.sp = b.sp = NADA;
-    efeitosPendentes.push({ r: rb, c: cb, sp: BOMBA, tam: 8, vale: 2200 });
-    bonusEspeciais += 2200;
+    efeitosPendentes.push({ r: rb, c: cb, sp: BOMBA, tam: 9, vale: 3500 });
+    bonusEspeciais += 3500;
     for (let dr = -3; dr <= 3; dr++) for (let dc = -3; dc <= 3; dc++)
-      if (Math.abs(dr) + Math.abs(dc) <= 3 && dentro(rb + dr, cb + dc)) conj.add(chave(rb + dr, cb + dc));
+      if (dentro(rb + dr, cb + dc)) conj.add(chave(rb + dr, cb + dc));
     conj.add(ka);
   } else {
     conj.add(ka); conj.add(kb);
@@ -2397,7 +2416,12 @@ async function limpar(conj, novos) {
     if (e.vale) faisca(e.r, e.c, '+' + e.vale, '#FFE7A3', e.vale >= 900);
     if (e.sp === LH) { raioLinha(e.r, e.c, true); Som.raio(); peso = Math.max(peso, 2); }
     else if (e.sp === LV) { raioLinha(e.r, e.c, false); Som.raio(); peso = Math.max(peso, 2); }
-    else if (e.sp === BOMBA) { ondaChoque(e.r, e.c, e.tam || 5.4, '#FFE7A3'); Som.bomba(); clarao('rgba(255,231,163,.45)'); peso = 3; }
+    else if (e.sp === BOMBA) {
+      ondaChoque(e.r, e.c, e.tam || 6.2, '#FFE7A3');
+      setTimeout(() => ondaChoque(e.r, e.c, (e.tam || 6.2) * .6, '#FF9A5C'), 110);
+      estilhacos(e.r, e.c, '#FFD35C', 14);
+      Som.bomba(); clarao('rgba(255,231,163,.55)'); peso = 3;
+    }
     else if (e.sp === 'tudo') {
       Som.combo(); clarao('rgba(255,255,255,.6)');
       [0, 200, 400].forEach((d, i) => setTimeout(() => ondaChoque(3 + i, 3, 7 + i * 2, ['#fff', '#6BFFE0', '#FFD35C'][i]), d));
@@ -2933,7 +2957,7 @@ async function venceu() {
   const ganho = moedasDaFase(e, primeira);
   prog.moedas += ganho;
   salvaProg();
-  if (prog.conta) nuvemSalva();
+  salvaNaNuvemDepois();
   pintaMoedas();
 
   const frases = ['Passou, mas no último fôlego.', 'Mergulho bonito.', 'Impecável. Nem levantou areia.'];
@@ -3157,23 +3181,22 @@ function pegaBau() {
    Mesma semente para todo mundo na semana: o tabuleiro e a ordem
    das peças novas são iguais, ganha quem jogar melhor.           */
 const Placar = {
-  url: '',   /* URL do Realtime Database, ex.: https://seu-projeto.firebaseio.com — vazio, o ranking fica só no aparelho */
-  id: null,
   async envia(nome, pontos, semana) {
-    if (!this.url || !nome) return;
+    if (!Conta.ligada || !Conta.dentro) return;
+    const t = await Conta.token();
+    if (!t) return;
     try {
-      this.id = this.id || Math.random().toString(36).slice(2, 10);
-      await fetch(this.url + '/mergulho/' + semana + '/' + this.id + '.json',
+      await fetch(Conta.cfg.banco + '/mergulho/desafio/' + semana + '/' + Conta.sessao.uid + '.json?auth=' + t,
         { method: 'PUT', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ nome: nome, pontos: pontos, quando: Date.now() }) });
-    } catch (e) { /* sem rede: o recorde continua salvo aqui */ }
+          body: JSON.stringify({ nome: nome || prog.apelido || (Conta.sessao.email || '').split('@')[0], pontos: pontos, quando: Date.now() }) });
+    } catch (e) {}
   },
   async lista(semana) {
-    if (!this.url) return null;
+    if (!Conta.ligada) return null;
     try {
-      const r = await fetch(this.url + '/mergulho/' + semana + '.json');
+      const r = await fetch(Conta.cfg.banco + '/mergulho/desafio/' + semana + '.json');
       const d = await r.json();
-      return Object.values(d || {}).sort((a, b) => b.pontos - a.pontos).slice(0, 20);
+      return Object.keys(d || {}).map(k => d[k]).sort((a, b) => b.pontos - a.pontos).slice(0, 20);
     } catch (e) { return null; }
   }
 };
@@ -3280,8 +3303,8 @@ function mostraAjustes() {
       '<button class="chave' + (valorAjuste(a.k) ? ' on' : '') + '" data-ac="mudar" data-k="' + a.k + '" ' +
       'role="switch" aria-checked="' + valorAjuste(a.k) + '" aria-label="' + a.nome + '"><span></span></button></div>').join('') +
     '<div class="ajuste"><div class="txt"><b>Progresso</b><small>' +
-      (prog.conta ? 'Código ' + prog.conta : 'Ainda só neste aparelho') + '</small></div>' +
-      '<button class="bt-compra" data-ac="conta">' + (prog.conta ? 'Ver' : 'Proteger') + '</button></div>' +
+      (Conta.dentro ? Conta.sessao.email : Conta.ligada ? 'Ainda só neste aparelho' : 'Guardado neste aparelho') + '</small></div>' +
+      '<button class="bt-compra" data-ac="conta">' + (Conta.dentro ? 'Ver' : 'Guardar') + '</button></div>' +
     '<p class="versao-cartao">versão ' + VERSAO_JOGO + '</p>' +
     '<div class="bts"><button class="bt" data-ac="fecha">Fechar</button></div>');
 }
@@ -3300,20 +3323,100 @@ function mudaAjuste(k) {
 }
 
 
-/* ═══ CONTA E BACKUP ════════════════════════════════════════════
-   Ninguém pode perder o que já jogou. Duas redes de segurança:
-   1. código de backup, que funciona sem internet nenhuma;
-   2. conta na nuvem, que liga quando a URL do banco estiver aqui.
-   Em qualquer volta os dois progressos se juntam pelo melhor de
-   cada um, então entrar com um código nunca apaga nada.          */
-const NUVEM = { url: '' };   /* ex.: https://seu-projeto-default-rtdb.firebaseio.com */
+/* ═══ CONTA NA NUVEM ════════════════════════════════════════════
+   E-mail e senha pelo REST do Firebase, sem SDK nenhum. Ao entrar,
+   o progresso da nuvem e o do aparelho se juntam pelo melhor de
+   cada um: entrar numa conta nunca apaga o que já foi jogado.
+   O código de backup continua como rede extra, offline.          */
+const Conta = {
+  cfg: window.MERGULHO_NUVEM || { chave: '', banco: '' },
+  sessao: null,
+  get ligada() { return !!(this.cfg.chave && this.cfg.banco); },
+  get dentro() { return !!(this.sessao && this.sessao.refresh); },
+  carrega() { try { this.sessao = JSON.parse(localStorage.getItem(CHAVE + '-sessao')) || null; } catch (e) { this.sessao = null; } },
+  guarda() { try { localStorage.setItem(CHAVE + '-sessao', JSON.stringify(this.sessao)); } catch (e) {} },
+  sai() { this.sessao = null; try { localStorage.removeItem(CHAVE + '-sessao'); } catch (e) {} },
 
-function codigoNovo() {
-  const letras = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  let s = '';
-  for (let i = 0; i < 12; i++) s += letras[Math.floor(Math.random() * letras.length)];
-  return s.slice(0, 4) + '-' + s.slice(4, 8) + '-' + s.slice(8, 12);
+  async identidade(caminho, corpo) {
+    const r = await fetch('https://identitytoolkit.googleapis.com/v1/accounts:' + caminho + '?key=' + this.cfg.chave,
+      { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corpo) });
+    const d = await r.json();
+    if (!r.ok) throw new Error((d && d.error && d.error.message) || 'ERRO');
+    return d;
+  },
+  guardaSessao(d, email) {
+    this.sessao = { id: d.idToken, refresh: d.refreshToken, uid: d.localId,
+                    email: email || d.email || '', expira: Date.now() + (+d.expiresIn || 3600) * 1000 - 60000 };
+    this.guarda();
+  },
+  async cria(email, senha) { this.guardaSessao(await this.identidade('signUp', { email: email, password: senha, returnSecureToken: true }), email); },
+  async entra(email, senha) { this.guardaSessao(await this.identidade('signInWithPassword', { email: email, password: senha, returnSecureToken: true }), email); },
+  async esqueci(email) { await this.identidade('sendOobCode', { requestType: 'PASSWORD_RESET', email: email }); },
+
+  async token() {
+    if (!this.dentro) return null;
+    if (Date.now() < this.sessao.expira) return this.sessao.id;
+    const r = await fetch('https://securetoken.googleapis.com/v1/token?key=' + this.cfg.chave,
+      { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: 'grant_type=refresh_token&refresh_token=' + encodeURIComponent(this.sessao.refresh) });
+    const d = await r.json();
+    if (!r.ok) return null;
+    this.sessao.id = d.id_token; this.sessao.refresh = d.refresh_token;
+    this.sessao.expira = Date.now() + (+d.expires_in || 3600) * 1000 - 60000;
+    this.guarda();
+    return this.sessao.id;
+  },
+  async salva() {
+    if (!this.ligada || !this.dentro) return false;
+    const t = await this.token();
+    if (!t) return false;
+    try {
+      const r = await fetch(this.cfg.banco + '/mergulho/jogadores/' + this.sessao.uid + '.json?auth=' + t,
+        { method: 'PUT', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ quando: Date.now(), versao: VERSAO_JOGO, prog: prog }) });
+      return r.ok;
+    } catch (e) { return false; }
+  },
+  async puxa() {
+    if (!this.ligada || !this.dentro) return null;
+    const t = await this.token();
+    if (!t) return null;
+    try {
+      const r = await fetch(this.cfg.banco + '/mergulho/jogadores/' + this.sessao.uid + '.json?auth=' + t);
+      const d = await r.json();
+      return d && d.prog ? d.prog : null;
+    } catch (e) { return null; }
+  },
+  /* junta os dois lados e deixa tudo igual nos dois */
+  async sincroniza() {
+    const daNuvem = await this.puxa();
+    if (daNuvem) aplicaProg(daNuvem);
+    prog.email = this.sessao ? this.sessao.email : prog.email;
+    salvaProg();
+    return await this.salva();
+  }
+};
+let salvarPendente = null;
+function salvaNaNuvemDepois() {
+  if (!Conta.ligada || !Conta.dentro) return;
+  clearTimeout(salvarPendente);
+  salvarPendente = setTimeout(() => Conta.salva(), 1500);
 }
+const RECADOS = {
+  EMAIL_EXISTS: 'Esse e-mail já tem conta. Tente entrar.',
+  INVALID_PASSWORD: 'Senha errada.',
+  INVALID_LOGIN_CREDENTIALS: 'E-mail ou senha errados.',
+  EMAIL_NOT_FOUND: 'Não achei conta com esse e-mail.',
+  WEAK_PASSWORD: 'A senha precisa de pelo menos 6 letras ou números.',
+  INVALID_EMAIL: 'Esse e-mail não parece certo.',
+  MISSING_PASSWORD: 'Falta a senha.',
+  TOO_MANY_ATTEMPTS_TRY_LATER: 'Muitas tentativas. Espere um pouco e tente de novo.'
+};
+const recado = e => {
+  const m = String(e && e.message || e || '').split(' : ')[0];
+  return RECADOS[m] || 'Não consegui agora. Veja a internet e tente de novo.';
+};
+
 function juntaProg(a, b) {
   if (!b) return a;
   const r = JSON.parse(JSON.stringify(a));
@@ -3325,10 +3428,10 @@ function juntaProg(a, b) {
   ['arpao', 'troca', 'giro', 'folego'].forEach(k => r.poderes[k] = Math.max((a.poderes || {})[k] || 0, (b.poderes || {})[k] || 0));
   r.vistos = Object.assign({}, b.vistos || {}, a.vistos || {});
   const da = a.desafio || {}, db = b.desafio || {};
-  r.desafio = { semana: da.semana === db.semana ? da.semana : (da.melhor >= db.melhor ? da.semana : db.semana),
+  r.desafio = { semana: (da.melhor || 0) >= (db.melhor || 0) ? da.semana : db.semana,
                 melhor: Math.max(da.melhor || 0, db.melhor || 0), nome: da.nome || db.nome || '' };
-  r.conta = a.conta || b.conta || '';
   r.apelido = a.apelido || b.apelido || '';
+  r.email = a.email || b.email || '';
   return r;
 }
 function aplicaProg(novo) { prog = juntaProg(novo, prog); salvaProg(); pintaMoedas(); pintaPoderes(); pintaBotaoSom(); aplicaLeve(); }
@@ -3336,94 +3439,97 @@ function aplicaProg(novo) { prog = juntaProg(novo, prog); salvaProg(); pintaMoed
 const paraTexto = () => 'MERGULHO1:' + btoa(unescape(encodeURIComponent(JSON.stringify(prog))));
 function doTexto(txt) {
   try {
-    const cru = String(txt).trim().replace(/^MERGULHO1:/, '');
-    const d = JSON.parse(decodeURIComponent(escape(atob(cru))));
+    const d = JSON.parse(decodeURIComponent(escape(atob(String(txt).trim().replace(/^MERGULHO1:/, '')))));
     return (d && typeof d.max === 'number') ? d : null;
   } catch (e) { return null; }
 }
 async function copia(txt, botao, rotulo) {
   try { await navigator.clipboard.writeText(txt); }
   catch (e) { try { const t = document.createElement('textarea'); t.value = txt; document.body.appendChild(t); t.select(); document.execCommand('copy'); t.remove(); } catch (e2) { return; } }
-  if (botao) { const antes = botao.textContent; botao.textContent = 'Copiado!'; setTimeout(() => botao.textContent = rotulo || antes, 1800); }
-}
-async function nuvemSalva() {
-  if (!NUVEM.url || !prog.conta) return false;
-  try {
-    const r = await fetch(NUVEM.url + '/mergulho/contas/' + prog.conta.replace(/-/g, '') + '.json',
-      { method: 'PUT', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ apelido: prog.apelido || '', quando: Date.now(), prog: prog }) });
-    return r.ok;
-  } catch (e) { return false; }
-}
-async function nuvemLe(codigo) {
-  if (!NUVEM.url) return null;
-  try {
-    const r = await fetch(NUVEM.url + '/mergulho/contas/' + codigo.replace(/-/g, '').toUpperCase() + '.json');
-    const d = await r.json();
-    return d && d.prog ? d.prog : null;
-  } catch (e) { return null; }
+  if (botao) { botao.textContent = 'Copiado!'; setTimeout(() => botao.textContent = rotulo, 1800); }
 }
 
-function mostraConta() {
-  const temNuvem = !!NUVEM.url;
-  if (!prog.conta) {
+/* ── telas da conta ─────────────────────────────────────────── */
+function mostraConta(aviso) {
+  if (!Conta.ligada) {
     cartao('<h3>Seu progresso</h3>' +
-      '<p>Hoje ele fica só neste aparelho. Crie um código e guarde: com ele você recupera tudo se trocar de celular ou limpar o navegador.</p>' +
-      '<input class="campo" id="campo-apelido" maxlength="18" placeholder="Seu apelido (opcional)">' +
-      '<div class="bts"><button class="bt vidro" data-ac="fecha">Agora não</button>' +
-      '<button class="bt" data-ac="criaconta">Criar meu código</button></div>');
+      '<p>A conta por e-mail ainda não está ligada neste site. Por enquanto o progresso fica neste aparelho, e a rede de segurança é o backup abaixo: copie e guarde em algum lugar seu.</p>' +
+      '<div class="bts"><button class="bt vidro" data-ac="copiabackup">Copiar backup</button>' +
+      '<button class="bt" data-ac="colar">Restaurar backup</button></div>');
     return;
   }
-  cartao('<h3>Seu código</h3>' +
-    '<p class="codigo">' + prog.conta + '</p>' +
-    '<p>' + (prog.apelido ? prog.apelido + ', guarde' : 'Guarde') + ' esse código em algum lugar seguro. ' +
-    (temNuvem ? 'Ele também sincroniza pela internet: é só entrar com ele em outro aparelho.'
-              : 'Ele vem junto no backup abaixo, que funciona sem internet.') + '</p>' +
-    '<div class="bts">' +
-      '<button class="bt vidro" data-ac="copiacodigo">Copiar código</button>' +
-      '<button class="bt vidro" data-ac="copiabackup">Copiar backup</button>' +
-    '</div>' +
-    '<div class="bts">' +
-      '<button class="bt vidro" data-ac="colar">Restaurar backup</button>' +
-      (temNuvem ? '<button class="bt" data-ac="salvanuvem">Salvar na nuvem</button>' : '<button class="bt" data-ac="fecha">Fechar</button>') +
-    '</div>');
+  if (!Conta.dentro) {
+    cartao('<h3>Guardar meu progresso</h3>' +
+      '<p>Crie uma conta com e-mail e senha. O que você já jogou continua: ao entrar, o jogo junta o progresso do aparelho com o da conta.</p>' +
+      (aviso ? '<p class="aviso">' + aviso + '</p>' : '') +
+      '<input class="campo" id="campo-email" type="email" inputmode="email" autocomplete="email" placeholder="seu@email.com">' +
+      '<input class="campo" id="campo-senha" type="password" autocomplete="current-password" placeholder="senha (mínimo 6)">' +
+      '<div class="bts"><button class="bt vidro" data-ac="criaconta">Criar conta</button>' +
+      '<button class="bt" data-ac="entrar">Entrar</button></div>' +
+      '<div class="bts"><button class="bt-texto" data-ac="esqueci">Esqueci a senha</button>' +
+      '<button class="bt-texto" data-ac="copiabackup">Copiar backup</button></div>');
+    return;
+  }
+  cartao('<h3>Conta</h3>' +
+    '<p class="codigo">' + (Conta.sessao.email || 'conectado') + '</p>' +
+    '<p>Progresso salvo na nuvem a cada fase. Pra jogar em outro aparelho, é só entrar com esse e-mail.</p>' +
+    (aviso ? '<p class="aviso">' + aviso + '</p>' : '') +
+    '<div class="bts"><button class="bt vidro" data-ac="copiabackup">Copiar backup</button>' +
+    '<button class="bt" data-ac="sincroniza">Sincronizar agora</button></div>' +
+    '<div class="bts"><button class="bt-texto" data-ac="sair">Sair desta conta</button></div>');
 }
-function criaConta() {
-  const campo = document.getElementById('campo-apelido');
-  prog.apelido = campo ? campo.value.trim().slice(0, 18) : '';
-  prog.conta = codigoNovo();
-  if (prog.desafio && !prog.desafio.nome) prog.desafio.nome = prog.apelido;
+async function contaEntrar(criar, botao) {
+  const email = (document.getElementById('campo-email') || {}).value || '';
+  const senha = (document.getElementById('campo-senha') || {}).value || '';
+  if (!email.trim() || !senha) { mostraConta('Preencha o e-mail e a senha.'); return; }
+  if (botao) botao.textContent = criar ? 'Criando...' : 'Entrando...';
+  try {
+    if (criar) await Conta.cria(email.trim(), senha); else await Conta.entra(email.trim(), senha);
+  } catch (e) { mostraConta(recado(e)); return; }
+  prog.email = Conta.sessao.email;
   salvaProg();
-  nuvemSalva();
-  mostraConta();
+  const ok = await Conta.sincroniza();
+  Som.liga(); Som.vitoria();
+  cartao('<h3>' + (criar ? 'Conta criada' : 'Bem-vindo de volta') + '</h3>' +
+    '<p>Progresso ' + (ok ? 'guardado na nuvem' : 'salvo aqui e vai subir assim que a internet voltar') + '. Você está na fase ' + (prog.max + 1) +
+    ' com ' + totalEstrelas() + (totalEstrelas() === 1 ? ' estrela' : ' estrelas') + ' e ' + nf(prog.moedas) + ' moedas.</p>' +
+    '<div class="bts"><button class="bt" data-ac="mapa">Jogar</button></div>');
+}
+async function contaEsqueci() {
+  const email = (document.getElementById('campo-email') || {}).value || '';
+  if (!email.trim()) { mostraConta('Escreva o e-mail primeiro.'); return; }
+  try { await Conta.esqueci(email.trim()); mostraConta('Mandei um e-mail para trocar a senha.'); }
+  catch (e) { mostraConta(recado(e)); }
+}
+async function contaSincroniza(botao) {
+  if (botao) botao.textContent = 'Sincronizando...';
+  const ok = await Conta.sincroniza();
+  mostraConta(ok ? 'Tudo sincronizado agora.' : 'Não consegui falar com o servidor agora.');
+}
+function contaSair() {
+  Conta.sai();
+  mostraConta('Saí da conta. O progresso continua guardado neste aparelho.');
 }
 function mostraColar() {
-  cartao('<h3>Restaurar</h3>' +
-    '<p>Cole aqui o backup que você copiou' + (NUVEM.url ? ', ou digite o código da sua conta' : '') + '. Nada é apagado: o jogo fica com o melhor dos dois progressos.</p>' +
-    '<textarea class="campo alto" id="campo-backup" placeholder="MERGULHO1:... ou ABCD-1234-EFGH"></textarea>' +
+  cartao('<h3>Restaurar backup</h3>' +
+    '<p>Cole o texto do backup que você copiou. Nada é apagado: o jogo fica com o melhor dos dois progressos.</p>' +
+    '<textarea class="campo alto" id="campo-backup" placeholder="MERGULHO1:..."></textarea>' +
     '<div class="bts"><button class="bt vidro" data-ac="conta">Voltar</button>' +
     '<button class="bt" data-ac="restaura">Restaurar</button></div>');
 }
-async function restaura() {
+function restaura() {
   const campo = document.getElementById('campo-backup');
-  const txt = campo ? campo.value.trim() : '';
-  if (!txt) return;
-  let novo = doTexto(txt);
-  if (!novo && NUVEM.url && /^[A-Za-z0-9-]{8,20}$/.test(txt)) novo = await nuvemLe(txt);
+  const novo = doTexto(campo ? campo.value : '');
   if (!novo) {
-    cartao('<h3>Não deu</h3><p>Esse texto não parece um backup nem um código válido. Confira se veio inteiro.</p>' +
+    cartao('<h3>Não deu</h3><p>Esse texto não parece um backup do Mergulho. Confira se ele veio inteiro, começando com MERGULHO1.</p>' +
       '<div class="bts"><button class="bt" data-ac="colar">Tentar de novo</button></div>');
     return;
   }
   aplicaProg(novo);
+  salvaNaNuvemDepois();
   Som.liga(); Som.vitoria();
   cartao('<h3>Pronto</h3><p>Progresso restaurado: fase ' + (prog.max + 1) + ', ' + totalEstrelas() + ' estrelas e ' + nf(prog.moedas) + ' moedas.</p>' +
     '<div class="bts"><button class="bt" data-ac="mapa">Ver o mapa</button></div>');
-}
-async function salvaNaNuvem(botao) {
-  if (botao) botao.textContent = 'Salvando...';
-  const ok = await nuvemSalva();
-  if (botao) { botao.textContent = ok ? 'Salvo!' : 'Falhou'; setTimeout(() => botao.textContent = 'Salvar na nuvem', 1800); }
 }
 
 /* ═══ TELAS ═════════════════════════════════════════════════════ */
@@ -3645,6 +3751,8 @@ function iniciar() {
   faiscasBox = document.getElementById('faiscas');
 
   carregaProg();
+  Conta.carrega();
+  if (Conta.ligada && Conta.dentro) Conta.sincroniza();
   decideLeve();
   aplicaLeve();
   document.getElementById('versao').textContent = 'v' + VERSAO_JOGO;
@@ -3686,12 +3794,14 @@ function iniciar() {
     else if (ac === 'compartilha') compartilhaDesafio(b);
     else if (ac === 'mudar') mudaAjuste(b.dataset.k);
     else if (ac === 'conta') mostraConta();
-    else if (ac === 'criaconta') criaConta();
-    else if (ac === 'copiacodigo') copia(prog.conta, b, 'Copiar código');
+    else if (ac === 'criaconta') contaEntrar(true, b);
+    else if (ac === 'entrar') contaEntrar(false, b);
+    else if (ac === 'esqueci') contaEsqueci();
+    else if (ac === 'sincroniza') contaSincroniza(b);
+    else if (ac === 'sair') contaSair();
     else if (ac === 'copiabackup') copia(paraTexto(), b, 'Copiar backup');
     else if (ac === 'colar') mostraColar();
     else if (ac === 'restaura') restaura();
-    else if (ac === 'salvanuvem') salvaNaNuvem(b);
     else if (ac === 'retoma') { const d = lePartida(); limpaPartida(); if (d) retomaPartida(d); else fechaCartao(); }
     else if (ac === 'descarta') { limpaPartida(); fechaCartao(); if (prog.dia !== hoje()) setTimeout(mostraBau, 300); }
     else if (ac === 'folego') usaFolegoNoCartao();
@@ -3720,7 +3830,7 @@ function iniciar() {
   grid = Array.from({ length: H }, () => Array(W).fill(null));
 
   document.addEventListener('visibilitychange', () => {
-    if (document.hidden) { salvaPartida(); Musica.para(); clearTimeout(dicaTimer); apagaDica(); if (olhoFps) { cancelAnimationFrame(olhoFps); olhoFps = null; } }
+    if (document.hidden) { salvaPartida(); if (Conta.dentro) Conta.salva(); Musica.para(); clearTimeout(dicaTimer); apagaDica(); if (olhoFps) { cancelAnimationFrame(olhoFps); olhoFps = null; } }
     else if (prog.som && prog.musica) Musica.liga(document.body.classList.contains('em-jogo') ? 'jogo' : 'menu', mundoAtual);
   });
 

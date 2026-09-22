@@ -6,6 +6,17 @@
 <meta name="theme-color" content="#FFF3D2">
 <meta name="description" content="Jogo de combinar três em que você desce do raso até 4.000 metros. Cada mundo tem bichos, luz e som próprios. Sem anúncio, sem cadastro.">
 <title>Mergulho</title>
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   CONTA NA NUVEM (Firebase). Preencha os dois campos abaixo e o
+   jogo passa a salvar o progresso por e-mail e senha. Deixando
+   vazio, tudo continua funcionando só neste aparelho.
+   ═══════════════════════════════════════════════════════════════ */
+window.MERGULHO_NUVEM = {
+  chave: 'AIzaSyC4SBDOddZ2yTDbmD7kZwjxNEZ9gy_uxeg',
+  banco: 'https://mergulho-c6230-default-rtdb.firebaseio.com'
+};
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Sniglet:wght@800&family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">
@@ -577,6 +588,12 @@ body.leve #descida.roda{animation-duration:.45s}
   background:rgba(10,108,122,.09);border-radius:16px;padding:12px 8px;margin:10px 0;user-select:all;-webkit-user-select:all}
 [data-mundo="3"] .campo,[data-mundo="4"] .campo{color:var(--espuma);background:rgba(107,255,224,.08);box-shadow:inset 0 0 0 2px rgba(107,255,224,.25)}
 [data-mundo="3"] .cartao p.codigo,[data-mundo="4"] .cartao p.codigo{color:var(--espuma);background:rgba(107,255,224,.08)}
+
+.bt-texto{background:none;border:0;cursor:pointer;font-family:Nunito,sans-serif;font-weight:800;font-size:13.5px;
+  color:#0A6C7A;text-decoration:underline;padding:6px 8px}
+[data-mundo="3"] .bt-texto,[data-mundo="4"] .bt-texto{color:var(--biolum)}
+.cartao p.aviso{background:rgba(255,106,61,.12);color:#B2430F;border-radius:12px;padding:9px 12px;font-size:13.5px;margin-top:10px}
+[data-mundo="3"] .cartao p.aviso,[data-mundo="4"] .cartao p.aviso{background:rgba(255,106,61,.18);color:#FFC7AC}
 
 /* ── ajustes ────────────────────────────────────────────────── */
 .canto-som{display:flex}

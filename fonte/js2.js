@@ -3,7 +3,7 @@ let efeitosPendentes = [];
 /* ponto extra por disparar especial e por juntar dois deles:
    é o que faz valer a pena montar a jogada em vez de só combinar 3 */
 let bonusEspeciais = 0;
-const VALOR_ESP = { 1: 300, 2: 300, 3: 600, 4: 900 };     /* correnteza, correnteza em pé, bolha, pérola */
+const VALOR_ESP = { 1: 300, 2: 300, 3: 900, 4: 900 };     /* correnteza, correnteza em pé, bolha, pérola */
 const VALOR_NASCE = { 1: 150, 2: 150, 3: 250, 4: 400 };   /* por criar cada um deles */
 
 /* ═══ ESTADO ════════════════════════════════════════════════════ */
@@ -136,8 +136,9 @@ function areaEspecial(r, c, p, corAlvo) {
   if (p.sp === LH) { for (let x = 0; x < W; x++) out.push(chave(r, x)); }
   else if (p.sp === LV) { for (let y = 0; y < H; y++) out.push(chave(y, c)); }
   else if (p.sp === BOMBA) {
+    /* bomba é bomba: leva tudo em volta, 5x5 cheio */
     for (let dr = -2; dr <= 2; dr++) for (let dc = -2; dc <= 2; dc++)
-      if (Math.abs(dr) + Math.abs(dc) <= 2 && dentro(r + dr, c + dc)) out.push(chave(r + dr, c + dc));
+      if (dentro(r + dr, c + dc)) out.push(chave(r + dr, c + dc));
   } else if (p.sp === ARCO) {
     const t = (corAlvo != null) ? corAlvo : corMaisComum();
     for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (grid[y][x] && grid[y][x].t === t) out.push(chave(y, x));
@@ -189,7 +190,7 @@ function comboTroca(ra, ca, rb, cb) {
     arco.sp = NADA;
     conj.add(kArco); conj.add(kOutro);
     if (outro.sp === LH || outro.sp === LV || outro.sp === BOMBA) {
-      bonusEspeciais += 2500;
+      bonusEspeciais += 3500;
       const alvo = outro.sp;
       for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
         const p = grid[y][x];
@@ -204,17 +205,18 @@ function comboTroca(ra, ca, rb, cb) {
     }
   } else if ((sa === LH || sa === LV) && (sb === LH || sb === LV)) {
     a.sp = b.sp = NADA;
-    linhaToda(rb); colunaToda(cb); conj.add(ka);
+    for (let d = -1; d <= 1; d++) { if (dentro(rb + d, 0)) linhaToda(rb + d); if (dentro(0, cb + d)) colunaToda(cb + d); }
+    conj.add(ka);
   } else if ((sa === BOMBA && (sb === LH || sb === LV)) || (sb === BOMBA && (sa === LH || sa === LV))) {
     a.sp = b.sp = NADA;
-    for (let d = -1; d <= 1; d++) { if (dentro(rb + d, 0)) linhaToda(rb + d); if (dentro(0, cb + d)) colunaToda(cb + d); }
+    for (let d = -2; d <= 2; d++) { if (dentro(rb + d, 0)) linhaToda(rb + d); if (dentro(0, cb + d)) colunaToda(cb + d); }
     conj.add(ka);
   } else if (sa === BOMBA && sb === BOMBA) {
     a.sp = b.sp = NADA;
-    efeitosPendentes.push({ r: rb, c: cb, sp: BOMBA, tam: 8, vale: 2200 });
-    bonusEspeciais += 2200;
+    efeitosPendentes.push({ r: rb, c: cb, sp: BOMBA, tam: 9, vale: 3500 });
+    bonusEspeciais += 3500;
     for (let dr = -3; dr <= 3; dr++) for (let dc = -3; dc <= 3; dc++)
-      if (Math.abs(dr) + Math.abs(dc) <= 3 && dentro(rb + dr, cb + dc)) conj.add(chave(rb + dr, cb + dc));
+      if (dentro(rb + dr, cb + dc)) conj.add(chave(rb + dr, cb + dc));
     conj.add(ka);
   } else {
     conj.add(ka); conj.add(kb);

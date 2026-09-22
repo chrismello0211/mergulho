@@ -144,7 +144,7 @@ async function venceu() {
   const ganho = moedasDaFase(e, primeira);
   prog.moedas += ganho;
   salvaProg();
-  if (prog.conta) nuvemSalva();
+  salvaNaNuvemDepois();
   pintaMoedas();
 
   const frases = ['Passou, mas no último fôlego.', 'Mergulho bonito.', 'Impecável. Nem levantou areia.'];
@@ -368,23 +368,22 @@ function pegaBau() {
    Mesma semente para todo mundo na semana: o tabuleiro e a ordem
    das peças novas são iguais, ganha quem jogar melhor.           */
 const Placar = {
-  url: '',   /* URL do Realtime Database, ex.: https://seu-projeto.firebaseio.com — vazio, o ranking fica só no aparelho */
-  id: null,
   async envia(nome, pontos, semana) {
-    if (!this.url || !nome) return;
+    if (!Conta.ligada || !Conta.dentro) return;
+    const t = await Conta.token();
+    if (!t) return;
     try {
-      this.id = this.id || Math.random().toString(36).slice(2, 10);
-      await fetch(this.url + '/mergulho/' + semana + '/' + this.id + '.json',
+      await fetch(Conta.cfg.banco + '/mergulho/desafio/' + semana + '/' + Conta.sessao.uid + '.json?auth=' + t,
         { method: 'PUT', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ nome: nome, pontos: pontos, quando: Date.now() }) });
-    } catch (e) { /* sem rede: o recorde continua salvo aqui */ }
+          body: JSON.stringify({ nome: nome || prog.apelido || (Conta.sessao.email || '').split('@')[0], pontos: pontos, quando: Date.now() }) });
+    } catch (e) {}
   },
   async lista(semana) {
-    if (!this.url) return null;
+    if (!Conta.ligada) return null;
     try {
-      const r = await fetch(this.url + '/mergulho/' + semana + '.json');
+      const r = await fetch(Conta.cfg.banco + '/mergulho/desafio/' + semana + '.json');
       const d = await r.json();
-      return Object.values(d || {}).sort((a, b) => b.pontos - a.pontos).slice(0, 20);
+      return Object.keys(d || {}).map(k => d[k]).sort((a, b) => b.pontos - a.pontos).slice(0, 20);
     } catch (e) { return null; }
   }
 };
@@ -491,8 +490,8 @@ function mostraAjustes() {
       '<button class="chave' + (valorAjuste(a.k) ? ' on' : '') + '" data-ac="mudar" data-k="' + a.k + '" ' +
       'role="switch" aria-checked="' + valorAjuste(a.k) + '" aria-label="' + a.nome + '"><span></span></button></div>').join('') +
     '<div class="ajuste"><div class="txt"><b>Progresso</b><small>' +
-      (prog.conta ? 'Código ' + prog.conta : 'Ainda só neste aparelho') + '</small></div>' +
-      '<button class="bt-compra" data-ac="conta">' + (prog.conta ? 'Ver' : 'Proteger') + '</button></div>' +
+      (Conta.dentro ? Conta.sessao.email : Conta.ligada ? 'Ainda só neste aparelho' : 'Guardado neste aparelho') + '</small></div>' +
+      '<button class="bt-compra" data-ac="conta">' + (Conta.dentro ? 'Ver' : 'Guardar') + '</button></div>' +
     '<p class="versao-cartao">versão ' + VERSAO_JOGO + '</p>' +
     '<div class="bts"><button class="bt" data-ac="fecha">Fechar</button></div>');
 }
@@ -511,20 +510,100 @@ function mudaAjuste(k) {
 }
 
 
-/* ═══ CONTA E BACKUP ════════════════════════════════════════════
-   Ninguém pode perder o que já jogou. Duas redes de segurança:
-   1. código de backup, que funciona sem internet nenhuma;
-   2. conta na nuvem, que liga quando a URL do banco estiver aqui.
-   Em qualquer volta os dois progressos se juntam pelo melhor de
-   cada um, então entrar com um código nunca apaga nada.          */
-const NUVEM = { url: '' };   /* ex.: https://seu-projeto-default-rtdb.firebaseio.com */
+/* ═══ CONTA NA NUVEM ════════════════════════════════════════════
+   E-mail e senha pelo REST do Firebase, sem SDK nenhum. Ao entrar,
+   o progresso da nuvem e o do aparelho se juntam pelo melhor de
+   cada um: entrar numa conta nunca apaga o que já foi jogado.
+   O código de backup continua como rede extra, offline.          */
+const Conta = {
+  cfg: window.MERGULHO_NUVEM || { chave: '', banco: '' },
+  sessao: null,
+  get ligada() { return !!(this.cfg.chave && this.cfg.banco); },
+  get dentro() { return !!(this.sessao && this.sessao.refresh); },
+  carrega() { try { this.sessao = JSON.parse(localStorage.getItem(CHAVE + '-sessao')) || null; } catch (e) { this.sessao = null; } },
+  guarda() { try { localStorage.setItem(CHAVE + '-sessao', JSON.stringify(this.sessao)); } catch (e) {} },
+  sai() { this.sessao = null; try { localStorage.removeItem(CHAVE + '-sessao'); } catch (e) {} },
 
-function codigoNovo() {
-  const letras = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  let s = '';
-  for (let i = 0; i < 12; i++) s += letras[Math.floor(Math.random() * letras.length)];
-  return s.slice(0, 4) + '-' + s.slice(4, 8) + '-' + s.slice(8, 12);
+  async identidade(caminho, corpo) {
+    const r = await fetch('https://identitytoolkit.googleapis.com/v1/accounts:' + caminho + '?key=' + this.cfg.chave,
+      { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corpo) });
+    const d = await r.json();
+    if (!r.ok) throw new Error((d && d.error && d.error.message) || 'ERRO');
+    return d;
+  },
+  guardaSessao(d, email) {
+    this.sessao = { id: d.idToken, refresh: d.refreshToken, uid: d.localId,
+                    email: email || d.email || '', expira: Date.now() + (+d.expiresIn || 3600) * 1000 - 60000 };
+    this.guarda();
+  },
+  async cria(email, senha) { this.guardaSessao(await this.identidade('signUp', { email: email, password: senha, returnSecureToken: true }), email); },
+  async entra(email, senha) { this.guardaSessao(await this.identidade('signInWithPassword', { email: email, password: senha, returnSecureToken: true }), email); },
+  async esqueci(email) { await this.identidade('sendOobCode', { requestType: 'PASSWORD_RESET', email: email }); },
+
+  async token() {
+    if (!this.dentro) return null;
+    if (Date.now() < this.sessao.expira) return this.sessao.id;
+    const r = await fetch('https://securetoken.googleapis.com/v1/token?key=' + this.cfg.chave,
+      { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: 'grant_type=refresh_token&refresh_token=' + encodeURIComponent(this.sessao.refresh) });
+    const d = await r.json();
+    if (!r.ok) return null;
+    this.sessao.id = d.id_token; this.sessao.refresh = d.refresh_token;
+    this.sessao.expira = Date.now() + (+d.expires_in || 3600) * 1000 - 60000;
+    this.guarda();
+    return this.sessao.id;
+  },
+  async salva() {
+    if (!this.ligada || !this.dentro) return false;
+    const t = await this.token();
+    if (!t) return false;
+    try {
+      const r = await fetch(this.cfg.banco + '/mergulho/jogadores/' + this.sessao.uid + '.json?auth=' + t,
+        { method: 'PUT', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ quando: Date.now(), versao: VERSAO_JOGO, prog: prog }) });
+      return r.ok;
+    } catch (e) { return false; }
+  },
+  async puxa() {
+    if (!this.ligada || !this.dentro) return null;
+    const t = await this.token();
+    if (!t) return null;
+    try {
+      const r = await fetch(this.cfg.banco + '/mergulho/jogadores/' + this.sessao.uid + '.json?auth=' + t);
+      const d = await r.json();
+      return d && d.prog ? d.prog : null;
+    } catch (e) { return null; }
+  },
+  /* junta os dois lados e deixa tudo igual nos dois */
+  async sincroniza() {
+    const daNuvem = await this.puxa();
+    if (daNuvem) aplicaProg(daNuvem);
+    prog.email = this.sessao ? this.sessao.email : prog.email;
+    salvaProg();
+    return await this.salva();
+  }
+};
+let salvarPendente = null;
+function salvaNaNuvemDepois() {
+  if (!Conta.ligada || !Conta.dentro) return;
+  clearTimeout(salvarPendente);
+  salvarPendente = setTimeout(() => Conta.salva(), 1500);
 }
+const RECADOS = {
+  EMAIL_EXISTS: 'Esse e-mail já tem conta. Tente entrar.',
+  INVALID_PASSWORD: 'Senha errada.',
+  INVALID_LOGIN_CREDENTIALS: 'E-mail ou senha errados.',
+  EMAIL_NOT_FOUND: 'Não achei conta com esse e-mail.',
+  WEAK_PASSWORD: 'A senha precisa de pelo menos 6 letras ou números.',
+  INVALID_EMAIL: 'Esse e-mail não parece certo.',
+  MISSING_PASSWORD: 'Falta a senha.',
+  TOO_MANY_ATTEMPTS_TRY_LATER: 'Muitas tentativas. Espere um pouco e tente de novo.'
+};
+const recado = e => {
+  const m = String(e && e.message || e || '').split(' : ')[0];
+  return RECADOS[m] || 'Não consegui agora. Veja a internet e tente de novo.';
+};
+
 function juntaProg(a, b) {
   if (!b) return a;
   const r = JSON.parse(JSON.stringify(a));
@@ -536,10 +615,10 @@ function juntaProg(a, b) {
   ['arpao', 'troca', 'giro', 'folego'].forEach(k => r.poderes[k] = Math.max((a.poderes || {})[k] || 0, (b.poderes || {})[k] || 0));
   r.vistos = Object.assign({}, b.vistos || {}, a.vistos || {});
   const da = a.desafio || {}, db = b.desafio || {};
-  r.desafio = { semana: da.semana === db.semana ? da.semana : (da.melhor >= db.melhor ? da.semana : db.semana),
+  r.desafio = { semana: (da.melhor || 0) >= (db.melhor || 0) ? da.semana : db.semana,
                 melhor: Math.max(da.melhor || 0, db.melhor || 0), nome: da.nome || db.nome || '' };
-  r.conta = a.conta || b.conta || '';
   r.apelido = a.apelido || b.apelido || '';
+  r.email = a.email || b.email || '';
   return r;
 }
 function aplicaProg(novo) { prog = juntaProg(novo, prog); salvaProg(); pintaMoedas(); pintaPoderes(); pintaBotaoSom(); aplicaLeve(); }
@@ -547,94 +626,97 @@ function aplicaProg(novo) { prog = juntaProg(novo, prog); salvaProg(); pintaMoed
 const paraTexto = () => 'MERGULHO1:' + btoa(unescape(encodeURIComponent(JSON.stringify(prog))));
 function doTexto(txt) {
   try {
-    const cru = String(txt).trim().replace(/^MERGULHO1:/, '');
-    const d = JSON.parse(decodeURIComponent(escape(atob(cru))));
+    const d = JSON.parse(decodeURIComponent(escape(atob(String(txt).trim().replace(/^MERGULHO1:/, '')))));
     return (d && typeof d.max === 'number') ? d : null;
   } catch (e) { return null; }
 }
 async function copia(txt, botao, rotulo) {
   try { await navigator.clipboard.writeText(txt); }
   catch (e) { try { const t = document.createElement('textarea'); t.value = txt; document.body.appendChild(t); t.select(); document.execCommand('copy'); t.remove(); } catch (e2) { return; } }
-  if (botao) { const antes = botao.textContent; botao.textContent = 'Copiado!'; setTimeout(() => botao.textContent = rotulo || antes, 1800); }
-}
-async function nuvemSalva() {
-  if (!NUVEM.url || !prog.conta) return false;
-  try {
-    const r = await fetch(NUVEM.url + '/mergulho/contas/' + prog.conta.replace(/-/g, '') + '.json',
-      { method: 'PUT', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ apelido: prog.apelido || '', quando: Date.now(), prog: prog }) });
-    return r.ok;
-  } catch (e) { return false; }
-}
-async function nuvemLe(codigo) {
-  if (!NUVEM.url) return null;
-  try {
-    const r = await fetch(NUVEM.url + '/mergulho/contas/' + codigo.replace(/-/g, '').toUpperCase() + '.json');
-    const d = await r.json();
-    return d && d.prog ? d.prog : null;
-  } catch (e) { return null; }
+  if (botao) { botao.textContent = 'Copiado!'; setTimeout(() => botao.textContent = rotulo, 1800); }
 }
 
-function mostraConta() {
-  const temNuvem = !!NUVEM.url;
-  if (!prog.conta) {
+/* ── telas da conta ─────────────────────────────────────────── */
+function mostraConta(aviso) {
+  if (!Conta.ligada) {
     cartao('<h3>Seu progresso</h3>' +
-      '<p>Hoje ele fica só neste aparelho. Crie um código e guarde: com ele você recupera tudo se trocar de celular ou limpar o navegador.</p>' +
-      '<input class="campo" id="campo-apelido" maxlength="18" placeholder="Seu apelido (opcional)">' +
-      '<div class="bts"><button class="bt vidro" data-ac="fecha">Agora não</button>' +
-      '<button class="bt" data-ac="criaconta">Criar meu código</button></div>');
+      '<p>A conta por e-mail ainda não está ligada neste site. Por enquanto o progresso fica neste aparelho, e a rede de segurança é o backup abaixo: copie e guarde em algum lugar seu.</p>' +
+      '<div class="bts"><button class="bt vidro" data-ac="copiabackup">Copiar backup</button>' +
+      '<button class="bt" data-ac="colar">Restaurar backup</button></div>');
     return;
   }
-  cartao('<h3>Seu código</h3>' +
-    '<p class="codigo">' + prog.conta + '</p>' +
-    '<p>' + (prog.apelido ? prog.apelido + ', guarde' : 'Guarde') + ' esse código em algum lugar seguro. ' +
-    (temNuvem ? 'Ele também sincroniza pela internet: é só entrar com ele em outro aparelho.'
-              : 'Ele vem junto no backup abaixo, que funciona sem internet.') + '</p>' +
-    '<div class="bts">' +
-      '<button class="bt vidro" data-ac="copiacodigo">Copiar código</button>' +
-      '<button class="bt vidro" data-ac="copiabackup">Copiar backup</button>' +
-    '</div>' +
-    '<div class="bts">' +
-      '<button class="bt vidro" data-ac="colar">Restaurar backup</button>' +
-      (temNuvem ? '<button class="bt" data-ac="salvanuvem">Salvar na nuvem</button>' : '<button class="bt" data-ac="fecha">Fechar</button>') +
-    '</div>');
+  if (!Conta.dentro) {
+    cartao('<h3>Guardar meu progresso</h3>' +
+      '<p>Crie uma conta com e-mail e senha. O que você já jogou continua: ao entrar, o jogo junta o progresso do aparelho com o da conta.</p>' +
+      (aviso ? '<p class="aviso">' + aviso + '</p>' : '') +
+      '<input class="campo" id="campo-email" type="email" inputmode="email" autocomplete="email" placeholder="seu@email.com">' +
+      '<input class="campo" id="campo-senha" type="password" autocomplete="current-password" placeholder="senha (mínimo 6)">' +
+      '<div class="bts"><button class="bt vidro" data-ac="criaconta">Criar conta</button>' +
+      '<button class="bt" data-ac="entrar">Entrar</button></div>' +
+      '<div class="bts"><button class="bt-texto" data-ac="esqueci">Esqueci a senha</button>' +
+      '<button class="bt-texto" data-ac="copiabackup">Copiar backup</button></div>');
+    return;
+  }
+  cartao('<h3>Conta</h3>' +
+    '<p class="codigo">' + (Conta.sessao.email || 'conectado') + '</p>' +
+    '<p>Progresso salvo na nuvem a cada fase. Pra jogar em outro aparelho, é só entrar com esse e-mail.</p>' +
+    (aviso ? '<p class="aviso">' + aviso + '</p>' : '') +
+    '<div class="bts"><button class="bt vidro" data-ac="copiabackup">Copiar backup</button>' +
+    '<button class="bt" data-ac="sincroniza">Sincronizar agora</button></div>' +
+    '<div class="bts"><button class="bt-texto" data-ac="sair">Sair desta conta</button></div>');
 }
-function criaConta() {
-  const campo = document.getElementById('campo-apelido');
-  prog.apelido = campo ? campo.value.trim().slice(0, 18) : '';
-  prog.conta = codigoNovo();
-  if (prog.desafio && !prog.desafio.nome) prog.desafio.nome = prog.apelido;
+async function contaEntrar(criar, botao) {
+  const email = (document.getElementById('campo-email') || {}).value || '';
+  const senha = (document.getElementById('campo-senha') || {}).value || '';
+  if (!email.trim() || !senha) { mostraConta('Preencha o e-mail e a senha.'); return; }
+  if (botao) botao.textContent = criar ? 'Criando...' : 'Entrando...';
+  try {
+    if (criar) await Conta.cria(email.trim(), senha); else await Conta.entra(email.trim(), senha);
+  } catch (e) { mostraConta(recado(e)); return; }
+  prog.email = Conta.sessao.email;
   salvaProg();
-  nuvemSalva();
-  mostraConta();
+  const ok = await Conta.sincroniza();
+  Som.liga(); Som.vitoria();
+  cartao('<h3>' + (criar ? 'Conta criada' : 'Bem-vindo de volta') + '</h3>' +
+    '<p>Progresso ' + (ok ? 'guardado na nuvem' : 'salvo aqui e vai subir assim que a internet voltar') + '. Você está na fase ' + (prog.max + 1) +
+    ' com ' + totalEstrelas() + (totalEstrelas() === 1 ? ' estrela' : ' estrelas') + ' e ' + nf(prog.moedas) + ' moedas.</p>' +
+    '<div class="bts"><button class="bt" data-ac="mapa">Jogar</button></div>');
+}
+async function contaEsqueci() {
+  const email = (document.getElementById('campo-email') || {}).value || '';
+  if (!email.trim()) { mostraConta('Escreva o e-mail primeiro.'); return; }
+  try { await Conta.esqueci(email.trim()); mostraConta('Mandei um e-mail para trocar a senha.'); }
+  catch (e) { mostraConta(recado(e)); }
+}
+async function contaSincroniza(botao) {
+  if (botao) botao.textContent = 'Sincronizando...';
+  const ok = await Conta.sincroniza();
+  mostraConta(ok ? 'Tudo sincronizado agora.' : 'Não consegui falar com o servidor agora.');
+}
+function contaSair() {
+  Conta.sai();
+  mostraConta('Saí da conta. O progresso continua guardado neste aparelho.');
 }
 function mostraColar() {
-  cartao('<h3>Restaurar</h3>' +
-    '<p>Cole aqui o backup que você copiou' + (NUVEM.url ? ', ou digite o código da sua conta' : '') + '. Nada é apagado: o jogo fica com o melhor dos dois progressos.</p>' +
-    '<textarea class="campo alto" id="campo-backup" placeholder="MERGULHO1:... ou ABCD-1234-EFGH"></textarea>' +
+  cartao('<h3>Restaurar backup</h3>' +
+    '<p>Cole o texto do backup que você copiou. Nada é apagado: o jogo fica com o melhor dos dois progressos.</p>' +
+    '<textarea class="campo alto" id="campo-backup" placeholder="MERGULHO1:..."></textarea>' +
     '<div class="bts"><button class="bt vidro" data-ac="conta">Voltar</button>' +
     '<button class="bt" data-ac="restaura">Restaurar</button></div>');
 }
-async function restaura() {
+function restaura() {
   const campo = document.getElementById('campo-backup');
-  const txt = campo ? campo.value.trim() : '';
-  if (!txt) return;
-  let novo = doTexto(txt);
-  if (!novo && NUVEM.url && /^[A-Za-z0-9-]{8,20}$/.test(txt)) novo = await nuvemLe(txt);
+  const novo = doTexto(campo ? campo.value : '');
   if (!novo) {
-    cartao('<h3>Não deu</h3><p>Esse texto não parece um backup nem um código válido. Confira se veio inteiro.</p>' +
+    cartao('<h3>Não deu</h3><p>Esse texto não parece um backup do Mergulho. Confira se ele veio inteiro, começando com MERGULHO1.</p>' +
       '<div class="bts"><button class="bt" data-ac="colar">Tentar de novo</button></div>');
     return;
   }
   aplicaProg(novo);
+  salvaNaNuvemDepois();
   Som.liga(); Som.vitoria();
   cartao('<h3>Pronto</h3><p>Progresso restaurado: fase ' + (prog.max + 1) + ', ' + totalEstrelas() + ' estrelas e ' + nf(prog.moedas) + ' moedas.</p>' +
     '<div class="bts"><button class="bt" data-ac="mapa">Ver o mapa</button></div>');
-}
-async function salvaNaNuvem(botao) {
-  if (botao) botao.textContent = 'Salvando...';
-  const ok = await nuvemSalva();
-  if (botao) { botao.textContent = ok ? 'Salvo!' : 'Falhou'; setTimeout(() => botao.textContent = 'Salvar na nuvem', 1800); }
 }
 
 /* ═══ TELAS ═════════════════════════════════════════════════════ */
@@ -856,6 +938,8 @@ function iniciar() {
   faiscasBox = document.getElementById('faiscas');
 
   carregaProg();
+  Conta.carrega();
+  if (Conta.ligada && Conta.dentro) Conta.sincroniza();
   decideLeve();
   aplicaLeve();
   document.getElementById('versao').textContent = 'v' + VERSAO_JOGO;
@@ -897,12 +981,14 @@ function iniciar() {
     else if (ac === 'compartilha') compartilhaDesafio(b);
     else if (ac === 'mudar') mudaAjuste(b.dataset.k);
     else if (ac === 'conta') mostraConta();
-    else if (ac === 'criaconta') criaConta();
-    else if (ac === 'copiacodigo') copia(prog.conta, b, 'Copiar código');
+    else if (ac === 'criaconta') contaEntrar(true, b);
+    else if (ac === 'entrar') contaEntrar(false, b);
+    else if (ac === 'esqueci') contaEsqueci();
+    else if (ac === 'sincroniza') contaSincroniza(b);
+    else if (ac === 'sair') contaSair();
     else if (ac === 'copiabackup') copia(paraTexto(), b, 'Copiar backup');
     else if (ac === 'colar') mostraColar();
     else if (ac === 'restaura') restaura();
-    else if (ac === 'salvanuvem') salvaNaNuvem(b);
     else if (ac === 'retoma') { const d = lePartida(); limpaPartida(); if (d) retomaPartida(d); else fechaCartao(); }
     else if (ac === 'descarta') { limpaPartida(); fechaCartao(); if (prog.dia !== hoje()) setTimeout(mostraBau, 300); }
     else if (ac === 'folego') usaFolegoNoCartao();
@@ -931,7 +1017,7 @@ function iniciar() {
   grid = Array.from({ length: H }, () => Array(W).fill(null));
 
   document.addEventListener('visibilitychange', () => {
-    if (document.hidden) { salvaPartida(); Musica.para(); clearTimeout(dicaTimer); apagaDica(); if (olhoFps) { cancelAnimationFrame(olhoFps); olhoFps = null; } }
+    if (document.hidden) { salvaPartida(); if (Conta.dentro) Conta.salva(); Musica.para(); clearTimeout(dicaTimer); apagaDica(); if (olhoFps) { cancelAnimationFrame(olhoFps); olhoFps = null; } }
     else if (prog.som && prog.musica) Musica.liga(document.body.classList.contains('em-jogo') ? 'jogo' : 'menu', mundoAtual);
   });
 

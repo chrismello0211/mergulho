@@ -339,7 +339,12 @@ async function limpar(conj, novos) {
     if (e.vale) faisca(e.r, e.c, '+' + e.vale, '#FFE7A3', e.vale >= 900);
     if (e.sp === LH) { raioLinha(e.r, e.c, true); Som.raio(); peso = Math.max(peso, 2); }
     else if (e.sp === LV) { raioLinha(e.r, e.c, false); Som.raio(); peso = Math.max(peso, 2); }
-    else if (e.sp === BOMBA) { ondaChoque(e.r, e.c, e.tam || 5.4, '#FFE7A3'); Som.bomba(); clarao('rgba(255,231,163,.45)'); peso = 3; }
+    else if (e.sp === BOMBA) {
+      ondaChoque(e.r, e.c, e.tam || 6.2, '#FFE7A3');
+      setTimeout(() => ondaChoque(e.r, e.c, (e.tam || 6.2) * .6, '#FF9A5C'), 110);
+      estilhacos(e.r, e.c, '#FFD35C', 14);
+      Som.bomba(); clarao('rgba(255,231,163,.55)'); peso = 3;
+    }
     else if (e.sp === 'tudo') {
       Som.combo(); clarao('rgba(255,255,255,.6)');
       [0, 200, 400].forEach((d, i) => setTimeout(() => ondaChoque(3 + i, 3, 7 + i * 2, ['#fff', '#6BFFE0', '#FFD35C'][i]), d));
