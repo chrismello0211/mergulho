@@ -1009,9 +1009,16 @@ function iniciar() {
   aplicaLeve();
   document.getElementById('versao').textContent = 'v' + VERSAO_JOGO;
   document.addEventListener('pointerdown', e => {
-    const alvo = e.target.closest('.bt, .ico-bt, .poder, .no, .bt-compra, .subir, .bt-att');
+    const alvo = e.target.closest('.bt, .ico-bt, .poder, .no, .bt-compra, .subir');
     if (!alvo) return;
     Som.liga(); Som.toque();
+    /* poder e nó do mapa têm enfeite pra fora da borda: neles a resposta
+       ao toque é um brilho, não a ondinha (que precisaria recortar) */
+    if (alvo.classList.contains('poder') || alvo.classList.contains('no')) {
+      alvo.classList.remove('tocado'); void alvo.offsetWidth; alvo.classList.add('tocado');
+      setTimeout(() => alvo.classList.remove('tocado'), 360);
+      return;
+    }
     const r = alvo.getBoundingClientRect(), o = document.createElement('span');
     o.className = 'ondinha';
     o.style.left = (e.clientX - r.left) + 'px';

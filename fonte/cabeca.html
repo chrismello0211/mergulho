@@ -504,11 +504,15 @@ body:not(.em-jogo) #cena{display:none}
 @keyframes nada-volta{0%{transform:translateX(122vw) scaleX(-1)}50%{transform:translateX(50vw) translateY(12px) scaleX(-1)}100%{transform:translateX(-22vw) scaleX(-1)}}
 
 /* ── toque com ondinha ──────────────────────────────────────── */
-.bt,.ico-bt,.poder,.no,.bt-compra,.subir{position:relative;overflow:hidden}
+.bt,.ico-bt,.bt-compra,.subir{position:relative;overflow:hidden}
+.poder,.no{position:relative}   /* aqui não: o contador e as estrelas ficam pra fora */
 .ondinha{position:absolute;width:12px;height:12px;margin:-6px 0 0 -6px;border-radius:50%;pointer-events:none;
   background:rgba(255,255,255,.55);animation:ondinha .6s ease-out forwards}
 @keyframes ondinha{0%{transform:scale(0);opacity:.7}100%{transform:scale(14);opacity:0}}
-.no .ondinha{background:rgba(255,255,255,.7)}
+.poder.tocado,.no.tocado{animation:tocado .34s ease}
+@keyframes tocado{0%{transform:scale(1);filter:brightness(1)}40%{transform:scale(.93);filter:brightness(1.5)}100%{transform:scale(1);filter:brightness(1)}}
+.no.tocado{animation-name:tocado-no}
+@keyframes tocado-no{0%,100%{filter:brightness(1)}45%{filter:brightness(1.35)}}
 
 /* ── barra de pontos viva ───────────────────────────────────── */
 .barra .cheio::after{content:"";position:absolute;top:0;right:0;bottom:0;width:36px;border-radius:999px;
