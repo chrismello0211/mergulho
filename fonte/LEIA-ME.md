@@ -23,6 +23,21 @@ Depois suba o `VERSAO` no `sw.js` (por exemplo `v2026.09.21` para `v2026.09.22`)
 | `calib.js` | Bot de calibragem das fases |
 | `PLANO.md` | Decisões de design (paleta, tipografia, princípios) |
 
+## Regiões e profundidade
+
+Duas coisas separadas decidem o ambiente de cada fase:
+
+- **faixa de profundidade** (`MUNDOS`, 5 faixas): manda na luz, nas peças e no tipo de
+  partícula. Raso e recife com sol, naufrágio com luz fria, crepúsculo translúcido, abismo neon.
+- **região** (`REGIOES`, 8 lugares): manda na cor da água, no chão, na moldura da mesa,
+  nos nomes das faixas e no que cobre o fundo (`BLOQUEIOS`).
+
+`ambiente(i)` junta as duas e devolve tudo pronto. Cada expedição (30 fases) acontece
+numa região diferente; passadas as 8, elas voltam com um giro de matiz, então a fase 250
+não é igual à 10. Para acrescentar uma região nova, basta um item em `REGIOES`: seis cores
+de água, cinco nomes de faixa, cinco peças de cenário (`PROPS` em `cena.js`) e cinco
+coberturas.
+
 ## Conta na nuvem (Firebase)
 
 Abra o `index.html` e preencha as duas linhas do topo:

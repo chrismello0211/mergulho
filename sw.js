@@ -1,6 +1,6 @@
 /* Mergulho: service worker
    Troque VERSAO a cada publicação: o cache velho é apagado sozinho. */
-const VERSAO = 'v2026.09.30';
+const VERSAO = 'v2026.10.01';
 const CACHE = 'mergulho-' + VERSAO;
 
 const ARQUIVOS = [

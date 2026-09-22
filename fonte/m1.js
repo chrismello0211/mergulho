@@ -2,7 +2,7 @@
    MERGULHO · combinar 3 da beira da praia até 4.000 metros
    ═══════════════════════════════════════════════════════════════ */
 
-const VERSAO_JOGO = '2026.09.30';
+const VERSAO_JOGO = '2026.10.01';
 const W = 7, H = 8, TIPOS = 6;
 const NADA = 0, LH = 1, LV = 2, BOMBA = 3, ARCO = 4;
 
@@ -25,29 +25,97 @@ const coluna = k => k % W;
 const dentro = (r, c) => r >= 0 && r < H && c >= 0 && c < W;
 const metros = n => n.toLocaleString('pt-BR') + ' m';
 
-/* ── os mundos: cada um é uma faixa de profundidade ─────────────
+
+/* ═══ O QUE COBRE O FUNDO ═══════════════════════════════════════
+   tex: como a casa é pintada (grão, fibra, malha, placa, breu).  */
+const BLOQUEIOS = {
+  areia:      { verbo:'Varrer', um:'monte de areia', varios:'montes de areia', tex:'grao', a:'#F3E2B8', b:'#E0C792', a2:'#D2AE6E', b2:'#B48A4A',
+                dica:'A areia cobre parte do fundo. Estoure peças em cima dela para varrer.' },
+  areiapreta: { verbo:'Varrer', um:'monte de areia preta', varios:'montes de areia preta', tex:'grao', a:'#6E6A72', b:'#4A4750', a2:'#3A3740', b2:'#23212A',
+                dica:'Areia vulcânica cobre o fundo. Estoure peças em cima para varrer.' },
+  cinza:      { verbo:'Soprar', um:'monte de cinza', varios:'montes de cinza', tex:'grao', a:'#B9B2C6', b:'#8E88A0', a2:'#6B6580', b2:'#463F5C',
+                dica:'A cinza do vulcão assentou no fundo. Estoure peças em cima para soprar.' },
+  alga:       { verbo:'Limpar', um:'alga', varios:'algas', tex:'fibra', a:'#5DBE6E', b:'#3F9853', a2:'#2E7D44', b2:'#1C552C',
+                dica:'Algas tomaram o fundo. As mais escuras precisam de duas passadas.' },
+  limo:       { verbo:'Limpar', um:'limo', varios:'limos', tex:'fibra', a:'#8FB36A', b:'#6B8F45', a2:'#4C6B2E', b2:'#33491C',
+                dica:'O limo gruda no fundo. Estoure peças em cima para soltar.' },
+  raiz:       { verbo:'Cortar', um:'raiz', varios:'raízes', tex:'fibra', a:'#C08A52', b:'#96633A', a2:'#6E4526', b2:'#4A2D18',
+                dica:'Raízes do mangue trançam o fundo. Estoure peças em cima para cortar.' },
+  rede:       { verbo:'Cortar', um:'rede', varios:'redes', tex:'malha', a:'#ECBE78', b:'#B98C48', a2:'#FF965A', b2:'#C2622C',
+                dica:'Tem rede presa aqui. Estoure peças em cima para cortar.' },
+  craca:      { verbo:'Raspar', um:'craca', varios:'cracas', tex:'placa', a:'#E4E0D2', b:'#B6B0A0', a2:'#8C8676', b2:'#635E52',
+                dica:'Cracas grudaram na pedra. Estoure peças em cima para raspar.' },
+  gelo:       { verbo:'Quebrar', um:'placa de gelo', varios:'placas de gelo', tex:'placa', a:'#E8FAFF', b:'#AEDDF2', a2:'#8FC6E8', b2:'#5E9CC6',
+                dica:'Placas de gelo fecham o fundo. Estoure peças em cima para quebrar.' },
+  coralmorto: { verbo:'Quebrar', um:'coral morto', varios:'corais mortos', tex:'placa', a:'#F0DAD0', b:'#CBA898', a2:'#A67E6C', b2:'#7A574A',
+                dica:'Coral morto endureceu no fundo. Estoure peças em cima para quebrar.' },
+  lodo:       { verbo:'Limpar', um:'casa com lodo', varios:'casas com lodo', tex:'fibra', a:'#A9A2C0', b:'#7B7498', a2:'#5C5680', b2:'#3A3550',
+                dica:'O lodo assentou no fundo. Estoure peças em cima para limpar.' },
+  breu:       { verbo:'Acender', um:'casa apagada', varios:'casas apagadas', tex:'breu', a:'#000000', b:'#000000', a2:'#000000', b2:'#000000',
+                dica:'Algumas casas estão apagadas. Estoure peças em cima para acender.' }
+};
+
+/* ═══ REGIÕES ═══════════════════════════════════════════════════
+   A profundidade manda na luz e nas peças; a região manda na cor
+   da água, no chão, nos nomes e no que cobre o fundo. Cada
+   expedição acontece numa região diferente, então a fase 200 não
+   parece a fase 20.                                              */
+const REGIOES = [
+  { nome:'Litoral', texto:'Água clara de beira de praia.',
+    agua:['#9BE9E0','#3FC0C6','#1A6E98','#123067','#0A0F28','#03050F'], moldura:'#EEDCAE', acento:'#6BFFE0',
+    bandas:['Raso','Recife','Naufrágio','Crepúsculo','Abismo'],
+    chao:['duna','coral','casco','longe','pedra'], bloq:['areia','alga','rede','lodo','breu'] },
+  { nome:'Mangue', texto:'Água turva de raiz e folha.',
+    agua:['#B6E8B0','#57B184','#1C7A69','#123F4C','#0A1A24','#03070A'], moldura:'#C9A06A', acento:'#9CFF8A',
+    bandas:['Baixio','Raizal','Canal turvo','Água parada','Poço negro'],
+    chao:['raizes','kelp','casco','longe','pedra'], bloq:['limo','raiz','rede','lodo','breu'] },
+  { nome:'Mar Polar', texto:'Água gelada e leitosa.',
+    agua:['#E2F7FF','#93D6F0','#3E86C4','#17306B','#080F2A','#02040E'], moldura:'#CFEAFF', acento:'#8FE9FF',
+    bandas:['Banco de gelo','Jardim de kelp','Navio preso','Água leitosa','Fossa polar'],
+    chao:['gelo','kelp','casco','longe','pedra'], bloq:['gelo','alga','rede','lodo','breu'] },
+  { nome:'Cordilheira', texto:'Montanha submersa, parede de pedra.',
+    agua:['#84E3D2','#23A89C','#116A70','#0E2148','#060A1C','#02040C'], moldura:'#A8C4B8', acento:'#5CFFD6',
+    bandas:['Laje','Pico submerso','Desfiladeiro','Encosta funda','Fenda'],
+    chao:['pedra','coral','pedra','longe','cristal'], bloq:['areia','coralmorto','craca','lodo','breu'] },
+  { nome:'Boca do Vulcão', texto:'Areia preta e água morna.',
+    agua:['#BCEAD2','#31AC90','#0F6F72','#2C1B40','#190A16','#0A0206'], moldura:'#E08A5C', acento:'#FF9A5C',
+    bandas:['Praia preta','Recife novo','Lava velha','Fumaça','Caldeira'],
+    chao:['duna','coral','pedra','longe','fumarola'], bloq:['areiapreta','alga','craca','cinza','breu'] },
+  { nome:'Ruínas', texto:'Alguém morou aqui antes do mar subir.',
+    agua:['#DCEBBC','#69B69C','#1C6E85','#17204F','#0B0A20','#030309'], moldura:'#D9C08A', acento:'#FFD98A',
+    bandas:['Escadaria','Pátio','Coluna caída','Salão fundo','Cripta'],
+    chao:['ruinas','coral','ruinas','longe','cristal'], bloq:['areia','limo','craca','lodo','breu'] },
+  { nome:'Sargaço', texto:'Um mato flutuante que não acaba.',
+    agua:['#D3EBAC','#73C28D','#2D8B8E','#14264F','#090C22','#02030B'], moldura:'#BBD48C', acento:'#B6FF7A',
+    bandas:['Mato flutuante','Tapete verde','Sombra do mato','Fundo escuro','Buraco'],
+    chao:['sargaco','kelp','casco','longe','pedra'], bloq:['alga','limo','rede','lodo','breu'] },
+  { nome:'Fossa', texto:'A água some rápido por aqui.',
+    agua:['#93DAEA','#2E8BAC','#144670','#1A1250','#0B0620','#030109'], moldura:'#A98CD8', acento:'#B07CFF',
+    bandas:['Borda','Talude','Degrau','Meia-água','Fundo da fossa'],
+    chao:['pedra','pedra','casco','longe','fumarola'], bloq:['areia','craca','rede','cinza','breu'] }
+];
+
+/* de que lugar é esta fase, e com que cara */
+function ambiente(i) {
+  const banda = Math.floor((i % CICLO) / 6);
+  const volta = Math.floor(i / CICLO);
+  const reg = REGIOES[volta % REGIOES.length];
+  const b = MUNDOS[banda], bl = BLOQUEIOS[reg.bloq[banda]];
+  /* passada a lista inteira, a mesma região volta com outra luz */
+  const giro = Math.floor(volta / REGIOES.length);
+  return { banda: banda, reg: reg, nome: reg.bandas[banda], de: b.de, ate: b.ate, bloq: bl,
+           texto: reg.texto + ' ' + b.texto, dica: bl.dica, chao: reg.chao[banda],
+           tom: giro === 0 ? '' : 'hue-rotate(' + (((giro * 29) % 61) - 30) + 'deg) saturate(' + (giro % 2 ? 1.12 : .9) + ')' };
+}
+
+/* ── as faixas de profundidade: elas mandam na luz e nas peças ──
    bloq: o que cobre o fundo nas fases de limpar                 */
 const MUNDOS = [
-  { nome: 'Raso', de: 0, ate: 12,
-    bloq: { verbo: 'Varrer', um: 'monte de areia', varios: 'montes de areia' },
-    texto: 'Água morna e areia clara. O sol ainda chega em tudo.',
-    dica: 'A areia cobre parte do fundo. Estoure peças em cima dela para varrer.' },
-  { nome: 'Recife', de: 15, ate: 35,
-    bloq: { verbo: 'Limpar', um: 'alga', varios: 'algas' },
-    texto: 'Coral para todo lado e bicho com cor de sobra.',
-    dica: 'Algas tomaram o recife. As mais escuras precisam de duas passadas.' },
-  { nome: 'Naufrágio', de: 45, ate: 130,
-    bloq: { verbo: 'Cortar', um: 'rede', varios: 'redes' },
-    texto: 'Um casco antigo, luz fria e redes esquecidas.',
-    dica: 'Tem rede presa no casco. Estoure peças em cima para cortar.' },
-  { nome: 'Crepúsculo', de: 200, ate: 1000,
-    bloq: { verbo: 'Limpar', um: 'casa com lodo', varios: 'casas com lodo' },
-    texto: 'A luz do sol acaba aqui. Os bichos começam a brilhar.',
-    dica: 'O lodo assentou no fundo. Estoure peças em cima para limpar.' },
-  { nome: 'Abismo', de: 1500, ate: 4000,
-    bloq: { verbo: 'Acender', um: 'casa apagada', varios: 'casas apagadas' },
-    texto: 'Escuro total. Só existe a luz que os próprios bichos fazem.',
-    dica: 'Algumas casas estão apagadas. Estoure peças em cima para acender.' }
+  { de: 0, ate: 12, texto: 'O sol ainda chega em tudo.' },
+  { de: 15, ate: 35, texto: 'Bicho com cor de sobra por todo lado.' },
+  { de: 45, ate: 130, texto: 'A luz chega fria e de lado.' },
+  { de: 200, ate: 1000, texto: 'A luz do sol acaba aqui e os bichos começam a brilhar.' },
+  { de: 1500, ate: 4000, texto: 'Escuro total: só existe a luz que os bichos fazem.' }
 ];
 
 /* ── as fases ──────────────────────────────────────────────────

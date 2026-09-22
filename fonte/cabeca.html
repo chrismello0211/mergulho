@@ -79,11 +79,7 @@ button{font:inherit}
 /* ═══ ÁGUA DE FUNDO (só aparece no jogo) ════════════════════════ */
 #agua{position:fixed;inset:0;z-index:0;overflow:hidden}
 body:not(.em-jogo) #cena{display:none}
-[data-mundo="0"] #agua{background:linear-gradient(180deg,#9BE9E0 0%,#5ACFC6 36%,#2AA5B4 76%,#1E8FA6 100%)}
-[data-mundo="1"] #agua{background:linear-gradient(180deg,#3FC0C6 0%,#1C95AA 40%,#0E6E8E 80%,#0A5A7C 100%)}
-[data-mundo="2"] #agua{background:linear-gradient(180deg,#1A6E98 0%,#0E5480 40%,#093D66 80%,#072F52 100%)}
-[data-mundo="3"] #agua{background:linear-gradient(180deg,#123067 0%,#15215A 40%,#0E1440 80%,#0A0D2C 100%)}
-[data-mundo="4"] #agua{background:linear-gradient(180deg,#0A0F28 0%,#060A1C 45%,#03050F 100%)}
+#agua{background:linear-gradient(180deg,var(--ag1,#9BE9E0) 0%,var(--ag2,#5ACFC6) 38%,var(--ag3,#2AA5B4) 78%,var(--ag4,#1E8FA6) 100%)}
 #cena{position:absolute;inset:0}
 
 .causticas{
@@ -186,11 +182,7 @@ body:not(.em-jogo) #cena{display:none}
 .barco{position:absolute;left:50%;top:78px;width:96px;transform:translateX(-50%);z-index:2}
 .onda-mapa{top:calc(63% - 11px);z-index:3}
 .faixa-mundo{position:relative;padding:16px 0 12px;--rot:#F3FBFF;--rot2:rgba(243,251,255,.72)}
-.faixa-mundo[data-m="0"]{background:linear-gradient(180deg,#6FD6CB,#36B4BC);--rot:#053546;--rot2:rgba(5,53,70,.72)}
-.faixa-mundo[data-m="1"]{background:linear-gradient(180deg,#36B4BC,#1788A2 55%,#0C6386)}
-.faixa-mundo[data-m="2"]{background:linear-gradient(180deg,#0C6386,#0A4C77 55%,#07365C)}
-.faixa-mundo[data-m="3"]{background:linear-gradient(180deg,#07365C,#141E52 55%,#0C1034)}
-.faixa-mundo[data-m="4"]{background:linear-gradient(180deg,#0C1034,#050818 55%,#02030A)}
+.faixa-mundo.clara{--rot:#053546;--rot2:rgba(5,53,70,.72)}
 .cab-mundo{position:relative;z-index:2;padding:4px 22px 6px;color:var(--rot)}
 .cab-mundo h3{font-family:var(--display);font-weight:800;font-size:30px;line-height:1;margin:0}
 .cab-mundo p{margin:3px 0 0;font-size:13px;font-weight:800;color:var(--rot2)}
@@ -207,9 +199,9 @@ body:not(.em-jogo) #cena{display:none}
 .no.travada{cursor:not-allowed}
 .no.travada .disco{background:rgba(243,251,255,.1);box-shadow:inset 0 0 0 2px rgba(243,251,255,.24)}
 .cadeado{width:22px;height:22px;fill:none;stroke:rgba(243,251,255,.55);stroke-width:2.2;stroke-linecap:round}
-.faixa-mundo[data-m="0"] .no.travada .disco{background:rgba(5,53,70,.07);box-shadow:inset 0 0 0 2px rgba(5,53,70,.22)}
-.faixa-mundo[data-m="0"] .cadeado{stroke:rgba(5,53,70,.5)}
-.faixa-mundo[data-m="3"] .no:not(.travada) .disco,.faixa-mundo[data-m="4"] .no:not(.travada) .disco{
+.faixa-mundo.clara .no.travada .disco{background:rgba(5,53,70,.07);box-shadow:inset 0 0 0 2px rgba(5,53,70,.22)}
+.faixa-mundo.clara .cadeado{stroke:rgba(5,53,70,.5)}
+.faixa-mundo.funda .no:not(.travada) .disco{
   box-shadow:inset 0 -4px 8px rgba(10,80,110,.35),inset 0 0 0 2px rgba(255,255,255,.8),0 0 24px rgba(107,255,224,.45)}
 .no.atual::before{content:"";position:absolute;inset:-10px;border-radius:50%;box-shadow:0 0 0 3px rgba(255,211,92,.95);animation:pulsa 1.6s ease-in-out infinite}
 @keyframes pulsa{0%,100%{opacity:.35;transform:scale(1)}50%{opacity:1;transform:scale(1.07)}}
@@ -278,13 +270,12 @@ body:not(.em-jogo) #cena{display:none}
 /* ── tabuleiro: o material muda com a profundidade ─────────── */
 .area-jogo{flex:1;display:grid;place-items:center;padding:8px 10px calc(var(--safe-b) + 10px);min-height:0;position:relative;z-index:1}
 #mesa{position:relative;border-radius:24px;padding:var(--gap);touch-action:none}
-[data-mundo="0"] #mesa{background:linear-gradient(180deg,rgba(8,92,104,.55),rgba(5,74,88,.68));box-shadow:0 0 0 4px #EEDCAE,0 0 0 7px rgba(150,115,55,.28),0 18px 34px rgba(0,50,70,.3)}
-[data-mundo="1"] #mesa{background:linear-gradient(180deg,rgba(5,60,76,.72),rgba(3,44,60,.8));box-shadow:0 0 0 3px rgba(242,160,170,.8),0 0 0 7px rgba(232,112,127,.2),0 18px 34px rgba(0,30,50,.35)}
-[data-mundo="2"] #mesa{
-  background:repeating-linear-gradient(90deg,rgba(0,0,0,.3) 0 2px,transparent 2px var(--cel)),linear-gradient(180deg,#3D4B53,#2B373E);
-  background-position:var(--gap) 0,0 0;box-shadow:0 0 0 4px #1F2A30,0 0 0 6px rgba(140,170,190,.18),0 18px 34px rgba(0,15,30,.5)}
-[data-mundo="3"] #mesa{background:linear-gradient(180deg,rgba(18,22,70,.8),rgba(10,12,44,.86));box-shadow:0 0 0 1.5px rgba(176,132,255,.45),0 0 28px rgba(120,90,255,.2),0 18px 34px rgba(0,0,20,.5)}
-[data-mundo="4"] #mesa{background:rgba(0,0,0,.62);box-shadow:0 0 0 1.5px rgba(107,255,224,.22),0 0 36px rgba(107,255,224,.07)}
+#mesa{background:linear-gradient(180deg,var(--mesa-a,rgba(8,92,104,.55)),var(--mesa-b,rgba(5,74,88,.7)));
+  box-shadow:0 0 0 4px var(--moldura,#EEDCAE),0 0 0 7px rgba(0,0,0,.18),0 18px 34px rgba(0,30,50,.34)}
+[data-mundo="2"] #mesa{background:repeating-linear-gradient(90deg,rgba(0,0,0,.26) 0 2px,transparent 2px var(--cel)),
+  linear-gradient(180deg,var(--mesa-a),var(--mesa-b));background-position:var(--gap) 0,0 0}
+[data-mundo="3"] #mesa{box-shadow:0 0 0 1.5px var(--acento,#B084FF),0 0 28px rgba(120,90,255,.22),0 18px 34px rgba(0,0,20,.5)}
+[data-mundo="4"] #mesa{background:rgba(0,0,0,.66);box-shadow:0 0 0 1.5px var(--acento,#6BFFE0),0 0 36px rgba(107,255,224,.1)}
 #mesa.treme{animation:treme .32s cubic-bezier(.36,.07,.19,.97)}
 @keyframes treme{10%,90%{transform:translate(-2px,1px)}20%,80%{transform:translate(3px,-2px)}30%,50%,70%{transform:translate(-4px,2px)}40%,60%{transform:translate(4px,-1px)}}
 #celulas,#pecas,#faiscas{position:absolute;top:var(--gap);left:var(--gap)}
@@ -293,19 +284,22 @@ body:not(.em-jogo) #cena{display:none}
 .casa i{width:calc(var(--cel) - 4px);height:calc(var(--cel) - 4px);border-radius:11px;background:rgba(255,255,255,.08)}
 [data-mundo="2"] .casa i{background:rgba(0,0,0,.16)}
 [data-mundo="3"] .casa i{background:rgba(176,132,255,.07);box-shadow:inset 0 0 0 1px rgba(176,132,255,.14)}
-[data-mundo="4"] .casa i{background:rgba(107,255,224,.22);box-shadow:inset 0 0 0 2px rgba(107,255,224,.7),inset 0 0 16px rgba(107,255,224,.35)}
+[data-mundo="4"] .casa i{background:rgba(107,255,224,.2);box-shadow:inset 0 0 0 2px var(--acento,#6BFFE0),inset 0 0 16px rgba(107,255,224,.3)}
 
-/* o que cobre o fundo: areia, alga, rede, lodo, breu (a escura precisa de duas) */
-[data-mundo="0"] .casa.papel i{background:radial-gradient(circle,rgba(150,110,50,.4) 0 1px,transparent 1.6px) 0 0/7px 7px,linear-gradient(180deg,#F3E2B8,#E0C792);box-shadow:inset 0 2px 0 rgba(255,255,255,.45),0 2px 3px rgba(80,60,20,.3)}
-[data-mundo="0"] .casa.papel2 i{background:repeating-linear-gradient(170deg,rgba(255,255,255,.2) 0 2px,transparent 2px 7px),linear-gradient(180deg,#D2AE6E,#B48A4A);box-shadow:inset 0 2px 0 rgba(255,255,255,.3),0 2px 3px rgba(60,40,10,.35)}
-[data-mundo="1"] .casa.papel i{background:radial-gradient(circle,rgba(200,255,200,.5) 0 1.4px,transparent 2px) 0 0/8px 8px,linear-gradient(180deg,#5DBE6E,#3F9853);box-shadow:inset 0 0 0 1.5px rgba(200,255,200,.35)}
-[data-mundo="1"] .casa.papel2 i{background:repeating-linear-gradient(75deg,rgba(0,0,0,.2) 0 2px,transparent 2px 6px),linear-gradient(180deg,#2E7D44,#1C552C);box-shadow:inset 0 0 0 1.5px rgba(150,230,160,.35)}
-[data-mundo="2"] .casa.papel i{background:repeating-linear-gradient(45deg,rgba(236,190,120,.9) 0 1.6px,transparent 1.6px 9px),repeating-linear-gradient(-45deg,rgba(236,190,120,.9) 0 1.6px,transparent 1.6px 9px),rgba(0,0,0,.2)}
-[data-mundo="2"] .casa.papel2 i{background:repeating-linear-gradient(45deg,rgba(255,150,90,.95) 0 2.4px,transparent 2.4px 6.5px),repeating-linear-gradient(-45deg,rgba(255,150,90,.95) 0 2.4px,transparent 2.4px 6.5px),rgba(0,0,0,.28)}
-[data-mundo="3"] .casa.papel i{background:radial-gradient(ellipse at 30% 35%,rgba(170,160,200,.55),transparent 60%),radial-gradient(ellipse at 70% 72%,rgba(140,130,170,.5),transparent 55%),rgba(96,88,128,.62)}
-[data-mundo="3"] .casa.papel2 i{background:radial-gradient(ellipse at 30% 35%,rgba(120,110,150,.6),transparent 60%),rgba(58,52,84,.94);box-shadow:inset 0 0 0 1.5px rgba(176,132,255,.3)}
-[data-mundo="4"] .casa.papel i{background:#000;box-shadow:inset 0 0 0 2px rgba(150,150,170,.35);border:2px dashed rgba(180,180,200,.35)}
-[data-mundo="4"] .casa.papel2 i{background:#000;box-shadow:inset 0 0 0 3px rgba(154,92,255,.9),0 0 0 1px rgba(154,92,255,.4);border:2px solid rgba(200,180,255,.5)}
+/* o que cobre o fundo: a cor vem da região, a textura do material */
+.casa.papel i{background:var(--bl-tex1),linear-gradient(180deg,var(--bl-a),var(--bl-b));box-shadow:inset 0 2px 0 rgba(255,255,255,.35),0 2px 3px rgba(0,0,0,.28)}
+.casa.papel2 i{background:var(--bl-tex2),linear-gradient(180deg,var(--bl-a2),var(--bl-b2));box-shadow:inset 0 2px 0 rgba(255,255,255,.25),0 2px 3px rgba(0,0,0,.35)}
+[data-tex="grao"]{--bl-tex1:radial-gradient(circle,rgba(90,60,20,.4) 0 1px,transparent 1.6px) 0 0/7px 7px;
+  --bl-tex2:repeating-linear-gradient(170deg,rgba(255,255,255,.22) 0 2px,transparent 2px 7px)}
+[data-tex="fibra"]{--bl-tex1:radial-gradient(circle,rgba(255,255,255,.4) 0 1.4px,transparent 2px) 0 0/8px 8px;
+  --bl-tex2:repeating-linear-gradient(75deg,rgba(0,0,0,.24) 0 2px,transparent 2px 6px)}
+[data-tex="malha"]{--bl-tex1:repeating-linear-gradient(45deg,rgba(255,255,255,.55) 0 1.6px,transparent 1.6px 9px),repeating-linear-gradient(-45deg,rgba(255,255,255,.55) 0 1.6px,transparent 1.6px 9px);
+  --bl-tex2:repeating-linear-gradient(45deg,rgba(255,255,255,.7) 0 2.4px,transparent 2.4px 6.5px),repeating-linear-gradient(-45deg,rgba(255,255,255,.7) 0 2.4px,transparent 2.4px 6.5px)}
+[data-tex="malha"] .casa.papel i,[data-tex="malha"] .casa.papel2 i{background-color:rgba(0,0,0,.22)}
+[data-tex="placa"]{--bl-tex1:linear-gradient(125deg,rgba(255,255,255,.55) 0 34%,transparent 36%),linear-gradient(300deg,rgba(255,255,255,.3) 0 28%,transparent 30%);
+  --bl-tex2:linear-gradient(125deg,rgba(255,255,255,.4) 0 40%,transparent 42%),repeating-linear-gradient(20deg,rgba(0,0,0,.16) 0 3px,transparent 3px 9px)}
+[data-tex="breu"] .casa.papel i{background:#000;box-shadow:inset 0 0 0 2px rgba(150,150,170,.35);border:2px dashed rgba(180,180,200,.35)}
+[data-tex="breu"] .casa.papel2 i{background:#000;box-shadow:inset 0 0 0 3px rgba(154,92,255,.9),0 0 0 1px rgba(154,92,255,.4);border:2px solid rgba(200,180,255,.5)}
 .casa.rasga i{animation:rasga .34s ease forwards}
 @keyframes rasga{0%{transform:scale(1);opacity:1}45%{transform:scale(1.18)}100%{transform:scale(.55);opacity:0}}
 [data-mundo="4"] .casa.rasga i{animation-name:acende}

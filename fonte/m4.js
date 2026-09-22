@@ -25,7 +25,7 @@ function faltaObjetivo() {
   return Math.max(0, J.papelTotal - J.papelFeito);
 }
 function objetivoFeito() { return faltaObjetivo() === 0; }
-function nomeBloq(f, n) { const b = MUNDOS[f.m].bloq; return n + ' ' + (n === 1 ? b.um : b.varios); }
+function nomeBloq(f, n) { const b = ambiente(J.desafio ? 0 : J.fase).bloq; return n + ' ' + (n === 1 ? b.um : b.varios); }
 
 function atualizaHud() {
   const f = faseAtual();
@@ -85,7 +85,7 @@ function atualizaHud() {
     o.innerHTML = s + '</div>';
   } else {
     const falta = casasCobertas(papel);
-    o.innerHTML = '<div><div class="rotulo">' + MUNDOS[f.m].bloq.verbo + '</div>' +
+    o.innerHTML = '<div><div class="rotulo">' + ambiente(J.desafio ? 0 : J.fase).bloq.verbo + '</div>' +
       '<div class="valor">' + (falta ? nomeBloq(f, falta) : 'tudo limpo ✓') + '</div></div>';
   }
 }
@@ -159,10 +159,10 @@ async function venceu() {
     '<p class="placar-final">' + nf(J.pontos) + '<small>pontos</small></p>' +
     '<p class="ganho-moedas"><svg viewBox="0 0 100 100"><use href="#i-moeda"/></svg>+' + ganho + '</p>' +
     '<p>' + (fimExp ? 'Foram 4.000 metros. A Expedição ' + expedicao(J.fase + 1) + ' começa de novo no raso, mais apertada.'
-             : muda ? frases[e - 1] + ' Daqui pra baixo começa o ' + MUNDOS[prox.m].nome + '.' : frases[e - 1]) + '</p>' +
+             : muda ? frases[e - 1] + ' Daqui pra baixo começa ' + ambiente(J.fase + 1).nome + '.' : frases[e - 1]) + '</p>' +
     '<div class="bts">' +
       '<button class="bt vidro" data-ac="mapa">Mapa</button>' +
-      '<button class="bt" data-ac="proxima">' + (fimExp ? 'Nova expedição' : muda ? 'Descer para o ' + MUNDOS[prox.m].nome : 'Próxima fase') + '</button>' +
+      '<button class="bt" data-ac="proxima">' + (fimExp ? 'Nova expedição' : muda ? 'Descer para ' + ambiente(J.fase + 1).nome : 'Próxima fase') + '</button>' +
     '</div>'
   );
   Som.liga(); Som.vitoria();
@@ -272,11 +272,11 @@ function mostraAjuda() {
 }
 
 /* a primeira vez em cada mundo: onde você está e o que muda */
-function mostraMundo(m) {
-  const mu = MUNDOS[m];
+function mostraMundo(m, i) {
+  const mu = ambiente(i == null ? J.fase : i);
   cartao(
     '<div class="intro-mundo">' +
-    '<p class="prof-faixa">' + metros(mu.de) + ' a ' + metros(mu.ate) + '</p>' +
+    '<p class="prof-faixa">' + mu.reg.nome + ' · ' + metros(mu.de) + ' a ' + metros(mu.ate) + '</p>' +
     '<h3>' + mu.nome + '</h3>' +
     '<div class="vitrine-mini">' + [0, 1, 2, 3, 4, 5].map(icone).join('') + '</div>' +
     '<p>' + mu.texto + '</p>' +
@@ -725,12 +725,12 @@ const CADEADO = '<svg viewBox="0 0 24 24" class="cadeado"><rect x="5" y="11" wid
 
 let mapaIni = 0;
 
-function superficieMapa(exp) {
+function superficieMapa(exp, reg) {
   return '<div class="superficie" aria-hidden="true"><div class="sol"></div>' +
     '<svg class="barco" viewBox="0 0 120 60"><path d="M8 38h96l-12 16H22Z" fill="#0B3A55"/><path d="M34 38V22h30v16" fill="#13506F"/>' +
     '<path d="M70 38V6" stroke="#0B3A55" stroke-width="3"/><path d="M71 7h26v16H71Z" fill="#E8412C"/><path d="M71 23L97 7" stroke="#fff" stroke-width="4"/></svg>' +
     '<div class="onda-mapa"></div></div>' +
-    (exp > 1 ? '<p class="cab-exped">Expedição ' + exp + '</p>' : '');
+    '<p class="cab-exped">' + (exp > 1 ? 'Expedição ' + exp + ' · ' : '') + (reg ? reg.nome : '') + '</p>';
 }
 function leitoMapa() {
   return '<div class="leito" aria-hidden="true"><svg viewBox="0 0 400 120" preserveAspectRatio="xMidYMax slice"><path d="M0 70Q60 50 120 64T240 58T400 60V120H0Z" fill="#05060F"/>' +
@@ -759,9 +759,11 @@ function montaMapa(mantem) {
   let h = '<svg class="trilha-svg" id="trilha-bolhas" aria-hidden="true"></svg>';
   if (mapaIni > 0) h += '<button class="subir" id="bt-subir">Subir para as fases anteriores</button>';
   for (let b = Math.floor(mapaIni / 6); b <= Math.floor(fim / 6); b++) {
-    const i0 = b * 6, mundo = Math.floor((i0 % CICLO) / 6), mu = MUNDOS[mundo];
-    if (i0 % CICLO === 0 && i0 >= mapaIni) h += superficieMapa(expedicao(i0));
-    h += '<section class="faixa-mundo" data-m="' + mundo + '">' +
+    const i0 = b * 6, mundo = Math.floor((i0 % CICLO) / 6), mu = ambiente(i0);
+    if (i0 % CICLO === 0 && i0 >= mapaIni) h += superficieMapa(expedicao(i0), mu.reg);
+    const cor = coresBanda(mu.reg, mundo);
+    h += '<section class="faixa-mundo' + (mundo === 0 ? ' clara' : '') + (mundo >= 3 ? ' funda' : '') + '" ' +
+         'style="background:linear-gradient(180deg,' + cor[0] + ',' + cor[1] + ' 45%,' + cor[3] + ');' + (mu.tom ? 'filter:' + mu.tom + ';' : '') + '">' +
          '<header class="cab-mundo"><h3>' + mu.nome + '</h3><p>' + metros(mu.de) + ' a ' + metros(mu.ate) + '</p></header>';
     for (let i = Math.max(i0, mapaIni); i <= Math.min(i0 + 5, fim); i++) h += noDoMapa(i);
     h += '</section>';
@@ -888,7 +890,8 @@ function abreFase(i) {
     atualizaHud();
     desligaPoder();
     mesa.classList.toggle('com-bau', f.obj.tipo === 'bau');
-    if (!prog.vistos[f.m]) { prog.vistos[f.m] = true; salvaProg(); mostraMundo(f.m); }
+    const chaveMundo = 'r' + (Math.floor(i / CICLO) % REGIOES.length) + 'b' + f.m;
+    if (!prog.vistos[chaveMundo]) { prog.vistos[chaveMundo] = true; salvaProg(); mostraMundo(f.m, i); }
     else comecaFase();
   });
 }
