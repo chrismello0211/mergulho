@@ -982,6 +982,22 @@ async function saiCardume() {
   mostraRanking('cardume');
 }
 
+/* ═══ A HOME CABE EM QUALQUER TELA ══════════════════════════════
+   Em vez de adivinhar altura de aparelho, ela mede o que desenhou
+   e vai apertando por degraus até o último item caber acima da
+   barra do sistema. Serve pra celular antigo, novo e tablet.     */
+function encaixaInicio() {
+  const tela = document.getElementById('tela-inicio');
+  if (!tela || !tela.classList.contains('ativa')) return;
+  const fim = document.getElementById('versao');
+  const sb = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--safe-b')) || 0;
+  for (let n = 0; n <= 5; n++) {
+    tela.dataset.aperto = n;
+    if (!fim) return;
+    if (fim.getBoundingClientRect().bottom <= window.innerHeight - sb - 6) return;
+  }
+}
+
 /* o ranking também mora na home: três primeiros e onde você está */
 async function pintaPodio() {
   const caixa = document.getElementById('podio');
@@ -1001,6 +1017,7 @@ async function pintaPodio() {
   }
   caixa.innerHTML = h;
   caixa.hidden = false;
+  encaixaInicio();
 }
 
 /* ═══ TELAS ═════════════════════════════════════════════════════ */
@@ -1010,7 +1027,7 @@ function tela(id) {
   document.body.classList.toggle('em-jogo', id === 'tela-jogo');
   if (id === 'tela-jogo') Musica.liga('jogo', mundoAtual);
   else { document.body.classList.remove('aperto'); Musica.liga('menu', mundoAtual); setTimeout(talvezAtualizar, 400); }
-  if (id === 'tela-inicio') setTimeout(pintaPodio, 300);
+  if (id === 'tela-inicio') { requestAnimationFrame(encaixaInicio); setTimeout(pintaPodio, 300); }
   /* a faixa de baixo do celular acompanha a cor da tela */
   document.body.style.backgroundColor = id === 'tela-jogo'
     ? (getComputedStyle(document.documentElement).getPropertyValue('--ag4').trim() || '#0B4F7A')
@@ -1265,6 +1282,7 @@ function iniciar() {
 
   carregaProg();
   Conta.carrega();
+  addEventListener('orientationchange', () => setTimeout(encaixaInicio, 250));
   if (Conta.ligada && Conta.dentro) Conta.sincroniza();
   decideLeve();
   aplicaLeve();
@@ -1362,6 +1380,7 @@ function iniciar() {
     t = setTimeout(() => {
       if (document.getElementById('tela-jogo').classList.contains('ativa')) dimensiona();
       if (document.getElementById('tela-mapa').classList.contains('ativa')) desenhaTrilha();
+      encaixaInicio();
     }, 140);
   });
 

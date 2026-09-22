@@ -144,7 +144,7 @@ body:not(.em-jogo) #cena{display:none}
 .t-seco{fill:#0B3A55}
 .inicio-conteudo{
   position:absolute;left:0;right:0;top:calc(var(--linha) + var(--tw) * .1192 + 18px);z-index:2;
-  display:flex;flex-direction:column;align-items:center;padding:0 20px;
+  display:flex;flex-direction:column;align-items:center;padding:0 20px calc(var(--safe-b) + 12px);
 }
 .subtitulo{
   font-size:15.5px;font-weight:800;line-height:1.45;text-align:center;max-width:25ch;margin:0;
@@ -575,8 +575,7 @@ body.aperto #vinheta{opacity:1;animation:vinheta 1.05s ease-in-out infinite}
 @keyframes estrela-pop{0%{transform:scale(1)}40%{transform:scale(2.1) rotate(18deg)}100%{transform:scale(1)}}
 .pontos-linha .p.sobe{animation:pontos-sobe .3s ease}
 @keyframes pontos-sobe{0%{transform:scale(1)}45%{transform:scale(1.16);color:#FFE7A3}100%{transform:scale(1)}}
-.versao{position:absolute;bottom:calc(var(--safe-b) + 10px);left:0;right:0;margin:0;text-align:center;
-  font-size:11px;font-weight:800;letter-spacing:.04em;color:rgba(243,251,255,.42);z-index:3}
+.versao{margin:14px 0 0;text-align:center;font-size:11px;font-weight:800;letter-spacing:.04em;color:rgba(243,251,255,.42)}
 .tela.ativa{animation:entra-tela .3s ease}
 @keyframes entra-tela{0%{opacity:0;transform:scale(.985)}100%{opacity:1;transform:none}}
 .no{animation:no-entra .4s cubic-bezier(.2,1.5,.4,1) backwards}
@@ -620,16 +619,41 @@ body.leve #descida.roda{animation-duration:.45s}
 .linha-podio .val{flex:0 0 auto;font-family:var(--display);color:var(--biolum)}
 .linha-podio.eu{color:#FFE7A3}
 .linha-podio.eu .val{color:#FFE7A3}
-@media (max-height:760px){
-  #tela-inicio{--linha:calc(var(--safe-t) + 24vh)}
-  .vitrine{display:none}
-  .subtitulo{font-size:14px}
-  .podio{margin:14px 0 12px;padding:8px 12px 6px}
-  .linha-podio{padding:3px 2px;font-size:12.5px}
-  .inicio-bts > * + *{margin-top:9px}
-  .bt{padding:11px 26px 13px;font-size:18px}
-  .bt.vidro{padding:9px 20px 10px;font-size:16px}
-}
+/* degraus de aperto da home: o JS escolhe qual usar medindo a tela */
+#tela-inicio[data-aperto="1"] .vitrine{margin:16px 0 18px}
+#tela-inicio[data-aperto="1"] .podio{margin-bottom:14px}
+#tela-inicio[data-aperto="1"] .inicio-bts > * + *{margin-top:10px}
+
+#tela-inicio[data-aperto="2"]{--linha:calc(var(--safe-t) + 26vh)}
+#tela-inicio[data-aperto="2"] .vitrine{margin:12px 0 14px}
+#tela-inicio[data-aperto="2"] .vitrine svg{width:40px;height:40px}
+#tela-inicio[data-aperto="2"] .podio{margin-bottom:12px;padding:8px 12px 6px}
+#tela-inicio[data-aperto="2"] .linha-podio{padding:3px 2px;font-size:12.5px}
+#tela-inicio[data-aperto="2"] .inicio-bts > * + *{margin-top:9px}
+
+#tela-inicio[data-aperto="3"]{--linha:calc(var(--safe-t) + 24vh)}
+#tela-inicio[data-aperto="3"] .vitrine{display:none}
+#tela-inicio[data-aperto="3"] .podio{margin:12px 0 12px;padding:8px 12px 6px}
+#tela-inicio[data-aperto="3"] .linha-podio{padding:3px 2px;font-size:12.5px}
+#tela-inicio[data-aperto="3"] .subtitulo{font-size:14px}
+#tela-inicio[data-aperto="3"] .inicio-bts > * + *{margin-top:9px}
+
+#tela-inicio[data-aperto="4"]{--linha:calc(var(--safe-t) + 21vh)}
+#tela-inicio[data-aperto="4"] .vitrine{display:none}
+#tela-inicio[data-aperto="4"] .podio .linha-podio:nth-child(4){display:none}
+#tela-inicio[data-aperto="4"] .podio{margin:10px 0;padding:7px 11px 5px}
+#tela-inicio[data-aperto="4"] .subtitulo{font-size:13.5px}
+#tela-inicio[data-aperto="4"] .bt{padding:11px 26px 13px;font-size:18px}
+#tela-inicio[data-aperto="4"] .bt.vidro{padding:9px 20px 10px;font-size:15.5px}
+#tela-inicio[data-aperto="4"] .inicio-bts > * + *{margin-top:8px}
+
+#tela-inicio[data-aperto="5"]{--linha:calc(var(--safe-t) + 18vh)}
+#tela-inicio[data-aperto="5"] .vitrine,#tela-inicio[data-aperto="5"] .podio{display:none}
+#tela-inicio[data-aperto="5"] .subtitulo{font-size:13px}
+#tela-inicio[data-aperto="5"] .bt{padding:10px 24px 12px;font-size:17px}
+#tela-inicio[data-aperto="5"] .bt.vidro{padding:8px 18px 9px;font-size:15px}
+#tela-inicio[data-aperto="5"] .inicio-bts > * + *{margin-top:7px}
+
 body.leve .podio{-webkit-backdrop-filter:none;backdrop-filter:none;background:rgba(4,30,48,.72)}
 
 /* ── ranking ────────────────────────────────────────────────── */

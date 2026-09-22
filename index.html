@@ -152,7 +152,7 @@ body:not(.em-jogo) #cena{display:none}
 .t-seco{fill:#0B3A55}
 .inicio-conteudo{
   position:absolute;left:0;right:0;top:calc(var(--linha) + var(--tw) * .1192 + 18px);z-index:2;
-  display:flex;flex-direction:column;align-items:center;padding:0 20px;
+  display:flex;flex-direction:column;align-items:center;padding:0 20px calc(var(--safe-b) + 12px);
 }
 .subtitulo{
   font-size:15.5px;font-weight:800;line-height:1.45;text-align:center;max-width:25ch;margin:0;
@@ -583,8 +583,7 @@ body.aperto #vinheta{opacity:1;animation:vinheta 1.05s ease-in-out infinite}
 @keyframes estrela-pop{0%{transform:scale(1)}40%{transform:scale(2.1) rotate(18deg)}100%{transform:scale(1)}}
 .pontos-linha .p.sobe{animation:pontos-sobe .3s ease}
 @keyframes pontos-sobe{0%{transform:scale(1)}45%{transform:scale(1.16);color:#FFE7A3}100%{transform:scale(1)}}
-.versao{position:absolute;bottom:calc(var(--safe-b) + 10px);left:0;right:0;margin:0;text-align:center;
-  font-size:11px;font-weight:800;letter-spacing:.04em;color:rgba(243,251,255,.42);z-index:3}
+.versao{margin:14px 0 0;text-align:center;font-size:11px;font-weight:800;letter-spacing:.04em;color:rgba(243,251,255,.42)}
 .tela.ativa{animation:entra-tela .3s ease}
 @keyframes entra-tela{0%{opacity:0;transform:scale(.985)}100%{opacity:1;transform:none}}
 .no{animation:no-entra .4s cubic-bezier(.2,1.5,.4,1) backwards}
@@ -628,16 +627,41 @@ body.leve #descida.roda{animation-duration:.45s}
 .linha-podio .val{flex:0 0 auto;font-family:var(--display);color:var(--biolum)}
 .linha-podio.eu{color:#FFE7A3}
 .linha-podio.eu .val{color:#FFE7A3}
-@media (max-height:760px){
-  #tela-inicio{--linha:calc(var(--safe-t) + 24vh)}
-  .vitrine{display:none}
-  .subtitulo{font-size:14px}
-  .podio{margin:14px 0 12px;padding:8px 12px 6px}
-  .linha-podio{padding:3px 2px;font-size:12.5px}
-  .inicio-bts > * + *{margin-top:9px}
-  .bt{padding:11px 26px 13px;font-size:18px}
-  .bt.vidro{padding:9px 20px 10px;font-size:16px}
-}
+/* degraus de aperto da home: o JS escolhe qual usar medindo a tela */
+#tela-inicio[data-aperto="1"] .vitrine{margin:16px 0 18px}
+#tela-inicio[data-aperto="1"] .podio{margin-bottom:14px}
+#tela-inicio[data-aperto="1"] .inicio-bts > * + *{margin-top:10px}
+
+#tela-inicio[data-aperto="2"]{--linha:calc(var(--safe-t) + 26vh)}
+#tela-inicio[data-aperto="2"] .vitrine{margin:12px 0 14px}
+#tela-inicio[data-aperto="2"] .vitrine svg{width:40px;height:40px}
+#tela-inicio[data-aperto="2"] .podio{margin-bottom:12px;padding:8px 12px 6px}
+#tela-inicio[data-aperto="2"] .linha-podio{padding:3px 2px;font-size:12.5px}
+#tela-inicio[data-aperto="2"] .inicio-bts > * + *{margin-top:9px}
+
+#tela-inicio[data-aperto="3"]{--linha:calc(var(--safe-t) + 24vh)}
+#tela-inicio[data-aperto="3"] .vitrine{display:none}
+#tela-inicio[data-aperto="3"] .podio{margin:12px 0 12px;padding:8px 12px 6px}
+#tela-inicio[data-aperto="3"] .linha-podio{padding:3px 2px;font-size:12.5px}
+#tela-inicio[data-aperto="3"] .subtitulo{font-size:14px}
+#tela-inicio[data-aperto="3"] .inicio-bts > * + *{margin-top:9px}
+
+#tela-inicio[data-aperto="4"]{--linha:calc(var(--safe-t) + 21vh)}
+#tela-inicio[data-aperto="4"] .vitrine{display:none}
+#tela-inicio[data-aperto="4"] .podio .linha-podio:nth-child(4){display:none}
+#tela-inicio[data-aperto="4"] .podio{margin:10px 0;padding:7px 11px 5px}
+#tela-inicio[data-aperto="4"] .subtitulo{font-size:13.5px}
+#tela-inicio[data-aperto="4"] .bt{padding:11px 26px 13px;font-size:18px}
+#tela-inicio[data-aperto="4"] .bt.vidro{padding:9px 20px 10px;font-size:15.5px}
+#tela-inicio[data-aperto="4"] .inicio-bts > * + *{margin-top:8px}
+
+#tela-inicio[data-aperto="5"]{--linha:calc(var(--safe-t) + 18vh)}
+#tela-inicio[data-aperto="5"] .vitrine,#tela-inicio[data-aperto="5"] .podio{display:none}
+#tela-inicio[data-aperto="5"] .subtitulo{font-size:13px}
+#tela-inicio[data-aperto="5"] .bt{padding:10px 24px 12px;font-size:17px}
+#tela-inicio[data-aperto="5"] .bt.vidro{padding:8px 18px 9px;font-size:15px}
+#tela-inicio[data-aperto="5"] .inicio-bts > * + *{margin-top:7px}
+
 body.leve .podio{-webkit-backdrop-filter:none;backdrop-filter:none;background:rgba(4,30,48,.72)}
 
 /* ── ranking ────────────────────────────────────────────────── */
@@ -878,8 +902,8 @@ body.leve .cartao{animation-duration:.18s}
         <button class="bt vidro" id="bt-ajuda">Como jogar</button>
         <button class="bt vidro" id="bt-desafio">Desafio da semana</button>
       </div>
+      <p class="versao" id="versao" aria-hidden="true"></p>
     </div>
-    <p class="versao" id="versao" aria-hidden="true"></p>
   </section>
 
   <!-- ══ MAPA: a coluna d'água ═════════════════════════════════ -->
@@ -945,7 +969,7 @@ body.leve .cartao{animation-duration:.18s}
    MERGULHO · combinar 3 da beira da praia até 4.000 metros
    ═══════════════════════════════════════════════════════════════ */
 
-const VERSAO_JOGO = '2026.10.10';
+const VERSAO_JOGO = '2026.10.11';
 const W = 7, H = 8, TIPOS = 6;
 const NADA = 0, LH = 1, LV = 2, BOMBA = 3, ARCO = 4, ONDA = 5, ONDAV = 6, CARDUME = 7;
 
@@ -4250,6 +4274,22 @@ async function saiCardume() {
   mostraRanking('cardume');
 }
 
+/* ═══ A HOME CABE EM QUALQUER TELA ══════════════════════════════
+   Em vez de adivinhar altura de aparelho, ela mede o que desenhou
+   e vai apertando por degraus até o último item caber acima da
+   barra do sistema. Serve pra celular antigo, novo e tablet.     */
+function encaixaInicio() {
+  const tela = document.getElementById('tela-inicio');
+  if (!tela || !tela.classList.contains('ativa')) return;
+  const fim = document.getElementById('versao');
+  const sb = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--safe-b')) || 0;
+  for (let n = 0; n <= 5; n++) {
+    tela.dataset.aperto = n;
+    if (!fim) return;
+    if (fim.getBoundingClientRect().bottom <= window.innerHeight - sb - 6) return;
+  }
+}
+
 /* o ranking também mora na home: três primeiros e onde você está */
 async function pintaPodio() {
   const caixa = document.getElementById('podio');
@@ -4269,6 +4309,7 @@ async function pintaPodio() {
   }
   caixa.innerHTML = h;
   caixa.hidden = false;
+  encaixaInicio();
 }
 
 /* ═══ TELAS ═════════════════════════════════════════════════════ */
@@ -4278,7 +4319,7 @@ function tela(id) {
   document.body.classList.toggle('em-jogo', id === 'tela-jogo');
   if (id === 'tela-jogo') Musica.liga('jogo', mundoAtual);
   else { document.body.classList.remove('aperto'); Musica.liga('menu', mundoAtual); setTimeout(talvezAtualizar, 400); }
-  if (id === 'tela-inicio') setTimeout(pintaPodio, 300);
+  if (id === 'tela-inicio') { requestAnimationFrame(encaixaInicio); setTimeout(pintaPodio, 300); }
   /* a faixa de baixo do celular acompanha a cor da tela */
   document.body.style.backgroundColor = id === 'tela-jogo'
     ? (getComputedStyle(document.documentElement).getPropertyValue('--ag4').trim() || '#0B4F7A')
@@ -4533,6 +4574,7 @@ function iniciar() {
 
   carregaProg();
   Conta.carrega();
+  addEventListener('orientationchange', () => setTimeout(encaixaInicio, 250));
   if (Conta.ligada && Conta.dentro) Conta.sincroniza();
   decideLeve();
   aplicaLeve();
@@ -4630,6 +4672,7 @@ function iniciar() {
     t = setTimeout(() => {
       if (document.getElementById('tela-jogo').classList.contains('ativa')) dimensiona();
       if (document.getElementById('tela-mapa').classList.contains('ativa')) desenhaTrilha();
+      encaixaInicio();
     }, 140);
   });
 
