@@ -606,6 +606,32 @@ body.aperto #vinheta{opacity:1;animation:vinheta 1.05s ease-in-out infinite}
 }
 body.leve #descida.roda{animation-duration:.45s}
 
+/* ── pódio da tela inicial ──────────────────────────────────── */
+.podio{width:min(320px,86vw);margin:0 0 18px;padding:10px 12px 8px;border-radius:20px;cursor:pointer;
+  background:rgba(4,30,48,.42);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
+  box-shadow:inset 0 0 0 1px var(--vidro-borda);animation:entra-podio .5s ease}
+@keyframes entra-podio{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.podio-topo{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:4px}
+.podio-topo b{font-family:var(--display);font-weight:800;font-size:15px;color:var(--espuma)}
+.podio-topo span{font-size:11.5px;font-weight:800;color:var(--biolum)}
+.linha-podio{display:flex;align-items:center;gap:8px;padding:4px 2px;font-size:13px;font-weight:800;color:rgba(243,251,255,.9)}
+.linha-podio .pos{width:26px;flex:0 0 auto;font-family:var(--display)}
+.linha-podio .nome{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.linha-podio .val{flex:0 0 auto;font-family:var(--display);color:var(--biolum)}
+.linha-podio.eu{color:#FFE7A3}
+.linha-podio.eu .val{color:#FFE7A3}
+@media (max-height:760px){
+  #tela-inicio{--linha:calc(var(--safe-t) + 24vh)}
+  .vitrine{display:none}
+  .subtitulo{font-size:14px}
+  .podio{margin:14px 0 12px;padding:8px 12px 6px}
+  .linha-podio{padding:3px 2px;font-size:12.5px}
+  .inicio-bts > * + *{margin-top:9px}
+  .bt{padding:11px 26px 13px;font-size:18px}
+  .bt.vidro{padding:9px 20px 10px;font-size:16px}
+}
+body.leve .podio{-webkit-backdrop-filter:none;backdrop-filter:none;background:rgba(4,30,48,.72)}
+
 /* ── ranking ────────────────────────────────────────────────── */
 .abas{display:flex;margin:12px 0 8px;background:rgba(10,108,122,.1);border-radius:999px;padding:4px}
 .abas .aba{flex:1;border:0;cursor:pointer;border-radius:999px;padding:8px 4px;font-family:Nunito,sans-serif;

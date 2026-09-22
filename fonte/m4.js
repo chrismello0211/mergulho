@@ -171,7 +171,12 @@ async function venceu() {
       '<button class="bt" data-ac="proxima">' + (fimExp ? 'Nova expedição' : muda ? 'Descer para ' + ambiente(J.fase + 1).nome : 'Próxima fase') + '</button>' +
     '</div>'
   );
-  if (Ranking.ligado) { Ranking.pontuaFase(J.fase, J.pontos); Ranking.subeFicha(); mostraPosicaoFase(J.fase, J.pontos); }
+  if (Conta.ligada) Conta.garante().then(() => {
+    if (!Ranking.ligado) return;
+    Ranking.pontuaFase(J.fase, J.pontos);
+    Ranking.subeFicha();
+    mostraPosicaoFase(J.fase, J.pontos);
+  });
   Som.liga(); Som.vitoria();
   document.body.classList.remove('aperto');
   Musica.tensao(false, 0);
@@ -578,6 +583,8 @@ function mostraAjustes() {
       '<div class="ajuste"><div class="txt"><b>' + a.nome + '</b><small>' + a.texto + '</small></div>' +
       '<button class="chave' + (valorAjuste(a.k) ? ' on' : '') + '" data-ac="mudar" data-k="' + a.k + '" ' +
       'role="switch" aria-checked="' + valorAjuste(a.k) + '" aria-label="' + a.nome + '"><span></span></button></div>').join('') +
+    '<div class="ajuste"><div class="txt"><b>Seu nome no ranking</b><small>' + (prog.apelido || 'ainda sem nome') + '</small></div>' +
+      '<button class="bt-compra" data-ac="apelido">' + (prog.apelido ? 'Trocar' : 'Escolher') + '</button></div>' +
     '<div class="ajuste"><div class="txt"><b>Progresso</b><small>' +
       (Conta.dentro ? Conta.sessao.email : Conta.ligada ? 'Ainda só neste aparelho' : 'Guardado neste aparelho') + '</small></div>' +
       '<button class="bt-compra" data-ac="conta">' + (Conta.dentro ? 'Ver' : 'Guardar') + '</button></div>' +
@@ -627,6 +634,19 @@ const Conta = {
                     email: email || d.email || '', expira: Date.now() + (+d.expiresIn || 3600) * 1000 - 60000 };
     this.guarda();
   },
+  /* quem não quer cadastro entra assim: uma conta sem e-mail, criada
+     na hora, só pra ter lugar no ranking e guardar o progresso.     */
+  async anonimo() {
+    if (!this.ligada || this.dentro) return this.dentro;
+    try {
+      const d = await this.identidade('signUp', { returnSecureToken: true });
+      this.sessao = { id: d.idToken, refresh: d.refreshToken, uid: d.localId, email: '', anon: true,
+                      expira: Date.now() + (+d.expiresIn || 3600) * 1000 - 60000 };
+      this.guarda();
+      return true;
+    } catch (e) { return false; }
+  },
+  async garante() { return this.dentro ? true : await this.anonimo(); },
   async cria(email, senha) { this.guardaSessao(await this.identidade('signUp', { email: email, password: senha, returnSecureToken: true }), email); },
   async entra(email, senha) { this.guardaSessao(await this.identidade('signInWithPassword', { email: email, password: senha, returnSecureToken: true }), email); },
   async esqueci(email) { await this.identidade('sendOobCode', { requestType: 'PASSWORD_RESET', email: email }); },
@@ -756,6 +776,7 @@ async function contaEntrar(criar, botao) {
   const senha = (document.getElementById('campo-senha') || {}).value || '';
   if (!email.trim() || !senha) { mostraConta('Preencha o e-mail e a senha.'); return; }
   if (botao) botao.textContent = criar ? 'Criando...' : 'Entrando...';
+  if (Conta.sessao && Conta.sessao.anon) await Ranking.apagaFicha();   /* some com o fantasma da conta sem nome */
   try {
     if (criar) await Conta.cria(email.trim(), senha); else await Conta.entra(email.trim(), senha);
   } catch (e) { mostraConta(recado(e)); return; }
@@ -821,6 +842,10 @@ const Ranking = {
   },
 
   /* sobe a ficha pública da pessoa: onde chegou, quantas estrelas, de que cardume é */
+  async apagaFicha() {
+    if (!this.ligado) return;
+    return this.manda('/mergulho/placar/' + Conta.sessao.uid, null);
+  },
   async subeFicha() {
     if (!this.ligado) return;
     return this.manda('/mergulho/placar/' + Conta.sessao.uid,
@@ -867,13 +892,19 @@ function linhasRanking(lista, campo, sufixo) {
   return h;
 }
 
-let abaRank = 'cardume';
+let abaRank = 'geral';
 async function mostraRanking(aba) {
   abaRank = aba || abaRank;
-  if (!Ranking.ligado) {
-    cartao('<h3>Ranking</h3><p>O ranking anda junto com a conta. Crie a sua em Ajustes → Progresso e você entra na disputa, inclusive com a turma toda num cardume.</p>' +
-      '<div class="bts"><button class="bt vidro" data-ac="fecha">Agora não</button><button class="bt" data-ac="conta">Criar conta</button></div>', true);
+  if (!Conta.ligada) {
+    cartao('<h3>Ranking</h3><p>O ranking ainda não está ligado neste site.</p>' +
+      '<div class="bts"><button class="bt" data-ac="fecha">Fechar</button></div>', true);
     return;
+  }
+  if (!Conta.dentro) {
+    cartao('<h3>Ranking</h3><p class="vazio">Entrando na disputa...</p>', true);
+    await Conta.garante();
+    if (!Conta.dentro) { cartao('<h3>Ranking</h3><p>Não consegui falar com o servidor agora. Tente daqui a pouco.</p>' +
+      '<div class="bts"><button class="bt" data-ac="fecha">Fechar</button></div>', true); return; }
   }
   if (!prog.apelido) { pedeApelido(); return; }
   const abas = [['cardume', 'Cardume'], ['geral', 'Geral'], ['fase', 'Esta fase'], ['semana', 'Semana']];
@@ -912,9 +943,10 @@ function pedeApelido() {
     '<input class="campo" id="campo-apelido" maxlength="16" placeholder="seu apelido" value="' + (prog.apelido || '') + '">' +
     '<div class="bts"><button class="bt" data-ac="salvaapelido">Pronto</button></div>', true);
 }
-function salvaApelido() {
+async function salvaApelido() {
   const c = document.getElementById('campo-apelido');
   prog.apelido = (c ? c.value : '').trim().slice(0, 16) || 'mergulhador';
+  await Conta.garante();
   if (prog.desafio && !prog.desafio.nome) prog.desafio.nome = prog.apelido;
   salvaProg();
   Ranking.subeFicha();
@@ -950,6 +982,27 @@ async function saiCardume() {
   mostraRanking('cardume');
 }
 
+/* o ranking também mora na home: três primeiros e onde você está */
+async function pintaPodio() {
+  const caixa = document.getElementById('podio');
+  if (!caixa || !Conta.ligada) return;
+  const lista = await Ranking.geral();
+  if (!lista || !lista.length) { caixa.hidden = true; return; }
+  const meu = Conta.dentro ? Conta.sessao.uid : '';
+  const ord = lista.slice().sort((a, b) => (b.max || 0) - (a.max || 0) || (b.estrelas || 0) - (a.estrelas || 0));
+  const minha = ord.findIndex(x => x.id === meu);
+  let h = '<div class="podio-topo"><b>Ranking</b><span>ver tudo</span></div>';
+  h += ord.slice(0, 3).map((x, k) => '<div class="linha-podio' + (x.id === meu ? ' eu' : '') + '"><span class="pos">' + medalha(k) + '</span>' +
+       '<span class="nome">' + (x.nome || 'mergulhador') + '</span><span class="val">fase ' + ((x.max || 0) + 1) + '</span></div>').join('');
+  if (minha >= 3) {
+    const x = ord[minha];
+    h += '<div class="linha-podio eu"><span class="pos">' + (minha + 1) + 'º</span><span class="nome">' + (x.nome || 'você') +
+         '</span><span class="val">fase ' + ((x.max || 0) + 1) + '</span></div>';
+  }
+  caixa.innerHTML = h;
+  caixa.hidden = false;
+}
+
 /* ═══ TELAS ═════════════════════════════════════════════════════ */
 function tela(id) {
   ['tela-inicio', 'tela-mapa', 'tela-jogo'].forEach(t =>
@@ -957,6 +1010,7 @@ function tela(id) {
   document.body.classList.toggle('em-jogo', id === 'tela-jogo');
   if (id === 'tela-jogo') Musica.liga('jogo', mundoAtual);
   else { document.body.classList.remove('aperto'); Musica.liga('menu', mundoAtual); setTimeout(talvezAtualizar, 400); }
+  if (id === 'tela-inicio') setTimeout(pintaPodio, 300);
   /* a faixa de baixo do celular acompanha a cor da tela */
   document.body.style.backgroundColor = id === 'tela-jogo'
     ? (getComputedStyle(document.documentElement).getPropertyValue('--ag4').trim() || '#0B4F7A')
@@ -1245,6 +1299,7 @@ function iniciar() {
   document.getElementById('bt-jogo-volta').onclick = () => { soltaSemente(); fechaCartao(); montaMapa(); tela('tela-mapa'); };
   if (window.Atualizacao && window.Atualizacao.pronta) avisaVersao();
   document.getElementById('bt-ajustes').onclick = () => { Som.liga(); mostraAjustes(); };
+  document.getElementById('podio').onclick = () => { Som.liga(); mostraRanking('geral'); };
   document.getElementById('bt-desafio').onclick = () => { Som.liga(); mostraDesafio(); };
   document.getElementById('bt-loja').onclick = () => { Som.liga(); mostraLoja(); };
   document.getElementById('bt-rank').onclick = () => { Som.liga(); mostraRanking(); };
@@ -1271,6 +1326,7 @@ function iniciar() {
     else if (ac === 'mudar') mudaAjuste(b.dataset.k);
     else if (ac === 'procura') procuraVersao(b);
     else if (ac === 'rank') mostraRanking();
+    else if (ac === 'apelido') pedeApelido();
     else if (ac === 'aba') mostraRanking(b.dataset.id);
     else if (ac === 'salvaapelido') salvaApelido();
     else if (ac === 'criacardume') criaCardume();
