@@ -479,28 +479,40 @@ async function compartilhaDesafio(botao) {
    O service worker avisa quando baixou uma versão nova. Nada
    recarrega no meio da partida: aparece uma faixa e você decide.
    Antes de trocar, a partida em andamento é guardada.            */
-const abriuEm = Date.now();
-/* Se a versão nova chegou logo na abertura e ninguém está no meio de
-   uma fase, ela entra sozinha: a pessoa nem vê. A faixa só aparece
-   quando trocar na hora atrapalharia.                              */
-window.avisaVersao = function () {
-  const el = document.getElementById('aviso-versao');
-  if (!el) return;
-  const jogando = document.body.classList.contains('em-jogo');
-  const cartaoAberto = document.getElementById('veu').classList.contains('aberto');
-  if (!jogando && !cartaoAberto && Date.now() - abriuEm < 15000) { aplicaVersao(true); return; }
-  el.hidden = false;
-  requestAnimationFrame(() => el.classList.add('mostra'));
-};
-function aplicaVersao(silencioso) {
+let precisaTrocar = false, trocando = false;
+
+/* A troca de versão nunca interrompe: se a pessoa está numa fase, a
+   nova espera. Ela entra quando volta pro mapa, pro início, ou
+   quando o app vai pro segundo plano.                              */
+window.avisaVersao = function () { precisaTrocar = true; talvezAtualizar(); };
+
+function talvezAtualizar(mesmoEmJogo) {
+  if (!precisaTrocar || trocando) return false;
+  if (!mesmoEmJogo && document.body.classList.contains('em-jogo')) return false;
+  if (document.getElementById('veu').classList.contains('aberto')) return false;
+  aplicaVersao();
+  return true;
+}
+
+function aplicaVersao() {
   const A = window.Atualizacao;
+  trocando = true;
   salvaPartida();
-  if (!A || !A.reg || !A.reg.waiting) { if (!silencioso) location.reload(); return; }
+  if (!A || !A.reg || !A.reg.waiting) { location.reload(); return; }
   A.aplicando = true;
-  const el = document.getElementById('bt-atualiza');
-  if (el && !silencioso) el.textContent = 'Atualizando...';
   try { A.reg.waiting.postMessage('atualiza-agora'); } catch (e) {}
-  setTimeout(() => location.reload(), 1500);
+  setTimeout(() => location.reload(), 1200);   /* rede de segurança */
+}
+
+/* procura na hora, quando a pessoa pede nos ajustes */
+async function procuraVersao(botao) {
+  const A = window.Atualizacao;
+  if (botao) botao.textContent = 'Procurando...';
+  if (!A || !A.reg) { if (botao) botao.textContent = 'Sem conexão'; return; }
+  try { await A.reg.update(); } catch (e) {}
+  await espera(900);
+  if (A.reg.waiting || precisaTrocar) { precisaTrocar = true; if (botao) botao.textContent = 'Atualizando...'; aplicaVersao(); }
+  else if (botao) { botao.textContent = 'Já é a mais nova'; setTimeout(() => botao.textContent = 'Procurar', 2200); }
 }
 
 /* ═══ AJUSTES E DESEMPENHO ═════════════════════════════════════
@@ -552,7 +564,9 @@ function mostraAjustes() {
     '<div class="ajuste"><div class="txt"><b>Progresso</b><small>' +
       (Conta.dentro ? Conta.sessao.email : Conta.ligada ? 'Ainda só neste aparelho' : 'Guardado neste aparelho') + '</small></div>' +
       '<button class="bt-compra" data-ac="conta">' + (Conta.dentro ? 'Ver' : 'Guardar') + '</button></div>' +
-    '<p class="versao-cartao">versão ' + VERSAO_JOGO + '</p>' +
+    '<div class="ajuste"><div class="txt"><b>Versão</b><small>' + VERSAO_JOGO +
+      (precisaTrocar ? ' · tem uma nova pronta' : '') + '</small></div>' +
+      '<button class="bt-compra" data-ac="procura">' + (precisaTrocar ? 'Atualizar' : 'Procurar') + '</button></div>' +
     '<div class="bts"><button class="bt" data-ac="fecha">Fechar</button></div>', true);
 }
 function mudaAjuste(k) {
@@ -757,7 +771,11 @@ function tela(id) {
     document.getElementById(t).classList.toggle('ativa', t === id));
   document.body.classList.toggle('em-jogo', id === 'tela-jogo');
   if (id === 'tela-jogo') Musica.liga('jogo', mundoAtual);
-  else { document.body.classList.remove('aperto'); Musica.liga('menu', mundoAtual); }
+  else { document.body.classList.remove('aperto'); Musica.liga('menu', mundoAtual); setTimeout(talvezAtualizar, 400); }
+  /* a faixa de baixo do celular acompanha a cor da tela */
+  document.body.style.backgroundColor = id === 'tela-jogo'
+    ? (getComputedStyle(document.documentElement).getPropertyValue('--ag4').trim() || '#0B4F7A')
+    : id === 'tela-mapa' ? '#02030A' : '#0B4F7A';
   corDaBarra(id === 'tela-jogo' ? COR_TOPO[mundoAtual] : id === 'tela-inicio' ? '#FFF3D2' : '#0B4F7A');
 }
 
@@ -1011,7 +1029,6 @@ function iniciar() {
   document.getElementById('bt-ajuda').onclick = () => { Som.liga(); mostraAjuda(); };
   document.getElementById('bt-mapa-volta').onclick = () => { instalaMundo(fase(prog.max).m); tela('tela-inicio'); };
   document.getElementById('bt-jogo-volta').onclick = () => { soltaSemente(); fechaCartao(); montaMapa(); tela('tela-mapa'); };
-  document.getElementById('bt-atualiza').onclick = aplicaVersao;
   if (window.Atualizacao && window.Atualizacao.pronta) avisaVersao();
   document.getElementById('bt-ajustes').onclick = () => { Som.liga(); mostraAjustes(); };
   document.getElementById('bt-desafio').onclick = () => { Som.liga(); mostraDesafio(); };
@@ -1037,6 +1054,7 @@ function iniciar() {
     else if (ac === 'desafio') abreDesafio();
     else if (ac === 'compartilha') compartilhaDesafio(b);
     else if (ac === 'mudar') mudaAjuste(b.dataset.k);
+    else if (ac === 'procura') procuraVersao(b);
     else if (ac === 'conta') mostraConta();
     else if (ac === 'criaconta') contaEntrar(true, b);
     else if (ac === 'entrar') contaEntrar(false, b);
@@ -1072,7 +1090,7 @@ function iniciar() {
   grid = Array.from({ length: H }, () => Array(W).fill(null));
 
   document.addEventListener('visibilitychange', () => {
-    if (document.hidden) { salvaPartida(); if (Conta.dentro) Conta.salva(); Musica.para(); clearTimeout(dicaTimer); apagaDica(); if (olhoFps) { cancelAnimationFrame(olhoFps); olhoFps = null; } }
+    if (document.hidden) { salvaPartida(); if (Conta.dentro) Conta.salva(); Musica.para(); talvezAtualizar(); clearTimeout(dicaTimer); apagaDica(); if (olhoFps) { cancelAnimationFrame(olhoFps); olhoFps = null; } }
     else if (prog.som && prog.musica) Musica.liga(document.body.classList.contains('em-jogo') ? 'jogo' : 'menu', mundoAtual);
   });
 
