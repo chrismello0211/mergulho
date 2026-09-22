@@ -606,6 +606,38 @@ body.aperto #vinheta{opacity:1;animation:vinheta 1.05s ease-in-out infinite}
 }
 body.leve #descida.roda{animation-duration:.45s}
 
+/* ── ranking ────────────────────────────────────────────────── */
+.abas{display:flex;margin:12px 0 8px;background:rgba(10,108,122,.1);border-radius:999px;padding:4px}
+.abas .aba{flex:1;border:0;cursor:pointer;border-radius:999px;padding:8px 4px;font-family:Nunito,sans-serif;
+  font-weight:800;font-size:12.5px;color:#2E5E6C;background:none}
+.abas .aba.on{background:var(--boia);color:#fff;box-shadow:0 2px 6px rgba(0,20,40,.25)}
+.lista-rank{max-height:min(46vh,340px);overflow-y:auto;margin:4px -4px 0;padding:0 4px}
+.linha-rank{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:14px;margin:5px 0;
+  background:rgba(10,108,122,.07);text-align:left}
+.linha-rank .pos{flex:0 0 auto;width:30px;font-family:var(--display);font-weight:800;font-size:15px;color:#0A6C7A}
+.linha-rank .nome{flex:1;min-width:0;font-weight:800;font-size:14.5px;color:var(--tinta);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.linha-rank .val{flex:0 0 auto;font-family:var(--display);font-weight:800;font-size:15px;color:var(--tinta)}
+.linha-rank.eu{background:rgba(255,106,61,.16);box-shadow:inset 0 0 0 2px var(--boia)}
+.linha-rank.eu.longe{margin-top:12px}
+.cartao p.cod-cardume{font-size:13px;color:#4F7F8C;margin:2px 0 8px}
+.cartao p.cod-cardume b{font-family:var(--display);font-size:17px;letter-spacing:.14em;color:var(--tinta)}
+.cartao p.vazio{font-size:13.5px;color:#4F7F8C;padding:14px 6px}
+.cartao p.pos-fase{margin-top:8px;font-family:var(--display);font-weight:800;font-size:14px;color:#0A6C7A;opacity:0}
+.cartao p.pos-fase.mostra{animation:entra-pos .5s ease forwards}
+@keyframes entra-pos{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.amigos{position:absolute;bottom:2px;left:50%;transform:translateX(-50%);display:flex;gap:4px;z-index:3;pointer-events:none}
+.amigos span{font-size:10.5px;font-weight:800;color:#06374A;background:rgba(243,251,255,.92);
+  padding:2px 7px 3px;border-radius:999px;box-shadow:0 2px 5px rgba(0,20,40,.3);max-width:74px;overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap}
+[data-mundo="3"] .abas,[data-mundo="4"] .abas{background:rgba(107,255,224,.09)}
+[data-mundo="3"] .abas .aba,[data-mundo="4"] .abas .aba{color:rgba(243,251,255,.8)}
+[data-mundo="3"] .linha-rank,[data-mundo="4"] .linha-rank{background:rgba(107,255,224,.08)}
+[data-mundo="3"] .linha-rank .nome,[data-mundo="4"] .linha-rank .nome,
+[data-mundo="3"] .linha-rank .val,[data-mundo="4"] .linha-rank .val{color:var(--espuma)}
+[data-mundo="3"] .linha-rank .pos,[data-mundo="4"] .linha-rank .pos,
+[data-mundo="3"] .cartao p.pos-fase,[data-mundo="4"] .cartao p.pos-fase{color:var(--biolum)}
+[data-mundo="3"] .cartao p.cod-cardume b,[data-mundo="4"] .cartao p.cod-cardume b{color:var(--espuma)}
+
 /* ── escolher o conjunto de peças ───────────────────────────── */
 .escolha{display:flex;align-items:center;text-align:left;gap:12px;background:rgba(10,108,122,.08);border-radius:18px;
   padding:10px 12px;margin:10px 0;cursor:pointer;box-shadow:inset 0 0 0 2px transparent;transition:box-shadow .15s,background .15s}

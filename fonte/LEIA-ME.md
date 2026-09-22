@@ -79,6 +79,25 @@ aparelho e a rede de segurança é o backup em texto, dentro de Ajustes.
 Entrar numa conta nunca apaga nada: `juntaProg` fica com o melhor dos dois lados
 (fase mais alta, mais estrelas por fase, mais moedas, mais poderes).
 
+## Ranking
+
+Quatro listas, todas pela conta do jogador:
+
+- **cardume**: turma fechada, entra por código de quatro letras (`prog.cardume`)
+- **geral**: todo mundo, por fase alcançada
+- **esta fase**: melhores pontuações da fase aberta
+- **semana**: desafio da semana
+
+Caminhos no banco (só apelido e número ficam públicos, e-mail nunca sobe):
+
+    /mergulho/placar/<uid>      { nome, max, estrelas, cardume }   leitura pública
+    /mergulho/fases/<fase>/<uid> { nome, pontos }                  leitura pública
+    /mergulho/desafio/<semana>/<uid> { nome, pontos }              leitura pública
+    /mergulho/jogadores/<uid>   progresso inteiro                  só o dono lê
+
+As regras do banco precisam dos índices `.indexOn` em `placar` (max, cardume),
+`fases/$fase` (pontos) e `desafio/$semana` (pontos), senão as consultas voltam vazias.
+
 ## Desafio da semana e ranking
 
 O desafio usa a semana como semente (`chaveSemana()` em `m1.js`), então o tabuleiro e a ordem das peças novas saem iguais para todo mundo. O recorde fica no aparelho.

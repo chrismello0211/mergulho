@@ -163,6 +163,7 @@ async function venceu() {
     '</div>' +
     '<p class="placar-final">' + nf(J.pontos) + '<small>pontos</small></p>' +
     '<p class="ganho-moedas"><svg viewBox="0 0 100 100"><use href="#i-moeda"/></svg>+' + ganho + '</p>' +
+    '<p class="pos-fase" id="pos-fase"></p>' +
     '<p>' + (fimExp ? 'Foram 4.000 metros. A Expedição ' + expedicao(J.fase + 1) + ' começa de novo no raso, mais apertada.'
              : muda ? frases[e - 1] + ' Daqui pra baixo começa ' + ambiente(J.fase + 1).nome + '.' : frases[e - 1]) + '</p>' +
     '<div class="bts">' +
@@ -170,6 +171,7 @@ async function venceu() {
       '<button class="bt" data-ac="proxima">' + (fimExp ? 'Nova expedição' : muda ? 'Descer para ' + ambiente(J.fase + 1).nome : 'Próxima fase') + '</button>' +
     '</div>'
   );
+  if (Ranking.ligado) { Ranking.pontuaFase(J.fase, J.pontos); Ranking.subeFicha(); mostraPosicaoFase(J.fase, J.pontos); }
   Som.liga(); Som.vitoria();
   document.body.classList.remove('aperto');
   Musica.tensao(false, 0);
@@ -203,6 +205,21 @@ async function perdeu() {
         : '<button class="bt" data-ac="denovo">Tentar de novo</button>') +
     '</div>'
   );
+}
+
+/* depois da vitória, a colocação daquela fase aparece no cartão */
+async function mostraPosicaoFase(i, pontos) {
+  Ranking.cache = {};
+  const lista = await Ranking.daFase(i);
+  const el = document.getElementById('pos-fase');
+  if (!el || !lista || !lista.length) return;
+  const ord = lista.slice().sort((a, b) => (b.pontos || 0) - (a.pontos || 0));
+  const meu = Conta.dentro ? Conta.sessao.uid : '';
+  const k = ord.findIndex(x => x.id === meu);
+  if (k < 0) return;
+  if (k === 0) el.innerHTML = '🥇 melhor pontuação desta fase';
+  else el.innerHTML = medalha(k) + ' nesta fase · o primeiro fez ' + nf(ord[0].pontos) + ' (' + (ord[0].nome || 'alguém') + ')';
+  el.classList.add('mostra');
 }
 
 /* ═══ CARTÕES ═══════════════════════════════════════════════════ */
@@ -692,6 +709,9 @@ function juntaProg(a, b) {
   r.desafio = { semana: (da.melhor || 0) >= (db.melhor || 0) ? da.semana : db.semana,
                 melhor: Math.max(da.melhor || 0, db.melhor || 0), nome: da.nome || db.nome || '' };
   r.apelido = a.apelido || b.apelido || '';
+  r.cardume = a.cardume || b.cardume || '';
+  r.melhores = Object.assign({}, b.melhores || {});
+  for (const k in (a.melhores || {})) r.melhores[k] = Math.max(a.melhores[k] || 0, r.melhores[k] || 0);
   r.email = a.email || b.email || '';
   return r;
 }
@@ -763,6 +783,171 @@ async function contaSincroniza(botao) {
 function contaSair() {
   Conta.sai();
   mostraConta('Saí da conta. O progresso continua guardado neste aparelho.');
+}
+
+
+/* ═══ RANKING ═══════════════════════════════════════════════════
+   Quatro listas, sempre pela mesma conta: o cardume (a turma da
+   pessoa, entra por código de quatro letras como no Dominó), o
+   geral, a fase em que ela está e o desafio da semana.
+   O que é público é só apelido e número: e-mail nunca sobe.     */
+const Ranking = {
+  cache: {}, pendente: {},
+  get ligado() { return Conta.ligada && Conta.dentro; },
+  nome() { return (prog.apelido || (Conta.sessao && Conta.sessao.email || '').split('@')[0] || 'mergulhador').slice(0, 16); },
+
+  async manda(caminho, corpo) {
+    if (!this.ligado) return false;
+    const t = await Conta.token();
+    if (!t) return false;
+    try {
+      const r = await fetch(Conta.cfg.banco + caminho + '.json?auth=' + t,
+        { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corpo) });
+      return r.ok;
+    } catch (e) { return false; }
+  },
+  async pega(caminho, consulta) {
+    if (!Conta.ligada) return null;
+    const chave = caminho + (consulta || '');
+    if (this.cache[chave] && Date.now() - this.cache[chave].quando < 45000) return this.cache[chave].dados;
+    try {
+      const t = Conta.dentro ? await Conta.token() : null;
+      const r = await fetch(Conta.cfg.banco + caminho + '.json?' + (consulta || '') + (t ? '&auth=' + t : ''));
+      const d = await r.json();
+      const lista = Object.keys(d || {}).map(k => Object.assign({ id: k }, d[k]));
+      this.cache[chave] = { quando: Date.now(), dados: lista };
+      return lista;
+    } catch (e) { return null; }
+  },
+
+  /* sobe a ficha pública da pessoa: onde chegou, quantas estrelas, de que cardume é */
+  async subeFicha() {
+    if (!this.ligado) return;
+    return this.manda('/mergulho/placar/' + Conta.sessao.uid,
+      { nome: this.nome(), max: prog.max, estrelas: totalEstrelas(), cardume: prog.cardume || '', quando: Date.now() });
+  },
+  async pontuaFase(i, pontos) {
+    if (!this.ligado) return;
+    const antes = prog.melhores && prog.melhores[i] || 0;
+    if (pontos <= antes) return;
+    prog.melhores = prog.melhores || {};
+    prog.melhores[i] = pontos;
+    salvaProg();
+    return this.manda('/mergulho/fases/' + i + '/' + Conta.sessao.uid, { nome: this.nome(), pontos: pontos });
+  },
+  geral() { return this.pega('/mergulho/placar', 'orderBy="max"&limitToLast=50'); },
+  cardume(cod) { return this.pega('/mergulho/placar', 'orderBy="cardume"&equalTo="' + cod + '"&limitToLast=60'); },
+  daFase(i) { return this.pega('/mergulho/fases/' + i, 'orderBy="pontos"&limitToLast=25'); },
+  daSemana(sem) { return this.pega('/mergulho/desafio/' + sem, 'orderBy="pontos"&limitToLast=30'); }
+};
+
+function codigoCardume() {
+  const l = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+  let s = '';
+  for (let i = 0; i < 4; i++) s += l[Math.floor(Math.random() * l.length)];
+  return s;
+}
+const medalha = k => k === 0 ? '🥇' : k === 1 ? '🥈' : k === 2 ? '🥉' : (k + 1) + 'º';
+
+function linhasRanking(lista, campo, sufixo) {
+  if (!lista) return '<p class="vazio">Sem internet pra buscar agora.</p>';
+  if (!lista.length) return '<p class="vazio">Ninguém aqui ainda. Seja o primeiro.</p>';
+  const meu = Conta.dentro ? Conta.sessao.uid : '';
+  const ord = lista.slice().sort((a, b) => (b[campo] || 0) - (a[campo] || 0) || (b.estrelas || 0) - (a.estrelas || 0));
+  const minha = ord.findIndex(x => x.id === meu);
+  let h = ord.slice(0, 20).map((x, k) =>
+    '<div class="linha-rank' + (x.id === meu ? ' eu' : '') + '"><span class="pos">' + medalha(k) + '</span>' +
+    '<span class="nome">' + (x.nome || 'mergulhador') + '</span>' +
+    '<span class="val">' + nf(campo === 'max' ? (x[campo] || 0) + 1 : (x[campo] || 0)) + sufixo + '</span></div>').join('');
+  if (minha >= 20) {
+    const x = ord[minha];
+    h += '<div class="linha-rank eu longe"><span class="pos">' + (minha + 1) + 'º</span><span class="nome">' + (x.nome || 'você') +
+         '</span><span class="val">' + nf(campo === 'max' ? (x[campo] || 0) + 1 : (x[campo] || 0)) + sufixo + '</span></div>';
+  }
+  return h;
+}
+
+let abaRank = 'cardume';
+async function mostraRanking(aba) {
+  abaRank = aba || abaRank;
+  if (!Ranking.ligado) {
+    cartao('<h3>Ranking</h3><p>O ranking anda junto com a conta. Crie a sua em Ajustes → Progresso e você entra na disputa, inclusive com a turma toda num cardume.</p>' +
+      '<div class="bts"><button class="bt vidro" data-ac="fecha">Agora não</button><button class="bt" data-ac="conta">Criar conta</button></div>', true);
+    return;
+  }
+  if (!prog.apelido) { pedeApelido(); return; }
+  const abas = [['cardume', 'Cardume'], ['geral', 'Geral'], ['fase', 'Esta fase'], ['semana', 'Semana']];
+  const topo = '<h3>Ranking</h3><div class="abas">' +
+    abas.map(a => '<button class="aba' + (abaRank === a[0] ? ' on' : '') + '" data-ac="aba" data-id="' + a[0] + '">' + a[1] + '</button>').join('') + '</div>';
+  cartao(topo + '<div class="lista-rank" id="lista-rank"><p class="vazio">Buscando...</p></div>' +
+    '<div class="bts"><button class="bt" data-ac="fecha">Fechar</button></div>', true);
+  Ranking.subeFicha();
+  const alvo = () => document.getElementById('lista-rank');
+  let html = '';
+  if (abaRank === 'cardume') {
+    if (!prog.cardume) {
+      html = '<p class="vazio">Você ainda não tem cardume. Crie o seu e passe o código pra turma, ou entre no de alguém.</p>' +
+             '<div class="bts"><button class="bt vidro" data-ac="entracardume">Entrar num</button><button class="bt" data-ac="criacardume">Criar cardume</button></div>';
+    } else {
+      const lista = await Ranking.cardume(prog.cardume);
+      html = '<p class="cod-cardume">Código <b>' + prog.cardume + '</b> · passe pra quem você quer na disputa</p>' +
+             linhasRanking(lista, 'max', '') +
+             '<div class="bts"><button class="bt-texto" data-ac="copiacardume">Copiar código</button>' +
+             '<button class="bt-texto" data-ac="saicardume">Sair do cardume</button></div>';
+    }
+  } else if (abaRank === 'geral') {
+    html = linhasRanking(await Ranking.geral(), 'max', '');
+  } else if (abaRank === 'fase') {
+    /* dentro da partida mostra a fase aberta; fora dela, a fase onde a pessoa está */
+    const i = (document.body.classList.contains('em-jogo') && J && J.fase >= 0) ? J.fase : prog.max;
+    html = '<p class="cod-cardume">Fase ' + (i + 1) + ' · ' + fase(i).nome + '</p>' + linhasRanking(await Ranking.daFase(i), 'pontos', '');
+  } else {
+    const sem = chaveSemana();
+    html = '<p class="cod-cardume">Desafio de ' + sem + '</p>' + linhasRanking(await Ranking.daSemana(sem), 'pontos', '');
+  }
+  if (alvo() && document.querySelector('.abas .aba.on')) alvo().innerHTML = html;
+}
+function pedeApelido() {
+  cartao('<h3>Como quer aparecer?</h3><p>Esse nome é o que a turma vê no ranking. Seu e-mail não aparece pra ninguém.</p>' +
+    '<input class="campo" id="campo-apelido" maxlength="16" placeholder="seu apelido" value="' + (prog.apelido || '') + '">' +
+    '<div class="bts"><button class="bt" data-ac="salvaapelido">Pronto</button></div>', true);
+}
+function salvaApelido() {
+  const c = document.getElementById('campo-apelido');
+  prog.apelido = (c ? c.value : '').trim().slice(0, 16) || 'mergulhador';
+  if (prog.desafio && !prog.desafio.nome) prog.desafio.nome = prog.apelido;
+  salvaProg();
+  Ranking.subeFicha();
+  mostraRanking();
+}
+async function criaCardume() {
+  prog.cardume = codigoCardume();
+  salvaProg();
+  await Ranking.subeFicha();
+  Ranking.cache = {};
+  mostraRanking('cardume');
+}
+function entraCardume() {
+  cartao('<h3>Entrar num cardume</h3><p>Peça o código de quatro letras pra quem já está lá dentro.</p>' +
+    '<input class="campo" id="campo-cardume" maxlength="4" placeholder="ABCD" style="text-transform:uppercase;text-align:center;letter-spacing:.3em">' +
+    '<div class="bts"><button class="bt vidro" data-ac="rank">Voltar</button><button class="bt" data-ac="confirmacardume">Entrar</button></div>', true);
+}
+async function confirmaCardume() {
+  const c = document.getElementById('campo-cardume');
+  const cod = ((c ? c.value : '') || '').trim().toUpperCase().slice(0, 4);
+  if (cod.length !== 4) return;
+  prog.cardume = cod;
+  salvaProg();
+  await Ranking.subeFicha();
+  Ranking.cache = {};
+  mostraRanking('cardume');
+}
+async function saiCardume() {
+  prog.cardume = '';
+  salvaProg();
+  await Ranking.subeFicha();
+  Ranking.cache = {};
+  mostraRanking('cardume');
 }
 
 /* ═══ TELAS ═════════════════════════════════════════════════════ */
@@ -849,6 +1034,7 @@ function montaMapa(mantem) {
   };
   document.getElementById('total-estrelas').textContent = totalEstrelas();
   pintaMoedas();
+  pintaAmigos();
   requestAnimationFrame(() => { desenhaTrilha(); if (!mantem) rolaAteAtual(); });
 }
 
@@ -893,6 +1079,27 @@ function descida(texto) {
   if (!d) return;
   d.querySelector('span').textContent = texto;
   d.classList.remove('roda'); void d.offsetWidth; d.classList.add('roda');
+}
+
+/* fichinhas da turma na fase em que cada um parou */
+async function pintaAmigos() {
+  if (!Ranking.ligado || !prog.cardume) return;
+  const lista = await Ranking.cardume(prog.cardume);
+  if (!lista) return;
+  const meu = Conta.sessao.uid;
+  const porFase = {};
+  lista.forEach(x => { if (x.id !== meu) (porFase[x.max || 0] = porFase[x.max || 0] || []).push(x.nome || '?'); });
+  document.querySelectorAll('#coluna .no').forEach(b => {
+    const gente = porFase[+b.dataset.i];
+    if (!gente) return;
+    const linha = b.parentElement;
+    if (linha.querySelector('.amigos')) return;
+    const d = document.createElement('div');
+    d.className = 'amigos';
+    d.innerHTML = gente.slice(0, 3).map(n => '<span>' + n.slice(0, 10) + '</span>').join('') +
+                  (gente.length > 3 ? '<span>+' + (gente.length - 3) + '</span>' : '');
+    linha.appendChild(d);
+  });
 }
 
 /* ═══ ABRIR UMA FASE ════════════════════════════════════════════ */
@@ -1040,6 +1247,7 @@ function iniciar() {
   document.getElementById('bt-ajustes').onclick = () => { Som.liga(); mostraAjustes(); };
   document.getElementById('bt-desafio').onclick = () => { Som.liga(); mostraDesafio(); };
   document.getElementById('bt-loja').onclick = () => { Som.liga(); mostraLoja(); };
+  document.getElementById('bt-rank').onclick = () => { Som.liga(); mostraRanking(); };
   document.getElementById('poderes').addEventListener('click', e => {
     const b = e.target.closest('[data-p]');
     if (b) clicaPoder(b.dataset.p);
@@ -1062,6 +1270,14 @@ function iniciar() {
     else if (ac === 'compartilha') compartilhaDesafio(b);
     else if (ac === 'mudar') mudaAjuste(b.dataset.k);
     else if (ac === 'procura') procuraVersao(b);
+    else if (ac === 'rank') mostraRanking();
+    else if (ac === 'aba') mostraRanking(b.dataset.id);
+    else if (ac === 'salvaapelido') salvaApelido();
+    else if (ac === 'criacardume') criaCardume();
+    else if (ac === 'entracardume') entraCardume();
+    else if (ac === 'confirmacardume') confirmaCardume();
+    else if (ac === 'saicardume') saiCardume();
+    else if (ac === 'copiacardume') copia(prog.cardume, b, 'Copiar código');
     else if (ac === 'conta') mostraConta();
     else if (ac === 'criaconta') contaEntrar(true, b);
     else if (ac === 'entrar') contaEntrar(false, b);
