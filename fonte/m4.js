@@ -1318,9 +1318,9 @@ async function pintaPodio() {
   const ord = lista.slice().sort((a, b) => (b.max || 0) - (a.max || 0) || (b.estrelas || 0) - (a.estrelas || 0));
   const minha = ord.findIndex(x => x.id === meu);
   let h = '<div class="podio-topo"><b>Ranking</b><span>ver tudo</span></div>';
-  h += ord.slice(0, 3).map((x, k) => '<div class="linha-podio' + (x.id === meu ? ' eu' : '') + '"><span class="pos">' + medalha(k) + '</span>' +
+  h += ord.slice(0, 5).map((x, k) => '<div class="linha-podio' + (x.id === meu ? ' eu' : '') + '"><span class="pos">' + medalha(k) + '</span>' +
        '<span class="nome">' + (x.nome || 'mergulhador') + '</span><span class="val">fase ' + ((x.max || 0) + 1) + '</span></div>').join('');
-  if (minha >= 3) {
+  if (minha >= 5) {
     const x = ord[minha];
     h += '<div class="linha-podio eu"><span class="pos">' + (minha + 1) + 'º</span><span class="nome">' + (x.nome || 'você') +
          '</span><span class="val">fase ' + ((x.max || 0) + 1) + '</span></div>';

@@ -648,7 +648,7 @@ body.leve .semana-home{-webkit-backdrop-filter:none;backdrop-filter:none;backgro
 .podio-topo{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:4px}
 .podio-topo b{font-family:var(--display);font-weight:800;font-size:15px;color:var(--espuma)}
 .podio-topo span{font-size:11.5px;font-weight:800;color:var(--biolum)}
-.linha-podio{display:flex;align-items:center;gap:8px;padding:4px 2px;font-size:13px;font-weight:800;color:rgba(243,251,255,.9)}
+.linha-podio{display:flex;align-items:center;gap:8px;padding:2.5px 2px;font-size:12.5px;font-weight:800;color:rgba(243,251,255,.9);line-height:1.25}
 .linha-podio .pos{width:26px;flex:0 0 auto;font-family:var(--display)}
 .linha-podio .nome{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .linha-podio .val{flex:0 0 auto;font-family:var(--display);color:var(--biolum)}
@@ -675,7 +675,9 @@ body.leve .semana-home{-webkit-backdrop-filter:none;backdrop-filter:none;backgro
 
 #tela-inicio[data-aperto="4"]{--linha:calc(var(--safe-t) + 21vh)}
 #tela-inicio[data-aperto="4"] .vitrine{display:none}
-#tela-inicio[data-aperto="4"] .podio .linha-podio:nth-child(4){display:none}
+#tela-inicio[data-aperto="3"] .podio .linha-podio:nth-child(6){display:none}
+#tela-inicio[data-aperto="4"] .podio .linha-podio:nth-child(n+5){display:none}
+#tela-inicio[data-aperto="5"] .podio .linha-podio:nth-child(n+4){display:none}
 #tela-inicio[data-aperto="4"] .podio{margin:10px 0;padding:7px 11px 5px}
 #tela-inicio[data-aperto="4"] .subtitulo{font-size:13.5px}
 #tela-inicio[data-aperto="4"] .bt{padding:11px 26px 13px;font-size:18px}
@@ -1163,7 +1165,7 @@ body.leve .cartao{animation-duration:.18s}
    MERGULHO · combinar 3 da beira da praia até 4.000 metros
    ═══════════════════════════════════════════════════════════════ */
 
-const VERSAO_JOGO = '2026.10.28';
+const VERSAO_JOGO = '2026.10.29';
 const W = 7, H = 8, TIPOS = 6;
 const NADA = 0, LH = 1, LV = 2, BOMBA = 3, ARCO = 4, ONDA = 5, ONDAV = 6, CARDUME = 7;
 
@@ -5210,9 +5212,9 @@ async function pintaPodio() {
   const ord = lista.slice().sort((a, b) => (b.max || 0) - (a.max || 0) || (b.estrelas || 0) - (a.estrelas || 0));
   const minha = ord.findIndex(x => x.id === meu);
   let h = '<div class="podio-topo"><b>Ranking</b><span>ver tudo</span></div>';
-  h += ord.slice(0, 3).map((x, k) => '<div class="linha-podio' + (x.id === meu ? ' eu' : '') + '"><span class="pos">' + medalha(k) + '</span>' +
+  h += ord.slice(0, 5).map((x, k) => '<div class="linha-podio' + (x.id === meu ? ' eu' : '') + '"><span class="pos">' + medalha(k) + '</span>' +
        '<span class="nome">' + (x.nome || 'mergulhador') + '</span><span class="val">fase ' + ((x.max || 0) + 1) + '</span></div>').join('');
-  if (minha >= 3) {
+  if (minha >= 5) {
     const x = ord[minha];
     h += '<div class="linha-podio eu"><span class="pos">' + (minha + 1) + 'º</span><span class="nome">' + (x.nome || 'você') +
          '</span><span class="val">fase ' + ((x.max || 0) + 1) + '</span></div>';
