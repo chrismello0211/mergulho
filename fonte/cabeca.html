@@ -605,6 +605,33 @@ body.aperto #vinheta{opacity:1;animation:vinheta 1.05s ease-in-out infinite}
 }
 body.leve #descida.roda{animation-duration:.45s}
 
+/* ── semana na tela inicial ─────────────────────────────────── */
+.semana-home{width:min(320px,86vw);margin:0 0 12px;padding:10px 12px 9px;border-radius:20px;cursor:pointer;
+  background:rgba(4,30,48,.42);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
+  box-shadow:inset 0 0 0 1px var(--vidro-borda);animation:entra-podio .5s ease}
+.semana-home.tem-premio{box-shadow:inset 0 0 0 2px var(--boia),0 0 20px -6px var(--boia);
+  animation:entra-podio .5s ease,semana-chama 2.4s ease-in-out .5s infinite}
+@keyframes semana-chama{0%,100%{box-shadow:inset 0 0 0 2px var(--boia),0 0 16px -8px var(--boia)}
+  50%{box-shadow:inset 0 0 0 2px var(--boia),0 0 26px -2px var(--boia)}}
+.semana-topo{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:7px}
+.semana-topo b{font-family:var(--display);font-weight:800;font-size:15px;color:var(--espuma)}
+.semana-topo span{font-size:11.5px;font-weight:800;color:var(--biolum)}
+.bolhas-semana{display:flex;gap:5px;justify-content:space-between}
+.bolha-dia{flex:1;height:26px;border-radius:9px;display:grid;place-items:center;font-size:12px;font-weight:800;
+  color:rgba(243,251,255,.6);background:rgba(255,255,255,.1)}
+.bolha-dia.feito{background:rgba(107,255,224,.24);color:#06374A;box-shadow:inset 0 0 0 1.5px var(--biolum)}
+.bolha-dia.agora{background:var(--boia);color:#fff;box-shadow:0 0 12px -2px var(--boia);animation:dia-hoje 1.6s ease-in-out infinite}
+.bolha-dia.final{background:rgba(255,211,92,.2);color:var(--sol);box-shadow:inset 0 0 0 1.5px rgba(255,211,92,.55)}
+.bolha-dia.final.feito{background:rgba(255,211,92,.4);color:#6B4A05}
+.semana-pe{margin-top:7px;font-size:11.5px;font-weight:700;color:rgba(243,251,255,.82);line-height:1.3}
+.semana-pe b{font-weight:800;color:var(--sol)}
+.cartao p.semana-espera{margin-top:10px;font-size:13.5px;color:#4F7F8C}
+.cartao p.semana-espera b{color:var(--tinta)}
+[data-mundo="3"] .cartao p.semana-espera b,[data-mundo="4"] .cartao p.semana-espera b{color:var(--espuma)}
+body.leve .semana-home{-webkit-backdrop-filter:none;backdrop-filter:none;background:rgba(4,30,48,.72)}
+#tela-inicio[data-aperto="4"] .semana-pe,#tela-inicio[data-aperto="5"] .semana-pe{display:none}
+#tela-inicio[data-aperto="5"] .semana-home{display:none}
+
 /* ── pódio da tela inicial ──────────────────────────────────── */
 .podio{width:min(320px,86vw);margin:0 0 18px;padding:10px 12px 8px;border-radius:20px;cursor:pointer;
   background:rgba(4,30,48,.42);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);

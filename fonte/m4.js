@@ -558,10 +558,13 @@ const premioDoDia = k => {
            quantos: d.todos ? 1 + Math.min(2, Math.floor((prog.semanas || 0) / 2)) : 1 };
 };
 function mostraBau() {
-  const dia = diaDaSemana(), quebrou = prog.dia && prog.dia !== ontem() && (prog.seq || 0) > 1;
+  /* já pegou hoje: mostra o dia em que você está, não o próximo */
+  const pegou = jaPegouHoje();
+  const dia = pegou ? (prog.seq || 1) : diaDaSemana();
+  const quebrou = !pegou && prog.dia && prog.dia !== ontem() && (prog.seq || 0) > 1;
   const semana = (prog.semanas || 0) + 1;
   const trilha = SEMANA.map((_, k) => {
-    const d = premioDoDia(k), n = k + 1, passou = n < dia, hojeE = n === dia;
+    const d = premioDoDia(k), n = k + 1, passou = n < dia || (n === dia && pegou), hojeE = n === dia && !pegou;
     const premio = d.todos ? '<b>' + d.moedas + '</b><i>+ ' + (d.quantos > 1 ? d.quantos + ' de cada poder' : 'tudo') + '</i>'
       : d.poder ? '<b>' + d.moedas + '</b><i>+ ' + (PODERES.find(p => p.id === d.poder) || {}).nome + '</i>'
       : '<b>' + d.moedas + '</b><i>moedas</i>';
@@ -575,7 +578,10 @@ function mostraBau() {
     'Dia <b>' + dia + ' de 7</b>' + (prog.melhorSeq > 1 ? ' · melhor sequência: ' + prog.melhorSeq + ' dias' : '') +
     (semana > 1 ? '<br><i class="premio-cresce">prêmios ' + Math.round((fatorSemana() - 1) * 100) + '% maiores nesta semana</i>' : '') + '</p>' +
     '<div class="trilha-semana">' + trilha + '</div>' +
-    '<div class="bts"><button class="bt" data-ac="bau">Pegar o prêmio de hoje</button></div>');
+    (jaPegouHoje()
+      ? '<p class="semana-espera">Você já pegou o de hoje. O próximo abre em <b>' + horasAteAmanha() + '</b>.</p>' +
+        '<div class="bts"><button class="bt" data-ac="fecha">Fechar</button></div>'
+      : '<div class="bts"><button class="bt" data-ac="bau">Pegar o prêmio de hoje</button></div>'), true);
 }
 function pegaBau() {
   const dia = diaDaSemana(), d = premioDoDia(dia - 1);
@@ -593,6 +599,7 @@ function pegaBau() {
   pintaMoedas(); pintaPoderes();
   salvaNaNuvemDepois();
   Som.liga(); Som.vitoria();
+  pintaSemanaHome();
   if (d.todos) fogos();
   cartao('<h3>' + d.texto + '</h3>' +
     '<p class="bau-premio">' + moedaSvg + '+' + d.moedas + '</p>' +
@@ -1262,6 +1269,41 @@ function encaixaInicio() {
   }
 }
 
+/* a semana fica à vista na home: quantos dias seguidos, qual o
+   prêmio de hoje e quanto falta para o próximo virar.            */
+const jaPegouHoje = () => prog.dia === hoje();
+function horasAteAmanha() {
+  const agora = new Date();
+  const virada = Date.UTC(agora.getUTCFullYear(), agora.getUTCMonth(), agora.getUTCDate() + 1);
+  const falta = virada - agora.getTime();
+  const h = Math.floor(falta / 36e5), m = Math.floor((falta % 36e5) / 6e4);
+  return h > 0 ? h + 'h' + String(m).padStart(2, '0') : m + ' min';
+}
+function pintaSemanaHome() {
+  const caixa = document.getElementById('semana-home');
+  if (!caixa) return;
+  const pegou = jaPegouHoje();
+  const dia = pegou ? ((prog.seq || 1)) : diaDaSemana();
+  const semana = (prog.semanas || 0) + 1;
+  const bolinhas = SEMANA.map((_, k) => {
+    const n = k + 1, d = premioDoDia(k);
+    const feito = n < dia || (n === dia && pegou);
+    const agora = n === dia && !pegou;
+    return '<span class="bolha-dia' + (feito ? ' feito' : '') + (agora ? ' agora' : '') + (d.todos ? ' final' : '') + '">' +
+      (feito ? '✓' : d.todos ? '★' : n) + '</span>';
+  }).join('');
+  const prox = pegou ? (dia < 7 ? premioDoDia(dia) : premioDoDia(0)) : premioDoDia(dia - 1);
+  caixa.className = 'semana-home' + (pegou ? '' : ' tem-premio');
+  caixa.innerHTML =
+    '<div class="semana-topo"><b>Semana ' + semana + '</b><span>' + (pegou ? 'dia ' + dia + ' de 7' : 'pegue o dia ' + dia) + '</span></div>' +
+    '<div class="bolhas-semana">' + bolinhas + '</div>' +
+    '<div class="semana-pe">' + (pegou
+      ? 'Próximo prêmio em <b>' + horasAteAmanha() + '</b> · ' + (prox.todos ? prox.moedas + ' + poderes' : prox.moedas + ' moedas' + (prox.poder ? ' + poder' : ''))
+      : '<b>Prêmio de hoje: ' + prox.moedas + ' moedas' + (prox.todos ? ' + poderes' : prox.poder ? ' + poder' : '') + '</b> · toque para pegar') + '</div>';
+  caixa.hidden = false;
+  encaixaInicio();
+}
+
 /* o ranking também mora na home: três primeiros e onde você está */
 async function pintaPodio() {
   const caixa = document.getElementById('podio');
@@ -1291,7 +1333,7 @@ function tela(id) {
   document.body.classList.toggle('em-jogo', id === 'tela-jogo');
   if (id === 'tela-jogo') Musica.liga('jogo', mundoAtual);
   else { document.body.classList.remove('aperto'); Musica.liga('menu', mundoAtual); setTimeout(talvezAtualizar, 400); }
-  if (id === 'tela-inicio') { requestAnimationFrame(encaixaInicio); setTimeout(pintaPodio, 300); }
+  if (id === 'tela-inicio') { requestAnimationFrame(() => { pintaSemanaHome(); encaixaInicio(); }); setTimeout(pintaPodio, 300); }
   /* a faixa de baixo do celular acompanha a cor da tela */
   document.body.style.backgroundColor = id === 'tela-jogo'
     ? (getComputedStyle(document.documentElement).getPropertyValue('--ag4').trim() || '#0B4F7A')
@@ -1468,14 +1510,23 @@ function retomaPartida(d) {
   J = { fase: d.f, mov: d.mov, pontos: d.pontos, coletado: d.col,
         papelTotal: d.pt, papelFeito: d.pf, ocupado: true, fim: false, cascata: 1,
         bauFeito: d.bf, bauNaTela: d.bn, bauPendentes: d.bp, criados: d.cr || 0, objBatido: false, contaCresce: d.cc, alvoCresce: d.ac,
-        papelBase: d.base };
+        papelBase: d.base,
+        presosFeitos: d.pr || 0, bolhasFeitas: d.bo || 0, bolhasFugiram: d.bfg || 0,
+        dano: d.dn || 0, contaMestre: d.cm || 0, contaBolha: d.cb || 0, bauParado: d.bpa || 0 };
+  TOPO = (d.topo || f.forma || Array(W).fill(0)).slice();
+  pintaFundoMestre(f.obj.tipo === 'chefe' ? f.obj.mestre : null);
+  document.body.classList.toggle('com-mestre', f.obj.tipo === 'chefe');
   papel = d.papel;
   uid = 0;
   grid = d.g.map(l => l.map(cod => {
     if (!cod) return null;
     if (cod === 'b') return novoBau();
     const pd = cod.split('.');
-    const p = novaPeca(+pd[0]); p.sp = +pd[1]; return p;
+    const p = novaPeca(+pd[0]);
+    p.sp = +pd[1] || 0;
+    if (+pd[2]) p.gaiola = +pd[2];          /* bicho preso volta preso */
+    if (+pd[3]) p.bolha = true;             /* e a bolha volta subindo */
+    return p;
   }));
   pontosNaTela = 0;
   fechaCartao();
@@ -1483,6 +1534,7 @@ function retomaPartida(d) {
   requestAnimationFrame(() => {
     montaCasas(); dimensiona(); montaPecas(); atualizaHud(); desligaPoder();
     mesa.classList.toggle('com-bau', f.obj.tipo === 'bau');
+    garantePresos(); garanteBolhas(); montaPecas(); atualizaHud();
     pintaPapel();
     if (J.alvoCresce) pintaAvisoCresce();
     J.ocupado = false;
@@ -1538,6 +1590,25 @@ function abreFase(i, ignoraParada) {
     else comecaFase();
   });
 }
+/* se por qualquer motivo o tabuleiro ficar sem os bichos presos
+   que o objetivo pede, o jogo repõe em vez de virar fase morta. */
+function garantePresos() {
+  const f = faseAtual();
+  if (f.obj.tipo !== 'presos') return;
+  const falta = Math.max(0, f.obj.n - (J.presosFeitos || 0));
+  if (!falta) return;
+  let temos = 0;
+  for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) if (grid[r][c] && grid[r][c].gaiola) temos++;
+  if (temos >= Math.min(falta, 6)) return;
+  const quer = Math.min(falta, 6) - temos;
+  for (let k = 0, tent = 0; k < quer && tent < 300; tent++) {
+    const r = 1 + sorteia(H - 1), c = sorteia(W), p = grid[r][c];
+    if (!p || p.gaiola || p.bau || p.sp || p.bolha) continue;
+    p.gaiola = f.obj.rede || 1;
+    if (typeof atualizaEl === 'function') atualizaEl(p);
+    k++;
+  }
+}
 function garanteBolhas() {
   const f = faseAtual();
   if (f.obj.tipo !== 'bolhas') return;
@@ -1549,6 +1620,7 @@ function garanteBolhas() {
 function comecaFase() {
   const f = faseAtual();
   garanteBolhas();
+  garantePresos();
   if (!prog.vistos.bau && f.obj.tipo === 'bau') { prog.vistos.bau = true; salvaProg(); return mostraAviso('O baú', '#i-bau',
     'O baú só quer chegar na última fileira. Ele não combina com nada e nenhum especial leva ele embora. Estoure as peças debaixo dele para ele descer, ou empurre ele de lado trocando com a peça vizinha. E não se assuste se ele descer sozinho: o baú é pesado e afunda uma casa a cada quatro jogadas.'); }
   if (f.obj.tipo === 'chefe' && !J.viuMestre) {
@@ -1639,6 +1711,7 @@ function iniciar() {
   if (window.Atualizacao && window.Atualizacao.pronta) avisaVersao();
   document.getElementById('bt-ajustes').onclick = () => { Som.liga(); mostraAjustes(); };
   document.getElementById('podio').onclick = () => { Som.liga(); mostraRanking('geral'); };
+  document.getElementById('semana-home').onclick = () => { Som.liga(); mostraBau(); };
   document.getElementById('bt-desafio').onclick = () => { Som.liga(); mostraDesafio(); };
   document.getElementById('bt-loja').onclick = () => { Som.liga(); mostraLoja(); };
   document.getElementById('bt-rank').onclick = () => { Som.liga(); mostraRanking(); };

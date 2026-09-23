@@ -616,6 +616,7 @@ async function tentaTrocaInterna(a, b) {
   await passoBau();
   await passoBolha();
   garanteBolhas();
+  garantePresos();
   await passoMestre();
   salvaPartida();
   J.ocupado = false;
@@ -637,6 +638,7 @@ async function disparaEspecial(cel) {
   await passoBau();
   await passoBolha();
   garanteBolhas();
+  garantePresos();
   await passoMestre();
   salvaPartida();
   J.ocupado = false;
@@ -652,7 +654,10 @@ function salvaPartida() {
       f: J.fase, mov: J.mov, pontos: J.pontos, col: J.coletado,
       pt: J.papelTotal, pf: J.papelFeito, bf: J.bauFeito, bn: J.bauNaTela, bp: J.bauPendentes,
       cc: J.contaCresce, ac: J.alvoCresce, cr: J.criados, papel: papel, base: J.papelBase,
-      g: grid.map(l => l.map(p => p ? (p.bau ? 'b' : p.t + '.' + p.sp) : ''))
+      topo: TOPO.slice(),
+      pr: J.presosFeitos || 0, bo: J.bolhasFeitas || 0, bfg: J.bolhasFugiram || 0,
+      dn: J.dano || 0, cm: J.contaMestre || 0, cb: J.contaBolha || 0, bpa: J.bauParado || 0,
+      g: grid.map(l => l.map(p => p ? (p.bau ? 'b' : p.t + '.' + p.sp + '.' + (p.gaiola || 0) + '.' + (p.bolha ? 1 : 0)) : ''))
     }));
   } catch (e) { /* sem espaço: só não guarda */ }
 }

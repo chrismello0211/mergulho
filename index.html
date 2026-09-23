@@ -613,6 +613,33 @@ body.aperto #vinheta{opacity:1;animation:vinheta 1.05s ease-in-out infinite}
 }
 body.leve #descida.roda{animation-duration:.45s}
 
+/* ── semana na tela inicial ─────────────────────────────────── */
+.semana-home{width:min(320px,86vw);margin:0 0 12px;padding:10px 12px 9px;border-radius:20px;cursor:pointer;
+  background:rgba(4,30,48,.42);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
+  box-shadow:inset 0 0 0 1px var(--vidro-borda);animation:entra-podio .5s ease}
+.semana-home.tem-premio{box-shadow:inset 0 0 0 2px var(--boia),0 0 20px -6px var(--boia);
+  animation:entra-podio .5s ease,semana-chama 2.4s ease-in-out .5s infinite}
+@keyframes semana-chama{0%,100%{box-shadow:inset 0 0 0 2px var(--boia),0 0 16px -8px var(--boia)}
+  50%{box-shadow:inset 0 0 0 2px var(--boia),0 0 26px -2px var(--boia)}}
+.semana-topo{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:7px}
+.semana-topo b{font-family:var(--display);font-weight:800;font-size:15px;color:var(--espuma)}
+.semana-topo span{font-size:11.5px;font-weight:800;color:var(--biolum)}
+.bolhas-semana{display:flex;gap:5px;justify-content:space-between}
+.bolha-dia{flex:1;height:26px;border-radius:9px;display:grid;place-items:center;font-size:12px;font-weight:800;
+  color:rgba(243,251,255,.6);background:rgba(255,255,255,.1)}
+.bolha-dia.feito{background:rgba(107,255,224,.24);color:#06374A;box-shadow:inset 0 0 0 1.5px var(--biolum)}
+.bolha-dia.agora{background:var(--boia);color:#fff;box-shadow:0 0 12px -2px var(--boia);animation:dia-hoje 1.6s ease-in-out infinite}
+.bolha-dia.final{background:rgba(255,211,92,.2);color:var(--sol);box-shadow:inset 0 0 0 1.5px rgba(255,211,92,.55)}
+.bolha-dia.final.feito{background:rgba(255,211,92,.4);color:#6B4A05}
+.semana-pe{margin-top:7px;font-size:11.5px;font-weight:700;color:rgba(243,251,255,.82);line-height:1.3}
+.semana-pe b{font-weight:800;color:var(--sol)}
+.cartao p.semana-espera{margin-top:10px;font-size:13.5px;color:#4F7F8C}
+.cartao p.semana-espera b{color:var(--tinta)}
+[data-mundo="3"] .cartao p.semana-espera b,[data-mundo="4"] .cartao p.semana-espera b{color:var(--espuma)}
+body.leve .semana-home{-webkit-backdrop-filter:none;backdrop-filter:none;background:rgba(4,30,48,.72)}
+#tela-inicio[data-aperto="4"] .semana-pe,#tela-inicio[data-aperto="5"] .semana-pe{display:none}
+#tela-inicio[data-aperto="5"] .semana-home{display:none}
+
 /* ── pódio da tela inicial ──────────────────────────────────── */
 .podio{width:min(320px,86vw);margin:0 0 18px;padding:10px 12px 8px;border-radius:20px;cursor:pointer;
   background:rgba(4,30,48,.42);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
@@ -1062,6 +1089,7 @@ body.leve .cartao{animation-duration:.18s}
         <svg viewBox="0 0 100 100"><use href="#s4"/></svg>
         <svg viewBox="0 0 100 100"><use href="#s5"/></svg>
       </div>
+      <div class="semana-home" id="semana-home" hidden></div>
       <div class="podio" id="podio" hidden></div>
       <div class="inicio-bts">
         <button class="bt" id="bt-jogar">Mergulhar</button>
@@ -1135,7 +1163,7 @@ body.leve .cartao{animation-duration:.18s}
    MERGULHO · combinar 3 da beira da praia até 4.000 metros
    ═══════════════════════════════════════════════════════════════ */
 
-const VERSAO_JOGO = '2026.10.25';
+const VERSAO_JOGO = '2026.10.27';
 const W = 7, H = 8, TIPOS = 6;
 const NADA = 0, LH = 1, LV = 2, BOMBA = 3, ARCO = 4, ONDA = 5, ONDAV = 6, CARDUME = 7;
 
@@ -3467,6 +3495,7 @@ async function tentaTrocaInterna(a, b) {
   await passoBau();
   await passoBolha();
   garanteBolhas();
+  garantePresos();
   await passoMestre();
   salvaPartida();
   J.ocupado = false;
@@ -3488,6 +3517,7 @@ async function disparaEspecial(cel) {
   await passoBau();
   await passoBolha();
   garanteBolhas();
+  garantePresos();
   await passoMestre();
   salvaPartida();
   J.ocupado = false;
@@ -3503,7 +3533,10 @@ function salvaPartida() {
       f: J.fase, mov: J.mov, pontos: J.pontos, col: J.coletado,
       pt: J.papelTotal, pf: J.papelFeito, bf: J.bauFeito, bn: J.bauNaTela, bp: J.bauPendentes,
       cc: J.contaCresce, ac: J.alvoCresce, cr: J.criados, papel: papel, base: J.papelBase,
-      g: grid.map(l => l.map(p => p ? (p.bau ? 'b' : p.t + '.' + p.sp) : ''))
+      topo: TOPO.slice(),
+      pr: J.presosFeitos || 0, bo: J.bolhasFeitas || 0, bfg: J.bolhasFugiram || 0,
+      dn: J.dano || 0, cm: J.contaMestre || 0, cb: J.contaBolha || 0, bpa: J.bauParado || 0,
+      g: grid.map(l => l.map(p => p ? (p.bau ? 'b' : p.t + '.' + p.sp + '.' + (p.gaiola || 0) + '.' + (p.bolha ? 1 : 0)) : ''))
     }));
   } catch (e) { /* sem espaço: só não guarda */ }
 }
@@ -4414,10 +4447,13 @@ const premioDoDia = k => {
            quantos: d.todos ? 1 + Math.min(2, Math.floor((prog.semanas || 0) / 2)) : 1 };
 };
 function mostraBau() {
-  const dia = diaDaSemana(), quebrou = prog.dia && prog.dia !== ontem() && (prog.seq || 0) > 1;
+  /* já pegou hoje: mostra o dia em que você está, não o próximo */
+  const pegou = jaPegouHoje();
+  const dia = pegou ? (prog.seq || 1) : diaDaSemana();
+  const quebrou = !pegou && prog.dia && prog.dia !== ontem() && (prog.seq || 0) > 1;
   const semana = (prog.semanas || 0) + 1;
   const trilha = SEMANA.map((_, k) => {
-    const d = premioDoDia(k), n = k + 1, passou = n < dia, hojeE = n === dia;
+    const d = premioDoDia(k), n = k + 1, passou = n < dia || (n === dia && pegou), hojeE = n === dia && !pegou;
     const premio = d.todos ? '<b>' + d.moedas + '</b><i>+ ' + (d.quantos > 1 ? d.quantos + ' de cada poder' : 'tudo') + '</i>'
       : d.poder ? '<b>' + d.moedas + '</b><i>+ ' + (PODERES.find(p => p.id === d.poder) || {}).nome + '</i>'
       : '<b>' + d.moedas + '</b><i>moedas</i>';
@@ -4431,7 +4467,10 @@ function mostraBau() {
     'Dia <b>' + dia + ' de 7</b>' + (prog.melhorSeq > 1 ? ' · melhor sequência: ' + prog.melhorSeq + ' dias' : '') +
     (semana > 1 ? '<br><i class="premio-cresce">prêmios ' + Math.round((fatorSemana() - 1) * 100) + '% maiores nesta semana</i>' : '') + '</p>' +
     '<div class="trilha-semana">' + trilha + '</div>' +
-    '<div class="bts"><button class="bt" data-ac="bau">Pegar o prêmio de hoje</button></div>');
+    (jaPegouHoje()
+      ? '<p class="semana-espera">Você já pegou o de hoje. O próximo abre em <b>' + horasAteAmanha() + '</b>.</p>' +
+        '<div class="bts"><button class="bt" data-ac="fecha">Fechar</button></div>'
+      : '<div class="bts"><button class="bt" data-ac="bau">Pegar o prêmio de hoje</button></div>'), true);
 }
 function pegaBau() {
   const dia = diaDaSemana(), d = premioDoDia(dia - 1);
@@ -4449,6 +4488,7 @@ function pegaBau() {
   pintaMoedas(); pintaPoderes();
   salvaNaNuvemDepois();
   Som.liga(); Som.vitoria();
+  pintaSemanaHome();
   if (d.todos) fogos();
   cartao('<h3>' + d.texto + '</h3>' +
     '<p class="bau-premio">' + moedaSvg + '+' + d.moedas + '</p>' +
@@ -5118,6 +5158,41 @@ function encaixaInicio() {
   }
 }
 
+/* a semana fica à vista na home: quantos dias seguidos, qual o
+   prêmio de hoje e quanto falta para o próximo virar.            */
+const jaPegouHoje = () => prog.dia === hoje();
+function horasAteAmanha() {
+  const agora = new Date();
+  const virada = Date.UTC(agora.getUTCFullYear(), agora.getUTCMonth(), agora.getUTCDate() + 1);
+  const falta = virada - agora.getTime();
+  const h = Math.floor(falta / 36e5), m = Math.floor((falta % 36e5) / 6e4);
+  return h > 0 ? h + 'h' + String(m).padStart(2, '0') : m + ' min';
+}
+function pintaSemanaHome() {
+  const caixa = document.getElementById('semana-home');
+  if (!caixa) return;
+  const pegou = jaPegouHoje();
+  const dia = pegou ? ((prog.seq || 1)) : diaDaSemana();
+  const semana = (prog.semanas || 0) + 1;
+  const bolinhas = SEMANA.map((_, k) => {
+    const n = k + 1, d = premioDoDia(k);
+    const feito = n < dia || (n === dia && pegou);
+    const agora = n === dia && !pegou;
+    return '<span class="bolha-dia' + (feito ? ' feito' : '') + (agora ? ' agora' : '') + (d.todos ? ' final' : '') + '">' +
+      (feito ? '✓' : d.todos ? '★' : n) + '</span>';
+  }).join('');
+  const prox = pegou ? (dia < 7 ? premioDoDia(dia) : premioDoDia(0)) : premioDoDia(dia - 1);
+  caixa.className = 'semana-home' + (pegou ? '' : ' tem-premio');
+  caixa.innerHTML =
+    '<div class="semana-topo"><b>Semana ' + semana + '</b><span>' + (pegou ? 'dia ' + dia + ' de 7' : 'pegue o dia ' + dia) + '</span></div>' +
+    '<div class="bolhas-semana">' + bolinhas + '</div>' +
+    '<div class="semana-pe">' + (pegou
+      ? 'Próximo prêmio em <b>' + horasAteAmanha() + '</b> · ' + (prox.todos ? prox.moedas + ' + poderes' : prox.moedas + ' moedas' + (prox.poder ? ' + poder' : ''))
+      : '<b>Prêmio de hoje: ' + prox.moedas + ' moedas' + (prox.todos ? ' + poderes' : prox.poder ? ' + poder' : '') + '</b> · toque para pegar') + '</div>';
+  caixa.hidden = false;
+  encaixaInicio();
+}
+
 /* o ranking também mora na home: três primeiros e onde você está */
 async function pintaPodio() {
   const caixa = document.getElementById('podio');
@@ -5147,7 +5222,7 @@ function tela(id) {
   document.body.classList.toggle('em-jogo', id === 'tela-jogo');
   if (id === 'tela-jogo') Musica.liga('jogo', mundoAtual);
   else { document.body.classList.remove('aperto'); Musica.liga('menu', mundoAtual); setTimeout(talvezAtualizar, 400); }
-  if (id === 'tela-inicio') { requestAnimationFrame(encaixaInicio); setTimeout(pintaPodio, 300); }
+  if (id === 'tela-inicio') { requestAnimationFrame(() => { pintaSemanaHome(); encaixaInicio(); }); setTimeout(pintaPodio, 300); }
   /* a faixa de baixo do celular acompanha a cor da tela */
   document.body.style.backgroundColor = id === 'tela-jogo'
     ? (getComputedStyle(document.documentElement).getPropertyValue('--ag4').trim() || '#0B4F7A')
@@ -5324,14 +5399,23 @@ function retomaPartida(d) {
   J = { fase: d.f, mov: d.mov, pontos: d.pontos, coletado: d.col,
         papelTotal: d.pt, papelFeito: d.pf, ocupado: true, fim: false, cascata: 1,
         bauFeito: d.bf, bauNaTela: d.bn, bauPendentes: d.bp, criados: d.cr || 0, objBatido: false, contaCresce: d.cc, alvoCresce: d.ac,
-        papelBase: d.base };
+        papelBase: d.base,
+        presosFeitos: d.pr || 0, bolhasFeitas: d.bo || 0, bolhasFugiram: d.bfg || 0,
+        dano: d.dn || 0, contaMestre: d.cm || 0, contaBolha: d.cb || 0, bauParado: d.bpa || 0 };
+  TOPO = (d.topo || f.forma || Array(W).fill(0)).slice();
+  pintaFundoMestre(f.obj.tipo === 'chefe' ? f.obj.mestre : null);
+  document.body.classList.toggle('com-mestre', f.obj.tipo === 'chefe');
   papel = d.papel;
   uid = 0;
   grid = d.g.map(l => l.map(cod => {
     if (!cod) return null;
     if (cod === 'b') return novoBau();
     const pd = cod.split('.');
-    const p = novaPeca(+pd[0]); p.sp = +pd[1]; return p;
+    const p = novaPeca(+pd[0]);
+    p.sp = +pd[1] || 0;
+    if (+pd[2]) p.gaiola = +pd[2];          /* bicho preso volta preso */
+    if (+pd[3]) p.bolha = true;             /* e a bolha volta subindo */
+    return p;
   }));
   pontosNaTela = 0;
   fechaCartao();
@@ -5339,6 +5423,7 @@ function retomaPartida(d) {
   requestAnimationFrame(() => {
     montaCasas(); dimensiona(); montaPecas(); atualizaHud(); desligaPoder();
     mesa.classList.toggle('com-bau', f.obj.tipo === 'bau');
+    garantePresos(); garanteBolhas(); montaPecas(); atualizaHud();
     pintaPapel();
     if (J.alvoCresce) pintaAvisoCresce();
     J.ocupado = false;
@@ -5394,6 +5479,25 @@ function abreFase(i, ignoraParada) {
     else comecaFase();
   });
 }
+/* se por qualquer motivo o tabuleiro ficar sem os bichos presos
+   que o objetivo pede, o jogo repõe em vez de virar fase morta. */
+function garantePresos() {
+  const f = faseAtual();
+  if (f.obj.tipo !== 'presos') return;
+  const falta = Math.max(0, f.obj.n - (J.presosFeitos || 0));
+  if (!falta) return;
+  let temos = 0;
+  for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) if (grid[r][c] && grid[r][c].gaiola) temos++;
+  if (temos >= Math.min(falta, 6)) return;
+  const quer = Math.min(falta, 6) - temos;
+  for (let k = 0, tent = 0; k < quer && tent < 300; tent++) {
+    const r = 1 + sorteia(H - 1), c = sorteia(W), p = grid[r][c];
+    if (!p || p.gaiola || p.bau || p.sp || p.bolha) continue;
+    p.gaiola = f.obj.rede || 1;
+    if (typeof atualizaEl === 'function') atualizaEl(p);
+    k++;
+  }
+}
 function garanteBolhas() {
   const f = faseAtual();
   if (f.obj.tipo !== 'bolhas') return;
@@ -5405,6 +5509,7 @@ function garanteBolhas() {
 function comecaFase() {
   const f = faseAtual();
   garanteBolhas();
+  garantePresos();
   if (!prog.vistos.bau && f.obj.tipo === 'bau') { prog.vistos.bau = true; salvaProg(); return mostraAviso('O baú', '#i-bau',
     'O baú só quer chegar na última fileira. Ele não combina com nada e nenhum especial leva ele embora. Estoure as peças debaixo dele para ele descer, ou empurre ele de lado trocando com a peça vizinha. E não se assuste se ele descer sozinho: o baú é pesado e afunda uma casa a cada quatro jogadas.'); }
   if (f.obj.tipo === 'chefe' && !J.viuMestre) {
@@ -5495,6 +5600,7 @@ function iniciar() {
   if (window.Atualizacao && window.Atualizacao.pronta) avisaVersao();
   document.getElementById('bt-ajustes').onclick = () => { Som.liga(); mostraAjustes(); };
   document.getElementById('podio').onclick = () => { Som.liga(); mostraRanking('geral'); };
+  document.getElementById('semana-home').onclick = () => { Som.liga(); mostraBau(); };
   document.getElementById('bt-desafio').onclick = () => { Som.liga(); mostraDesafio(); };
   document.getElementById('bt-loja').onclick = () => { Som.liga(); mostraLoja(); };
   document.getElementById('bt-rank').onclick = () => { Som.liga(); mostraRanking(); };
