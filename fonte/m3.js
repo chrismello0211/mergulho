@@ -728,7 +728,7 @@ async function passoMestre() {
   const vida = Math.max(0, f.obj.vida - (J.dano || 0));
   if (vida <= 0) return false;
   const fase3 = vida < f.obj.vida * .35, fase2 = vida < f.obj.vida * .65;
-  const quantas = fase3 ? 5 : fase2 ? 4 : 3;
+  const quantas = fase3 ? 7 : fase2 ? 5 : 3;
   const livres = [];
   for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) if (papel[r][c] === 0 && temCasa(r, c)) livres.push([r, c]);
   for (let k = 0; k < quantas && livres.length; k++) {
@@ -739,9 +739,10 @@ async function passoMestre() {
     setTimeout(() => casa.classList.remove('cresceu'), 520);
   }
   pintaPapel();
-  J.mov = Math.max(0, J.mov - 1);
+  J.mov = Math.max(0, J.mov - (fase3 ? 2 : 1));
   Som.liga(); Som.nao(); vibra(TREMIDA.forte);
-  faixaTexto(fase3 ? 'O mestre está furioso!' : 'O mestre cospe tinta');
+  tremeTela();
+  faixaTexto(fase3 ? 'O mestre está furioso: duas jogadas a menos!' : 'O mestre cospe tinta', 2000);
   const ret = document.querySelector('.retrato-mestre');
   if (ret) { ret.classList.remove('ataca'); void ret.offsetWidth; ret.classList.add('ataca'); }
   atualizaHud();

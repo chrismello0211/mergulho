@@ -258,6 +258,20 @@ function coresBanda(reg, k) {
    o chão, a moldura da mesa e o que cobre o fundo.                */
 let mundoAtual = -1, ambAtual = null, conjAtual = '', acentoAtual = '';
 
+function pintaFundoMestre(idx) {
+  const cx = document.getElementById('cena');
+  if (!cx) return;
+  const velho = cx.querySelector('.mestre-fundo');
+  if (velho) velho.remove();
+  if (idx == null) return;
+  const M = MESTRES[idx % MESTRES.length];
+  const d = document.createElement('div');
+  d.className = 'mestre-fundo';
+  d.style.setProperty('--cor-mestre', M.cor);
+  d.innerHTML = desenhaMestre(idx);
+  cx.appendChild(d);
+}
+
 function instalaMundo(m, i) {
   const amb = ambiente(i == null ? 0 : i);
   const trato = amb.reg.trato || 'limpo';

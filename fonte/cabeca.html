@@ -658,6 +658,19 @@ body.leve .podio{-webkit-backdrop-filter:none;backdrop-filter:none;background:rg
 
 .casa.fora{visibility:hidden;pointer-events:none}
 
+/* ── o mestre por trás de tudo ──────────────────────────────── */
+.mestre-fundo{position:absolute;left:50%;top:46%;width:min(150vw,720px);height:min(150vw,720px);
+  transform:translate(-50%,-50%);opacity:.14;pointer-events:none;z-index:0;
+  animation:mestre-fundo 9s ease-in-out infinite}
+.mestre-fundo svg{width:100%;height:100%}
+@keyframes mestre-fundo{0%,100%{transform:translate(-50%,-50%) scale(1) rotate(-2deg)}50%{transform:translate(-50%,-52%) scale(1.06) rotate(2deg)}}
+body.com-mestre #mesa{box-shadow:0 0 0 2px var(--acento),0 0 30px 6px rgba(0,0,0,.45),0 18px 34px rgba(0,30,50,.4)}
+body.com-mestre .area-jogo::after{content:"";position:absolute;inset:-4% -12%;pointer-events:none;z-index:0;
+  background:radial-gradient(ellipse at 50% 0%,transparent 45%,rgba(0,0,0,.45) 100%);
+  animation:respira-mestre 5s ease-in-out infinite}
+@keyframes respira-mestre{0%,100%{opacity:.7}50%{opacity:1}}
+body.leve .mestre-fundo{animation:none}
+
 /* ── o mestre ───────────────────────────────────────────────── */
 .mestre-hud{display:flex;align-items:center;gap:12px}
 .retrato-mestre{width:56px;height:56px;flex:0 0 auto;filter:drop-shadow(0 3px 6px rgba(0,20,40,.5))}
@@ -726,6 +739,12 @@ body.leve .podio{-webkit-backdrop-filter:none;backdrop-filter:none;background:rg
 [data-mundo="3"] .tag-mestre,[data-mundo="4"] .tag-cresce{font-style:normal;font-size:10px;font-weight:800;letter-spacing:.02em;text-transform:uppercase;
   background:rgba(255,106,61,.22);color:#FFD6C4;border-radius:999px;padding:2px 7px;margin-left:6px;vertical-align:middle}
 .tag-mestre{color:#D9C3FF}
+.chave-ordem{display:flex;gap:6px;margin:2px 0 8px}
+.chave-ordem button{flex:1;border:0;cursor:pointer;border-radius:999px;padding:6px 4px;font-family:Nunito,sans-serif;
+  font-weight:800;font-size:12px;color:#2E5E6C;background:rgba(10,108,122,.1)}
+.chave-ordem button.on{background:rgba(255,106,61,.2);color:#B2430F;box-shadow:inset 0 0 0 2px var(--boia)}
+[data-mundo="3"] .chave-ordem button,[data-mundo="4"] .chave-ordem button{color:rgba(243,251,255,.78);background:rgba(107,255,224,.08)}
+[data-mundo="3"] .chave-ordem button.on,[data-mundo="4"] .chave-ordem button.on{color:#FFD6C4;background:rgba(255,106,61,.22)}
 .lista-rank .longe{margin-top:12px;border-top:2px dashed rgba(10,108,122,.25);padding-top:8px}
 .linha-rank.eu{background:rgba(255,106,61,.16);box-shadow:inset 0 0 0 2px var(--boia)}
 .linha-rank.eu.longe{margin-top:12px}

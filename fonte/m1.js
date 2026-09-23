@@ -2,7 +2,7 @@
    MERGULHO · combinar 3 da beira da praia até 4.000 metros
    ═══════════════════════════════════════════════════════════════ */
 
-const VERSAO_JOGO = '2026.10.21';
+const VERSAO_JOGO = '2026.10.22';
 const W = 7, H = 8, TIPOS = 6;
 const NADA = 0, LH = 1, LV = 2, BOMBA = 3, ARCO = 4, ONDA = 5, ONDAV = 6, CARDUME = 7;
 
@@ -101,7 +101,8 @@ const REGIOES = [
 
 /* de que lugar é esta fase, e com que cara */
 function ambiente(i) {
-  const banda = Math.floor((i % CICLO) / 6);
+  /* fase de mestre acontece sempre no escuro, não importa onde caia */
+  const banda = ehMestre(i) ? 4 : Math.floor((i % CICLO) / 6);
   const volta = Math.floor(i / CICLO);
   const reg = REGIOES[volta % REGIOES.length];
   const b = MUNDOS[banda], bl = BLOQUEIOS[reg.bloq[banda]];
@@ -315,8 +316,8 @@ function faseMestre(i) {
   const volta = Math.floor((i + 1) / 100);          /* 1º mestre na fase 100 */
   const mestre = (volta - 1) % MESTRES.length;
   const m = 4, dif = Math.min(1, .45 + (i - CICLO) / 420);
-  const vida = 58 + volta * 14;
-  const mov = 30 + Math.min(8, volta * 2);
+  const vida = 84 + volta * 20;
+  const mov = 28 + Math.min(6, volta * 2);
   const p50 = Math.round(mov * (980 + 320 * dif));
   return { m: m, prof: 4000 + volta * 500, nome: MESTRES[mestre].nome, mov: mov, mestre: mestre,
            obj: { tipo:'chefe', vida: vida, golpe: 2, mestre: mestre },

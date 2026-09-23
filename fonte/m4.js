@@ -586,6 +586,8 @@ function abreDesafio() {
   papel = Array.from({ length: H }, () => Array(W).fill(0));
   J.papelBase = papel.map(l => l.slice());
   TOPO = (f.forma || Array(W).fill(0)).slice();
+  pintaFundoMestre(f.obj.tipo === 'chefe' ? f.obj.mestre : null);
+  document.body.classList.toggle('com-mestre', f.obj.tipo === 'chefe');
   for (let c = 0; c < W; c++) for (let r = 0; r < TOPO[c]; r++) { papel[r][c] = 0; if (J.papelBase) J.papelBase[r][c] = 0; }
   J.papelTotal = contaPapel(papel);
   pontosNaTela = 0;
@@ -1018,17 +1020,25 @@ const medalha = k => k === 0 ? '🥇' : k === 1 ? '🥈' : k === 2 ? '🥉' : (k
 
 /* ranking de gente: manda a estrela, depois a fase, depois o ponto.
    Assim não basta atravessar as fases correndo: tem que jogar bem. */
+let ordemRank = 'fase';
 function linhasGente(lista) {
   if (!lista) return '<p class="vazio">Sem internet pra buscar agora.</p>';
   if (!lista.length) return '<p class="vazio">Ninguém aqui ainda. Seja o primeiro.</p>';
   const meu = Conta.dentro ? Conta.sessao.uid : '';
-  const ord = lista.slice().sort((a, b) =>
-    (b.estrelas || 0) - (a.estrelas || 0) || (b.max || 0) - (a.max || 0) || (b.pontos || 0) - (a.pontos || 0));
+  /* quem está mais fundo lidera; a chave embaixo troca para estrelas */
+  const porFase = (a, b) => (b.max || 0) - (a.max || 0) || (b.estrelas || 0) - (a.estrelas || 0) || (b.pontos || 0) - (a.pontos || 0);
+  const porEstrela = (a, b) => (b.estrelas || 0) - (a.estrelas || 0) || (b.max || 0) - (a.max || 0) || (b.pontos || 0) - (a.pontos || 0);
+  const ord = lista.slice().sort(ordemRank === 'estrelas' ? porEstrela : porFase);
   const minha = ord.findIndex(x => x.id === meu);
   const linha = (x, k) => '<div class="linha-rank' + (x.id === meu ? ' eu' : '') + '"><span class="pos">' + medalha(k) + '</span>' +
     '<span class="nome">' + (x.nome || 'mergulhador') + (x.mestres ? ' <i class="tag-mestre" title="mestres derrotados">' + x.mestres + '⚔</i>' : '') + '</span>' +
-    '<span class="val"><b>' + (x.estrelas || 0) + '★</b><small>fase ' + ((x.max || 0) + 1) + (x.pontos ? ' · ' + nf(x.pontos) + ' pts' : '') + '</small></span></div>';
-  let h = ord.slice(0, 20).map(linha).join('');
+    '<span class="val"><b>' + (ordemRank === 'estrelas' ? (x.estrelas || 0) + '★' : 'fase ' + ((x.max || 0) + 1)) + '</b>' +
+    '<small>' + (ordemRank === 'estrelas' ? 'fase ' + ((x.max || 0) + 1) : (x.estrelas || 0) + '★') +
+    (x.pontos ? ' · ' + nf(x.pontos) + ' pts' : '') + '</small></span></div>';
+  const chave = '<div class="chave-ordem">' +
+    '<button class="' + (ordemRank === 'fase' ? 'on' : '') + '" data-ac="ordem" data-id="fase">Por fase</button>' +
+    '<button class="' + (ordemRank === 'estrelas' ? 'on' : '') + '" data-ac="ordem" data-id="estrelas">Por estrelas</button></div>';
+  let h = chave + ord.slice(0, 20).map(linha).join('');
   if (minha >= 20) h += '<div class="longe">' + linha(ord[minha], minha) + '</div>';
   return h;
 }
@@ -1086,7 +1096,7 @@ async function mostraRanking(aba) {
              '<button class="bt-texto" data-ac="saicardume">Sair do cardume</button></div>';
     }
   } else if (abaRank === 'geral') {
-    html = '<p class="cod-cardume">Quem tem mais estrela lidera; empate desempata pela fase</p>' + linhasGente(await Ranking.geral());
+    html = linhasGente(await Ranking.geral());
   } else if (abaRank === 'fase') {
     /* dentro da partida mostra a fase aberta; fora dela, a fase onde a pessoa está */
     const i = (document.body.classList.contains('em-jogo') && J && J.fase >= 0) ? J.fase : prog.max;
@@ -1195,15 +1205,15 @@ async function pintaPodio() {
   const lista = await Ranking.geral();
   if (!lista || !lista.length) { caixa.hidden = true; return; }
   const meu = Conta.dentro ? Conta.sessao.uid : '';
-  const ord = lista.slice().sort((a, b) => (b.estrelas || 0) - (a.estrelas || 0) || (b.max || 0) - (a.max || 0));
+  const ord = lista.slice().sort((a, b) => (b.max || 0) - (a.max || 0) || (b.estrelas || 0) - (a.estrelas || 0));
   const minha = ord.findIndex(x => x.id === meu);
   let h = '<div class="podio-topo"><b>Ranking</b><span>ver tudo</span></div>';
   h += ord.slice(0, 3).map((x, k) => '<div class="linha-podio' + (x.id === meu ? ' eu' : '') + '"><span class="pos">' + medalha(k) + '</span>' +
-       '<span class="nome">' + (x.nome || 'mergulhador') + '</span><span class="val">' + (x.estrelas || 0) + '★</span></div>').join('');
+       '<span class="nome">' + (x.nome || 'mergulhador') + '</span><span class="val">fase ' + ((x.max || 0) + 1) + '</span></div>').join('');
   if (minha >= 3) {
     const x = ord[minha];
     h += '<div class="linha-podio eu"><span class="pos">' + (minha + 1) + 'º</span><span class="nome">' + (x.nome || 'você') +
-         '</span><span class="val">' + (x.estrelas || 0) + '★</span></div>';
+         '</span><span class="val">fase ' + ((x.max || 0) + 1) + '</span></div>';
   }
   caixa.innerHTML = h;
   caixa.hidden = false;
@@ -1420,6 +1430,8 @@ function abreFase(i, ignoraParada) {
   J.papelTotal = contaPapel(papel);
   J.presosFeitos = 0; J.bolhasFeitas = 0; J.bolhasFugiram = 0; J.contaBolha = 0;
   TOPO = (f.forma || Array(W).fill(0)).slice();
+  pintaFundoMestre(f.obj.tipo === 'chefe' ? f.obj.mestre : null);
+  document.body.classList.toggle('com-mestre', f.obj.tipo === 'chefe');
   for (let c = 0; c < W; c++) for (let r = 0; r < TOPO[c]; r++) { papel[r][c] = 0; if (J.papelBase) J.papelBase[r][c] = 0; }
   J.papelTotal = contaPapel(papel);
   pontosNaTela = 0;
@@ -1571,6 +1583,7 @@ function iniciar() {
     else if (ac === 'codigo') mostraCodigo();
     else if (ac === 'usacodigo') usaCodigo();
     else if (ac === 'aba') mostraRanking(b.dataset.id);
+    else if (ac === 'ordem') { ordemRank = b.dataset.id; mostraRanking(); }
     else if (ac === 'salvaapelido') salvaApelido();
     else if (ac === 'criacardume') criaCardume();
     else if (ac === 'entracardume') entraCardume();

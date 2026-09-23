@@ -666,6 +666,19 @@ body.leve .podio{-webkit-backdrop-filter:none;backdrop-filter:none;background:rg
 
 .casa.fora{visibility:hidden;pointer-events:none}
 
+/* ── o mestre por trás de tudo ──────────────────────────────── */
+.mestre-fundo{position:absolute;left:50%;top:46%;width:min(150vw,720px);height:min(150vw,720px);
+  transform:translate(-50%,-50%);opacity:.14;pointer-events:none;z-index:0;
+  animation:mestre-fundo 9s ease-in-out infinite}
+.mestre-fundo svg{width:100%;height:100%}
+@keyframes mestre-fundo{0%,100%{transform:translate(-50%,-50%) scale(1) rotate(-2deg)}50%{transform:translate(-50%,-52%) scale(1.06) rotate(2deg)}}
+body.com-mestre #mesa{box-shadow:0 0 0 2px var(--acento),0 0 30px 6px rgba(0,0,0,.45),0 18px 34px rgba(0,30,50,.4)}
+body.com-mestre .area-jogo::after{content:"";position:absolute;inset:-4% -12%;pointer-events:none;z-index:0;
+  background:radial-gradient(ellipse at 50% 0%,transparent 45%,rgba(0,0,0,.45) 100%);
+  animation:respira-mestre 5s ease-in-out infinite}
+@keyframes respira-mestre{0%,100%{opacity:.7}50%{opacity:1}}
+body.leve .mestre-fundo{animation:none}
+
 /* ── o mestre ───────────────────────────────────────────────── */
 .mestre-hud{display:flex;align-items:center;gap:12px}
 .retrato-mestre{width:56px;height:56px;flex:0 0 auto;filter:drop-shadow(0 3px 6px rgba(0,20,40,.5))}
@@ -734,6 +747,12 @@ body.leve .podio{-webkit-backdrop-filter:none;backdrop-filter:none;background:rg
 [data-mundo="3"] .tag-mestre,[data-mundo="4"] .tag-cresce{font-style:normal;font-size:10px;font-weight:800;letter-spacing:.02em;text-transform:uppercase;
   background:rgba(255,106,61,.22);color:#FFD6C4;border-radius:999px;padding:2px 7px;margin-left:6px;vertical-align:middle}
 .tag-mestre{color:#D9C3FF}
+.chave-ordem{display:flex;gap:6px;margin:2px 0 8px}
+.chave-ordem button{flex:1;border:0;cursor:pointer;border-radius:999px;padding:6px 4px;font-family:Nunito,sans-serif;
+  font-weight:800;font-size:12px;color:#2E5E6C;background:rgba(10,108,122,.1)}
+.chave-ordem button.on{background:rgba(255,106,61,.2);color:#B2430F;box-shadow:inset 0 0 0 2px var(--boia)}
+[data-mundo="3"] .chave-ordem button,[data-mundo="4"] .chave-ordem button{color:rgba(243,251,255,.78);background:rgba(107,255,224,.08)}
+[data-mundo="3"] .chave-ordem button.on,[data-mundo="4"] .chave-ordem button.on{color:#FFD6C4;background:rgba(255,106,61,.22)}
 .lista-rank .longe{margin-top:12px;border-top:2px dashed rgba(10,108,122,.25);padding-top:8px}
 .linha-rank.eu{background:rgba(255,106,61,.16);box-shadow:inset 0 0 0 2px var(--boia)}
 .linha-rank.eu.longe{margin-top:12px}
@@ -1044,7 +1063,7 @@ body.leve .cartao{animation-duration:.18s}
    MERGULHO · combinar 3 da beira da praia até 4.000 metros
    ═══════════════════════════════════════════════════════════════ */
 
-const VERSAO_JOGO = '2026.10.21';
+const VERSAO_JOGO = '2026.10.22';
 const W = 7, H = 8, TIPOS = 6;
 const NADA = 0, LH = 1, LV = 2, BOMBA = 3, ARCO = 4, ONDA = 5, ONDAV = 6, CARDUME = 7;
 
@@ -1143,7 +1162,8 @@ const REGIOES = [
 
 /* de que lugar é esta fase, e com que cara */
 function ambiente(i) {
-  const banda = Math.floor((i % CICLO) / 6);
+  /* fase de mestre acontece sempre no escuro, não importa onde caia */
+  const banda = ehMestre(i) ? 4 : Math.floor((i % CICLO) / 6);
   const volta = Math.floor(i / CICLO);
   const reg = REGIOES[volta % REGIOES.length];
   const b = MUNDOS[banda], bl = BLOQUEIOS[reg.bloq[banda]];
@@ -1357,8 +1377,8 @@ function faseMestre(i) {
   const volta = Math.floor((i + 1) / 100);          /* 1º mestre na fase 100 */
   const mestre = (volta - 1) % MESTRES.length;
   const m = 4, dif = Math.min(1, .45 + (i - CICLO) / 420);
-  const vida = 58 + volta * 14;
-  const mov = 30 + Math.min(8, volta * 2);
+  const vida = 84 + volta * 20;
+  const mov = 28 + Math.min(6, volta * 2);
   const p50 = Math.round(mov * (980 + 320 * dif));
   return { m: m, prof: 4000 + volta * 500, nome: MESTRES[mestre].nome, mov: mov, mestre: mestre,
            obj: { tipo:'chefe', vida: vida, golpe: 2, mestre: mestre },
@@ -2329,6 +2349,20 @@ function coresBanda(reg, k) {
    A profundidade manda na luz e nas peças; a região pinta a água,
    o chão, a moldura da mesa e o que cobre o fundo.                */
 let mundoAtual = -1, ambAtual = null, conjAtual = '', acentoAtual = '';
+
+function pintaFundoMestre(idx) {
+  const cx = document.getElementById('cena');
+  if (!cx) return;
+  const velho = cx.querySelector('.mestre-fundo');
+  if (velho) velho.remove();
+  if (idx == null) return;
+  const M = MESTRES[idx % MESTRES.length];
+  const d = document.createElement('div');
+  d.className = 'mestre-fundo';
+  d.style.setProperty('--cor-mestre', M.cor);
+  d.innerHTML = desenhaMestre(idx);
+  cx.appendChild(d);
+}
 
 function instalaMundo(m, i) {
   const amb = ambiente(i == null ? 0 : i);
@@ -3429,7 +3463,7 @@ async function passoMestre() {
   const vida = Math.max(0, f.obj.vida - (J.dano || 0));
   if (vida <= 0) return false;
   const fase3 = vida < f.obj.vida * .35, fase2 = vida < f.obj.vida * .65;
-  const quantas = fase3 ? 5 : fase2 ? 4 : 3;
+  const quantas = fase3 ? 7 : fase2 ? 5 : 3;
   const livres = [];
   for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) if (papel[r][c] === 0 && temCasa(r, c)) livres.push([r, c]);
   for (let k = 0; k < quantas && livres.length; k++) {
@@ -3440,9 +3474,10 @@ async function passoMestre() {
     setTimeout(() => casa.classList.remove('cresceu'), 520);
   }
   pintaPapel();
-  J.mov = Math.max(0, J.mov - 1);
+  J.mov = Math.max(0, J.mov - (fase3 ? 2 : 1));
   Som.liga(); Som.nao(); vibra(TREMIDA.forte);
-  faixaTexto(fase3 ? 'O mestre está furioso!' : 'O mestre cospe tinta');
+  tremeTela();
+  faixaTexto(fase3 ? 'O mestre está furioso: duas jogadas a menos!' : 'O mestre cospe tinta', 2000);
   const ret = document.querySelector('.retrato-mestre');
   if (ret) { ret.classList.remove('ataca'); void ret.offsetWidth; ret.classList.add('ataca'); }
   atualizaHud();
@@ -4275,6 +4310,8 @@ function abreDesafio() {
   papel = Array.from({ length: H }, () => Array(W).fill(0));
   J.papelBase = papel.map(l => l.slice());
   TOPO = (f.forma || Array(W).fill(0)).slice();
+  pintaFundoMestre(f.obj.tipo === 'chefe' ? f.obj.mestre : null);
+  document.body.classList.toggle('com-mestre', f.obj.tipo === 'chefe');
   for (let c = 0; c < W; c++) for (let r = 0; r < TOPO[c]; r++) { papel[r][c] = 0; if (J.papelBase) J.papelBase[r][c] = 0; }
   J.papelTotal = contaPapel(papel);
   pontosNaTela = 0;
@@ -4707,17 +4744,25 @@ const medalha = k => k === 0 ? '🥇' : k === 1 ? '🥈' : k === 2 ? '🥉' : (k
 
 /* ranking de gente: manda a estrela, depois a fase, depois o ponto.
    Assim não basta atravessar as fases correndo: tem que jogar bem. */
+let ordemRank = 'fase';
 function linhasGente(lista) {
   if (!lista) return '<p class="vazio">Sem internet pra buscar agora.</p>';
   if (!lista.length) return '<p class="vazio">Ninguém aqui ainda. Seja o primeiro.</p>';
   const meu = Conta.dentro ? Conta.sessao.uid : '';
-  const ord = lista.slice().sort((a, b) =>
-    (b.estrelas || 0) - (a.estrelas || 0) || (b.max || 0) - (a.max || 0) || (b.pontos || 0) - (a.pontos || 0));
+  /* quem está mais fundo lidera; a chave embaixo troca para estrelas */
+  const porFase = (a, b) => (b.max || 0) - (a.max || 0) || (b.estrelas || 0) - (a.estrelas || 0) || (b.pontos || 0) - (a.pontos || 0);
+  const porEstrela = (a, b) => (b.estrelas || 0) - (a.estrelas || 0) || (b.max || 0) - (a.max || 0) || (b.pontos || 0) - (a.pontos || 0);
+  const ord = lista.slice().sort(ordemRank === 'estrelas' ? porEstrela : porFase);
   const minha = ord.findIndex(x => x.id === meu);
   const linha = (x, k) => '<div class="linha-rank' + (x.id === meu ? ' eu' : '') + '"><span class="pos">' + medalha(k) + '</span>' +
     '<span class="nome">' + (x.nome || 'mergulhador') + (x.mestres ? ' <i class="tag-mestre" title="mestres derrotados">' + x.mestres + '⚔</i>' : '') + '</span>' +
-    '<span class="val"><b>' + (x.estrelas || 0) + '★</b><small>fase ' + ((x.max || 0) + 1) + (x.pontos ? ' · ' + nf(x.pontos) + ' pts' : '') + '</small></span></div>';
-  let h = ord.slice(0, 20).map(linha).join('');
+    '<span class="val"><b>' + (ordemRank === 'estrelas' ? (x.estrelas || 0) + '★' : 'fase ' + ((x.max || 0) + 1)) + '</b>' +
+    '<small>' + (ordemRank === 'estrelas' ? 'fase ' + ((x.max || 0) + 1) : (x.estrelas || 0) + '★') +
+    (x.pontos ? ' · ' + nf(x.pontos) + ' pts' : '') + '</small></span></div>';
+  const chave = '<div class="chave-ordem">' +
+    '<button class="' + (ordemRank === 'fase' ? 'on' : '') + '" data-ac="ordem" data-id="fase">Por fase</button>' +
+    '<button class="' + (ordemRank === 'estrelas' ? 'on' : '') + '" data-ac="ordem" data-id="estrelas">Por estrelas</button></div>';
+  let h = chave + ord.slice(0, 20).map(linha).join('');
   if (minha >= 20) h += '<div class="longe">' + linha(ord[minha], minha) + '</div>';
   return h;
 }
@@ -4775,7 +4820,7 @@ async function mostraRanking(aba) {
              '<button class="bt-texto" data-ac="saicardume">Sair do cardume</button></div>';
     }
   } else if (abaRank === 'geral') {
-    html = '<p class="cod-cardume">Quem tem mais estrela lidera; empate desempata pela fase</p>' + linhasGente(await Ranking.geral());
+    html = linhasGente(await Ranking.geral());
   } else if (abaRank === 'fase') {
     /* dentro da partida mostra a fase aberta; fora dela, a fase onde a pessoa está */
     const i = (document.body.classList.contains('em-jogo') && J && J.fase >= 0) ? J.fase : prog.max;
@@ -4884,15 +4929,15 @@ async function pintaPodio() {
   const lista = await Ranking.geral();
   if (!lista || !lista.length) { caixa.hidden = true; return; }
   const meu = Conta.dentro ? Conta.sessao.uid : '';
-  const ord = lista.slice().sort((a, b) => (b.estrelas || 0) - (a.estrelas || 0) || (b.max || 0) - (a.max || 0));
+  const ord = lista.slice().sort((a, b) => (b.max || 0) - (a.max || 0) || (b.estrelas || 0) - (a.estrelas || 0));
   const minha = ord.findIndex(x => x.id === meu);
   let h = '<div class="podio-topo"><b>Ranking</b><span>ver tudo</span></div>';
   h += ord.slice(0, 3).map((x, k) => '<div class="linha-podio' + (x.id === meu ? ' eu' : '') + '"><span class="pos">' + medalha(k) + '</span>' +
-       '<span class="nome">' + (x.nome || 'mergulhador') + '</span><span class="val">' + (x.estrelas || 0) + '★</span></div>').join('');
+       '<span class="nome">' + (x.nome || 'mergulhador') + '</span><span class="val">fase ' + ((x.max || 0) + 1) + '</span></div>').join('');
   if (minha >= 3) {
     const x = ord[minha];
     h += '<div class="linha-podio eu"><span class="pos">' + (minha + 1) + 'º</span><span class="nome">' + (x.nome || 'você') +
-         '</span><span class="val">' + (x.estrelas || 0) + '★</span></div>';
+         '</span><span class="val">fase ' + ((x.max || 0) + 1) + '</span></div>';
   }
   caixa.innerHTML = h;
   caixa.hidden = false;
@@ -5109,6 +5154,8 @@ function abreFase(i, ignoraParada) {
   J.papelTotal = contaPapel(papel);
   J.presosFeitos = 0; J.bolhasFeitas = 0; J.bolhasFugiram = 0; J.contaBolha = 0;
   TOPO = (f.forma || Array(W).fill(0)).slice();
+  pintaFundoMestre(f.obj.tipo === 'chefe' ? f.obj.mestre : null);
+  document.body.classList.toggle('com-mestre', f.obj.tipo === 'chefe');
   for (let c = 0; c < W; c++) for (let r = 0; r < TOPO[c]; r++) { papel[r][c] = 0; if (J.papelBase) J.papelBase[r][c] = 0; }
   J.papelTotal = contaPapel(papel);
   pontosNaTela = 0;
@@ -5260,6 +5307,7 @@ function iniciar() {
     else if (ac === 'codigo') mostraCodigo();
     else if (ac === 'usacodigo') usaCodigo();
     else if (ac === 'aba') mostraRanking(b.dataset.id);
+    else if (ac === 'ordem') { ordemRank = b.dataset.id; mostraRanking(); }
     else if (ac === 'salvaapelido') salvaApelido();
     else if (ac === 'criacardume') criaCardume();
     else if (ac === 'entracardume') entraCardume();
