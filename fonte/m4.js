@@ -951,7 +951,9 @@ const Ranking = {
       const t = Conta.dentro ? await Conta.token() : null;
       const r = await fetch(Conta.cfg.banco + caminho + '.json?' + (consulta || '') + (t ? '&auth=' + t : ''));
       const d = await r.json();
-      const lista = Object.keys(d || {}).map(k => Object.assign({ id: k }, d[k]));
+      if (!r.ok || (d && d.error)) return null;            /* servidor recusou: melhor avisar que fingir lista vazia */
+      const lista = Object.keys(d || {}).map(k => Object.assign({ id: k }, d[k]))
+        .filter(x => x && typeof x === 'object' && x.nome !== undefined);
       this.cache[chave] = { quando: Date.now(), dados: lista };
       return lista;
     } catch (e) { return null; }
@@ -979,10 +981,16 @@ const Ranking = {
     salvaProg();
     return this.manda('/mergulho/fases/' + i + '/' + Conta.sessao.uid, { nome: this.nome(), pontos: pontos });
   },
-  geral() { return this.pega('/mergulho/placar', 'orderBy="estrelas"&limitToLast=50'); },
-  cardume(cod) { return this.pega('/mergulho/placar', 'orderBy="cardume"&equalTo="' + cod + '"&limitToLast=60'); },
-  daFase(i) { return this.pega('/mergulho/fases/' + i, 'orderBy="pontos"&limitToLast=25'); },
-  daSemana(sem) { return this.pega('/mergulho/desafio/' + sem, 'orderBy="pontos"&limitToLast=30'); }
+  /* A lista é pequena: baixar inteira e ordenar aqui sai mais barato
+     do que depender de índice publicado nas regras do banco.       */
+  todos() { return this.pega('/mergulho/placar', ''); },
+  async geral() { return await this.todos(); },
+  async cardume(cod) {
+    const t = await this.todos();
+    return t ? t.filter(x => (x.cardume || '') === cod) : null;
+  },
+  daFase(i) { return this.pega('/mergulho/fases/' + i, ''); },
+  daSemana(sem) { return this.pega('/mergulho/desafio/' + sem, ''); }
 };
 
 function codigoCardume() {
