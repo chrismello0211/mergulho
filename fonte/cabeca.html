@@ -658,6 +658,32 @@ body.leve .podio{-webkit-backdrop-filter:none;backdrop-filter:none;background:rg
 
 .casa.fora{visibility:hidden;pointer-events:none}
 
+/* ── trilha da semana ───────────────────────────────────────── */
+.cartao .premio-cresce{display:inline-block;margin-top:5px;font-style:normal;font-size:12px;font-weight:800;
+  color:#B2760F;background:rgba(255,211,92,.2);border-radius:999px;padding:2px 10px}
+[data-mundo="3"] .cartao .premio-cresce,[data-mundo="4"] .cartao .premio-cresce{color:var(--sol)}
+.trilha-semana{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin:12px 0 4px}
+.dia-semana{position:relative;border-radius:14px;padding:8px 4px 7px;text-align:center;
+  background:rgba(10,108,122,.1);box-shadow:inset 0 0 0 2px transparent}
+.dia-semana .rot{display:block;font-size:10.5px;font-weight:800;color:#4F7F8C;letter-spacing:.04em}
+.dia-semana .premio b{display:block;font-family:var(--display);font-weight:800;font-size:17px;color:var(--tinta);line-height:1.1}
+.dia-semana .premio i{display:block;font-style:normal;font-size:10px;font-weight:800;color:#4F7F8C}
+.dia-semana.passou{background:rgba(10,108,122,.06);opacity:.55}
+.dia-semana .ok{position:absolute;top:-5px;right:-5px;width:20px;height:20px;border-radius:50%;background:var(--agua-clara,#2AA5B4);
+  color:#fff;font-size:12px;font-weight:800;display:grid;place-items:center;box-shadow:0 2px 5px rgba(0,20,40,.35)}
+.dia-semana.hoje{background:rgba(255,106,61,.16);box-shadow:inset 0 0 0 2px var(--boia);animation:dia-hoje 1.8s ease-in-out infinite}
+@keyframes dia-hoje{0%,100%{transform:scale(1)}50%{transform:scale(1.04)}}
+.dia-semana.grande{grid-column:span 3;background:linear-gradient(180deg,rgba(255,211,92,.22),rgba(255,166,61,.18));
+  box-shadow:inset 0 0 0 2px rgba(255,211,92,.65);padding:10px 4px 9px}
+.dia-semana.grande .premio b{font-size:22px;color:#B2760F}
+.dia-semana.grande .premio i,.dia-semana.grande .rot{color:#8A6413}
+.dia-semana.grande.hoje{box-shadow:inset 0 0 0 3px var(--boia)}
+[data-mundo="3"] .dia-semana,[data-mundo="4"] .dia-semana{background:rgba(107,255,224,.08)}
+[data-mundo="3"] .dia-semana .premio b,[data-mundo="4"] .dia-semana .premio b{color:var(--espuma)}
+[data-mundo="3"] .dia-semana .rot,[data-mundo="4"] .dia-semana .rot,
+[data-mundo="3"] .dia-semana .premio i,[data-mundo="4"] .dia-semana .premio i{color:rgba(243,251,255,.7)}
+[data-mundo="3"] .dia-semana.grande .premio b,[data-mundo="4"] .dia-semana.grande .premio b{color:var(--sol)}
+
 /* ── o portão do mestre no mapa ─────────────────────────────── */
 .mestre-linha{margin:26px 0}
 .portao{display:flex;align-items:center;justify-content:center;gap:10px;padding:14px 8px;border-radius:22px;
@@ -688,15 +714,31 @@ body.leve .podio{-webkit-backdrop-filter:none;backdrop-filter:none;background:rg
 [data-mundo="3"] .cartao .tesouro span,[data-mundo="4"] .cartao .tesouro span{color:#FFE7A3}
 
 /* ── o mestre por trás de tudo ──────────────────────────────── */
-.mestre-fundo{position:absolute;left:50%;top:46%;width:min(150vw,720px);height:min(150vw,720px);
-  transform:translate(-50%,-50%);opacity:.14;pointer-events:none;z-index:0;
+.mestre-fundo{position:absolute;left:50%;top:44%;width:min(190vw,900px);height:min(190vw,900px);
+  transform:translate(-50%,-50%);opacity:.42;pointer-events:none;z-index:0;filter:blur(1px);
   animation:mestre-fundo 9s ease-in-out infinite}
+/* braços do mestre entrando pelas bordas da tela */
+body.com-mestre #cena::after{content:"";position:absolute;inset:0;pointer-events:none;z-index:0;
+  background:
+    radial-gradient(60% 40% at 0% 42%,var(--acento),transparent 70%),
+    radial-gradient(60% 40% at 100% 58%,var(--acento),transparent 70%);
+  opacity:.16;animation:bracos 7s ease-in-out infinite}
+@keyframes bracos{0%,100%{opacity:.1;transform:scale(1)}50%{opacity:.26;transform:scale(1.05)}}
 .mestre-fundo svg{width:100%;height:100%}
 @keyframes mestre-fundo{0%,100%{transform:translate(-50%,-50%) scale(1) rotate(-2deg)}50%{transform:translate(-50%,-52%) scale(1.06) rotate(2deg)}}
 body.com-mestre #mesa{box-shadow:0 0 0 2px var(--acento),0 0 30px 6px rgba(0,0,0,.45),0 18px 34px rgba(0,30,50,.4)}
-body.com-mestre .area-jogo::after{content:"";position:absolute;inset:-4% -12%;pointer-events:none;z-index:0;
-  background:radial-gradient(ellipse at 50% 0%,transparent 45%,rgba(0,0,0,.45) 100%);
+body.com-mestre .area-jogo::after{content:"";position:absolute;inset:-6% -14%;pointer-events:none;z-index:0;
+  background:radial-gradient(ellipse at 50% 40%,transparent 38%,rgba(0,0,0,.62) 100%);
   animation:respira-mestre 5s ease-in-out infinite}
+body.com-mestre .painel{box-shadow:inset 0 0 0 2px var(--acento),0 10px 26px rgba(0,0,0,.5)}
+/* o golpe do mestre pinta a tela inteira */
+#golpe-mestre{position:fixed;inset:0;z-index:35;pointer-events:none;opacity:0;
+  background:radial-gradient(circle at 50% 30%,var(--acento),transparent 62%)}
+#golpe-mestre.bate{animation:golpe-mestre .85s ease-out}
+@keyframes golpe-mestre{0%{opacity:0}18%{opacity:.5}100%{opacity:0}}
+.tinta-voa{position:fixed;z-index:36;width:26px;height:26px;border-radius:50%;pointer-events:none;
+  background:radial-gradient(circle at 35% 30%,#fff6,var(--acento));animation:tinta-voa .8s ease-out forwards}
+@keyframes tinta-voa{0%{transform:translate(0,0) scale(.4);opacity:.95}100%{transform:translate(var(--dx),var(--dy)) scale(1.5);opacity:0}}
 @keyframes respira-mestre{0%,100%{opacity:.7}50%{opacity:1}}
 body.leve .mestre-fundo{animation:none}
 

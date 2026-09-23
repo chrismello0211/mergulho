@@ -666,6 +666,32 @@ body.leve .podio{-webkit-backdrop-filter:none;backdrop-filter:none;background:rg
 
 .casa.fora{visibility:hidden;pointer-events:none}
 
+/* ── trilha da semana ───────────────────────────────────────── */
+.cartao .premio-cresce{display:inline-block;margin-top:5px;font-style:normal;font-size:12px;font-weight:800;
+  color:#B2760F;background:rgba(255,211,92,.2);border-radius:999px;padding:2px 10px}
+[data-mundo="3"] .cartao .premio-cresce,[data-mundo="4"] .cartao .premio-cresce{color:var(--sol)}
+.trilha-semana{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin:12px 0 4px}
+.dia-semana{position:relative;border-radius:14px;padding:8px 4px 7px;text-align:center;
+  background:rgba(10,108,122,.1);box-shadow:inset 0 0 0 2px transparent}
+.dia-semana .rot{display:block;font-size:10.5px;font-weight:800;color:#4F7F8C;letter-spacing:.04em}
+.dia-semana .premio b{display:block;font-family:var(--display);font-weight:800;font-size:17px;color:var(--tinta);line-height:1.1}
+.dia-semana .premio i{display:block;font-style:normal;font-size:10px;font-weight:800;color:#4F7F8C}
+.dia-semana.passou{background:rgba(10,108,122,.06);opacity:.55}
+.dia-semana .ok{position:absolute;top:-5px;right:-5px;width:20px;height:20px;border-radius:50%;background:var(--agua-clara,#2AA5B4);
+  color:#fff;font-size:12px;font-weight:800;display:grid;place-items:center;box-shadow:0 2px 5px rgba(0,20,40,.35)}
+.dia-semana.hoje{background:rgba(255,106,61,.16);box-shadow:inset 0 0 0 2px var(--boia);animation:dia-hoje 1.8s ease-in-out infinite}
+@keyframes dia-hoje{0%,100%{transform:scale(1)}50%{transform:scale(1.04)}}
+.dia-semana.grande{grid-column:span 3;background:linear-gradient(180deg,rgba(255,211,92,.22),rgba(255,166,61,.18));
+  box-shadow:inset 0 0 0 2px rgba(255,211,92,.65);padding:10px 4px 9px}
+.dia-semana.grande .premio b{font-size:22px;color:#B2760F}
+.dia-semana.grande .premio i,.dia-semana.grande .rot{color:#8A6413}
+.dia-semana.grande.hoje{box-shadow:inset 0 0 0 3px var(--boia)}
+[data-mundo="3"] .dia-semana,[data-mundo="4"] .dia-semana{background:rgba(107,255,224,.08)}
+[data-mundo="3"] .dia-semana .premio b,[data-mundo="4"] .dia-semana .premio b{color:var(--espuma)}
+[data-mundo="3"] .dia-semana .rot,[data-mundo="4"] .dia-semana .rot,
+[data-mundo="3"] .dia-semana .premio i,[data-mundo="4"] .dia-semana .premio i{color:rgba(243,251,255,.7)}
+[data-mundo="3"] .dia-semana.grande .premio b,[data-mundo="4"] .dia-semana.grande .premio b{color:var(--sol)}
+
 /* ── o portão do mestre no mapa ─────────────────────────────── */
 .mestre-linha{margin:26px 0}
 .portao{display:flex;align-items:center;justify-content:center;gap:10px;padding:14px 8px;border-radius:22px;
@@ -696,15 +722,31 @@ body.leve .podio{-webkit-backdrop-filter:none;backdrop-filter:none;background:rg
 [data-mundo="3"] .cartao .tesouro span,[data-mundo="4"] .cartao .tesouro span{color:#FFE7A3}
 
 /* ── o mestre por trás de tudo ──────────────────────────────── */
-.mestre-fundo{position:absolute;left:50%;top:46%;width:min(150vw,720px);height:min(150vw,720px);
-  transform:translate(-50%,-50%);opacity:.14;pointer-events:none;z-index:0;
+.mestre-fundo{position:absolute;left:50%;top:44%;width:min(190vw,900px);height:min(190vw,900px);
+  transform:translate(-50%,-50%);opacity:.42;pointer-events:none;z-index:0;filter:blur(1px);
   animation:mestre-fundo 9s ease-in-out infinite}
+/* braços do mestre entrando pelas bordas da tela */
+body.com-mestre #cena::after{content:"";position:absolute;inset:0;pointer-events:none;z-index:0;
+  background:
+    radial-gradient(60% 40% at 0% 42%,var(--acento),transparent 70%),
+    radial-gradient(60% 40% at 100% 58%,var(--acento),transparent 70%);
+  opacity:.16;animation:bracos 7s ease-in-out infinite}
+@keyframes bracos{0%,100%{opacity:.1;transform:scale(1)}50%{opacity:.26;transform:scale(1.05)}}
 .mestre-fundo svg{width:100%;height:100%}
 @keyframes mestre-fundo{0%,100%{transform:translate(-50%,-50%) scale(1) rotate(-2deg)}50%{transform:translate(-50%,-52%) scale(1.06) rotate(2deg)}}
 body.com-mestre #mesa{box-shadow:0 0 0 2px var(--acento),0 0 30px 6px rgba(0,0,0,.45),0 18px 34px rgba(0,30,50,.4)}
-body.com-mestre .area-jogo::after{content:"";position:absolute;inset:-4% -12%;pointer-events:none;z-index:0;
-  background:radial-gradient(ellipse at 50% 0%,transparent 45%,rgba(0,0,0,.45) 100%);
+body.com-mestre .area-jogo::after{content:"";position:absolute;inset:-6% -14%;pointer-events:none;z-index:0;
+  background:radial-gradient(ellipse at 50% 40%,transparent 38%,rgba(0,0,0,.62) 100%);
   animation:respira-mestre 5s ease-in-out infinite}
+body.com-mestre .painel{box-shadow:inset 0 0 0 2px var(--acento),0 10px 26px rgba(0,0,0,.5)}
+/* o golpe do mestre pinta a tela inteira */
+#golpe-mestre{position:fixed;inset:0;z-index:35;pointer-events:none;opacity:0;
+  background:radial-gradient(circle at 50% 30%,var(--acento),transparent 62%)}
+#golpe-mestre.bate{animation:golpe-mestre .85s ease-out}
+@keyframes golpe-mestre{0%{opacity:0}18%{opacity:.5}100%{opacity:0}}
+.tinta-voa{position:fixed;z-index:36;width:26px;height:26px;border-radius:50%;pointer-events:none;
+  background:radial-gradient(circle at 35% 30%,#fff6,var(--acento));animation:tinta-voa .8s ease-out forwards}
+@keyframes tinta-voa{0%{transform:translate(0,0) scale(.4);opacity:.95}100%{transform:translate(var(--dx),var(--dy)) scale(1.5);opacity:0}}
 @keyframes respira-mestre{0%,100%{opacity:.7}50%{opacity:1}}
 body.leve .mestre-fundo{animation:none}
 
@@ -981,6 +1023,7 @@ body.leve .cartao{animation-duration:.18s}
   <div id="vinheta" aria-hidden="true"></div>
   <div id="fx-tela" aria-hidden="true"></div>
   <div id="descida" aria-hidden="true"><span></span></div>
+  <div id="golpe-mestre" aria-hidden="true"></div>
 
   <!-- ══ INÍCIO: o título boiando na linha d'água ══════════════ -->
   <section class="tela ativa" id="tela-inicio">
@@ -1092,7 +1135,7 @@ body.leve .cartao{animation-duration:.18s}
    MERGULHO · combinar 3 da beira da praia até 4.000 metros
    ═══════════════════════════════════════════════════════════════ */
 
-const VERSAO_JOGO = '2026.10.23';
+const VERSAO_JOGO = '2026.10.25';
 const W = 7, H = 8, TIPOS = 6;
 const NADA = 0, LH = 1, LV = 2, BOMBA = 3, ARCO = 4, ONDA = 5, ONDAV = 6, CARDUME = 7;
 
@@ -3553,6 +3596,22 @@ async function passoMestre() {
   faixaTexto(fase3 ? 'O mestre está furioso: duas jogadas a menos!' : 'O mestre cospe tinta', 2000);
   const ret = document.querySelector('.retrato-mestre');
   if (ret) { ret.classList.remove('ataca'); void ret.offsetWidth; ret.classList.add('ataca'); }
+  /* o golpe agora acontece na tela toda, não só no retratinho */
+  const tela = document.getElementById('golpe-mestre');
+  if (tela) { tela.classList.remove('bate'); void tela.offsetWidth; tela.classList.add('bate'); }
+  if (!prog.leve) {
+    const r0 = ret ? ret.getBoundingClientRect() : { left: innerWidth / 2, top: 120, width: 40, height: 40 };
+    for (let k = 0; k < 10; k++) {
+      const g = document.createElement('i');
+      g.className = 'tinta-voa';
+      g.style.left = (r0.left + r0.width / 2) + 'px';
+      g.style.top = (r0.top + r0.height / 2) + 'px';
+      g.style.setProperty('--dx', (Math.cos(k / 10 * 6.28) * (80 + Math.random() * 160)).toFixed(0) + 'px');
+      g.style.setProperty('--dy', (60 + Math.random() * 260).toFixed(0) + 'px');
+      document.body.appendChild(g);
+      setTimeout(() => g.remove(), 900);
+    }
+  }
   atualizaHud();
   await espera(420);
   return true;
@@ -4324,22 +4383,81 @@ function compra(id) {
   mostraLoja();
 }
 /* baú do dia: uma vez por dia, sem relógio nem conta */
+/* ═══ SEMANA DO MERGULHADOR ═════════════════════════════════════
+   Sete dias seguidos, cada um com o seu prêmio e o sétimo com o
+   baú do fundo. Faltou um dia, a semana recomeça: é isso que faz
+   valer a pena aparecer todo dia.                                */
+const SEMANA = [
+  { moedas: 40,  texto: 'Primeiro fôlego' },
+  { moedas: 60,  texto: 'Pegando o ritmo' },
+  { moedas: 40,  poder: 'arpao',  texto: 'Um arpão pra você' },
+  { moedas: 100, texto: 'Meio da semana' },
+  { moedas: 60,  poder: 'isca',   texto: 'Uma isca de luz' },
+  { moedas: 150, texto: 'Quase lá' },
+  { moedas: 400, todos: true, texto: 'Baú do fundo' }
+];
+/* mesma contagem de dia que o resto do jogo usa, pra sequência
+   não quebrar por causa de fuso                                  */
+const ontem = () => new Date(Date.now() - 864e5).toISOString().slice(0, 10);
+function diaDaSemana() {
+  /* que dia da trilha é hoje, sem ainda marcar como pego */
+  if (!prog.dia) return 1;
+  if (prog.dia === ontem()) return ((prog.seq || 0) % 7) + 1;
+  return 1;                                   /* furou: recomeça */
+}
+/* cada semana fechada engorda a próxima: o 7º dia da semana 4 vale
+   o dobro do da primeira. Sem teto de crescimento infinito.      */
+const fatorSemana = () => 1 + Math.min(1.5, (prog.semanas || 0) * .25);
+const premioDoDia = k => {
+  const d = SEMANA[k], f = fatorSemana();
+  return { moedas: Math.round(d.moedas * f / 10) * 10, poder: d.poder, todos: d.todos, texto: d.texto,
+           quantos: d.todos ? 1 + Math.min(2, Math.floor((prog.semanas || 0) / 2)) : 1 };
+};
 function mostraBau() {
-  cartao(
-    '<h3>Baú do dia</h3>' +
-    '<p class="bau-premio">' + moedaSvg + '+40</p>' +
-    '<p>Volte amanhã que tem outro.</p>' +
-    '<div class="bts"><button class="bt" data-ac="bau">Pegar</button></div>'
-  );
+  const dia = diaDaSemana(), quebrou = prog.dia && prog.dia !== ontem() && (prog.seq || 0) > 1;
+  const semana = (prog.semanas || 0) + 1;
+  const trilha = SEMANA.map((_, k) => {
+    const d = premioDoDia(k), n = k + 1, passou = n < dia, hojeE = n === dia;
+    const premio = d.todos ? '<b>' + d.moedas + '</b><i>+ ' + (d.quantos > 1 ? d.quantos + ' de cada poder' : 'tudo') + '</i>'
+      : d.poder ? '<b>' + d.moedas + '</b><i>+ ' + (PODERES.find(p => p.id === d.poder) || {}).nome + '</i>'
+      : '<b>' + d.moedas + '</b><i>moedas</i>';
+    return '<div class="dia-semana' + (passou ? ' passou' : '') + (hojeE ? ' hoje' : '') + (d.todos ? ' grande' : '') + '">' +
+      '<span class="rot">' + (d.todos ? '7º' : n + 'º') + '</span>' +
+      '<span class="premio">' + premio + '</span>' +
+      (passou ? '<span class="ok">✓</span>' : '') + '</div>';
+  }).join('');
+  cartao('<h3>Semana ' + semana + '</h3>' +
+    '<p>' + (quebrou ? 'Você faltou um dia, então a semana recomeça. ' : '') +
+    'Dia <b>' + dia + ' de 7</b>' + (prog.melhorSeq > 1 ? ' · melhor sequência: ' + prog.melhorSeq + ' dias' : '') +
+    (semana > 1 ? '<br><i class="premio-cresce">prêmios ' + Math.round((fatorSemana() - 1) * 100) + '% maiores nesta semana</i>' : '') + '</p>' +
+    '<div class="trilha-semana">' + trilha + '</div>' +
+    '<div class="bts"><button class="bt" data-ac="bau">Pegar o prêmio de hoje</button></div>');
 }
 function pegaBau() {
-  prog.moedas += 40;
+  const dia = diaDaSemana(), d = premioDoDia(dia - 1);
+  prog.moedas += d.moedas;
+  prog.poderes = prog.poderes || {};
+  if (d.poder) prog.poderes[d.poder] = (prog.poderes[d.poder] || 0) + 1;
+  if (d.todos) {
+    ['arpao', 'troca', 'giro', 'isca', 'folego'].forEach(k => prog.poderes[k] = (prog.poderes[k] || 0) + d.quantos);
+    prog.semanas = (prog.semanas || 0) + 1;
+  }
+  prog.seq = dia;
+  prog.melhorSeq = Math.max(prog.melhorSeq || 0, dia);
   prog.dia = hoje();
   salvaProg();
-  pintaMoedas();
+  pintaMoedas(); pintaPoderes();
+  salvaNaNuvemDepois();
   Som.liga(); Som.vitoria();
-  fechaCartao();
+  if (d.todos) fogos();
+  cartao('<h3>' + d.texto + '</h3>' +
+    '<p class="bau-premio">' + moedaSvg + '+' + d.moedas + '</p>' +
+    '<p>' + (d.todos ? 'Fechou a semana ' + (prog.semanas) + ' e levou ' + d.quantos + ' de cada poder. A semana que vem paga ainda mais.'
+           : d.poder ? 'E mais um ' + (PODERES.find(p => p.id === d.poder) || {}).nome + ' no estoque. Volte amanhã: o prêmio de amanhã é maior.'
+           : 'Volte amanhã que o prêmio aumenta. No sétimo dia vem o baú do fundo.') + '</p>' +
+    '<div class="bts"><button class="bt" data-ac="fecha">Beleza</button></div>', true);
 }
+
 
 /* ═══ DESAFIO DA SEMANA ════════════════════════════════════════
    Mesma semente para todo mundo na semana: o tabuleiro e a ordem
@@ -4660,6 +4778,9 @@ function juntaProg(a, b) {
                 melhor: Math.max(da.melhor || 0, db.melhor || 0), nome: da.nome || db.nome || '' };
   r.apelido = a.apelido || b.apelido || '';
   r.mestres = Math.max(a.mestres || 0, b.mestres || 0);
+  r.seq = (a.dia || '') >= (b.dia || '') ? (a.seq || 0) : (b.seq || 0);
+  r.melhorSeq = Math.max(a.melhorSeq || 0, b.melhorSeq || 0);
+  r.semanas = Math.max(a.semanas || 0, b.semanas || 0);
   r.codigos = Array.from(new Set([].concat(a.codigos || [], b.codigos || [])));
   r.cardume = a.cardume || b.cardume || '';
   r.melhores = Object.assign({}, b.melhores || {});

@@ -745,6 +745,22 @@ async function passoMestre() {
   faixaTexto(fase3 ? 'O mestre está furioso: duas jogadas a menos!' : 'O mestre cospe tinta', 2000);
   const ret = document.querySelector('.retrato-mestre');
   if (ret) { ret.classList.remove('ataca'); void ret.offsetWidth; ret.classList.add('ataca'); }
+  /* o golpe agora acontece na tela toda, não só no retratinho */
+  const tela = document.getElementById('golpe-mestre');
+  if (tela) { tela.classList.remove('bate'); void tela.offsetWidth; tela.classList.add('bate'); }
+  if (!prog.leve) {
+    const r0 = ret ? ret.getBoundingClientRect() : { left: innerWidth / 2, top: 120, width: 40, height: 40 };
+    for (let k = 0; k < 10; k++) {
+      const g = document.createElement('i');
+      g.className = 'tinta-voa';
+      g.style.left = (r0.left + r0.width / 2) + 'px';
+      g.style.top = (r0.top + r0.height / 2) + 'px';
+      g.style.setProperty('--dx', (Math.cos(k / 10 * 6.28) * (80 + Math.random() * 160)).toFixed(0) + 'px');
+      g.style.setProperty('--dy', (60 + Math.random() * 260).toFixed(0) + 'px');
+      document.body.appendChild(g);
+      setTimeout(() => g.remove(), 900);
+    }
+  }
   atualizaHud();
   await espera(420);
   return true;

@@ -527,22 +527,81 @@ function compra(id) {
   mostraLoja();
 }
 /* baú do dia: uma vez por dia, sem relógio nem conta */
+/* ═══ SEMANA DO MERGULHADOR ═════════════════════════════════════
+   Sete dias seguidos, cada um com o seu prêmio e o sétimo com o
+   baú do fundo. Faltou um dia, a semana recomeça: é isso que faz
+   valer a pena aparecer todo dia.                                */
+const SEMANA = [
+  { moedas: 40,  texto: 'Primeiro fôlego' },
+  { moedas: 60,  texto: 'Pegando o ritmo' },
+  { moedas: 40,  poder: 'arpao',  texto: 'Um arpão pra você' },
+  { moedas: 100, texto: 'Meio da semana' },
+  { moedas: 60,  poder: 'isca',   texto: 'Uma isca de luz' },
+  { moedas: 150, texto: 'Quase lá' },
+  { moedas: 400, todos: true, texto: 'Baú do fundo' }
+];
+/* mesma contagem de dia que o resto do jogo usa, pra sequência
+   não quebrar por causa de fuso                                  */
+const ontem = () => new Date(Date.now() - 864e5).toISOString().slice(0, 10);
+function diaDaSemana() {
+  /* que dia da trilha é hoje, sem ainda marcar como pego */
+  if (!prog.dia) return 1;
+  if (prog.dia === ontem()) return ((prog.seq || 0) % 7) + 1;
+  return 1;                                   /* furou: recomeça */
+}
+/* cada semana fechada engorda a próxima: o 7º dia da semana 4 vale
+   o dobro do da primeira. Sem teto de crescimento infinito.      */
+const fatorSemana = () => 1 + Math.min(1.5, (prog.semanas || 0) * .25);
+const premioDoDia = k => {
+  const d = SEMANA[k], f = fatorSemana();
+  return { moedas: Math.round(d.moedas * f / 10) * 10, poder: d.poder, todos: d.todos, texto: d.texto,
+           quantos: d.todos ? 1 + Math.min(2, Math.floor((prog.semanas || 0) / 2)) : 1 };
+};
 function mostraBau() {
-  cartao(
-    '<h3>Baú do dia</h3>' +
-    '<p class="bau-premio">' + moedaSvg + '+40</p>' +
-    '<p>Volte amanhã que tem outro.</p>' +
-    '<div class="bts"><button class="bt" data-ac="bau">Pegar</button></div>'
-  );
+  const dia = diaDaSemana(), quebrou = prog.dia && prog.dia !== ontem() && (prog.seq || 0) > 1;
+  const semana = (prog.semanas || 0) + 1;
+  const trilha = SEMANA.map((_, k) => {
+    const d = premioDoDia(k), n = k + 1, passou = n < dia, hojeE = n === dia;
+    const premio = d.todos ? '<b>' + d.moedas + '</b><i>+ ' + (d.quantos > 1 ? d.quantos + ' de cada poder' : 'tudo') + '</i>'
+      : d.poder ? '<b>' + d.moedas + '</b><i>+ ' + (PODERES.find(p => p.id === d.poder) || {}).nome + '</i>'
+      : '<b>' + d.moedas + '</b><i>moedas</i>';
+    return '<div class="dia-semana' + (passou ? ' passou' : '') + (hojeE ? ' hoje' : '') + (d.todos ? ' grande' : '') + '">' +
+      '<span class="rot">' + (d.todos ? '7º' : n + 'º') + '</span>' +
+      '<span class="premio">' + premio + '</span>' +
+      (passou ? '<span class="ok">✓</span>' : '') + '</div>';
+  }).join('');
+  cartao('<h3>Semana ' + semana + '</h3>' +
+    '<p>' + (quebrou ? 'Você faltou um dia, então a semana recomeça. ' : '') +
+    'Dia <b>' + dia + ' de 7</b>' + (prog.melhorSeq > 1 ? ' · melhor sequência: ' + prog.melhorSeq + ' dias' : '') +
+    (semana > 1 ? '<br><i class="premio-cresce">prêmios ' + Math.round((fatorSemana() - 1) * 100) + '% maiores nesta semana</i>' : '') + '</p>' +
+    '<div class="trilha-semana">' + trilha + '</div>' +
+    '<div class="bts"><button class="bt" data-ac="bau">Pegar o prêmio de hoje</button></div>');
 }
 function pegaBau() {
-  prog.moedas += 40;
+  const dia = diaDaSemana(), d = premioDoDia(dia - 1);
+  prog.moedas += d.moedas;
+  prog.poderes = prog.poderes || {};
+  if (d.poder) prog.poderes[d.poder] = (prog.poderes[d.poder] || 0) + 1;
+  if (d.todos) {
+    ['arpao', 'troca', 'giro', 'isca', 'folego'].forEach(k => prog.poderes[k] = (prog.poderes[k] || 0) + d.quantos);
+    prog.semanas = (prog.semanas || 0) + 1;
+  }
+  prog.seq = dia;
+  prog.melhorSeq = Math.max(prog.melhorSeq || 0, dia);
   prog.dia = hoje();
   salvaProg();
-  pintaMoedas();
+  pintaMoedas(); pintaPoderes();
+  salvaNaNuvemDepois();
   Som.liga(); Som.vitoria();
-  fechaCartao();
+  if (d.todos) fogos();
+  cartao('<h3>' + d.texto + '</h3>' +
+    '<p class="bau-premio">' + moedaSvg + '+' + d.moedas + '</p>' +
+    '<p>' + (d.todos ? 'Fechou a semana ' + (prog.semanas) + ' e levou ' + d.quantos + ' de cada poder. A semana que vem paga ainda mais.'
+           : d.poder ? 'E mais um ' + (PODERES.find(p => p.id === d.poder) || {}).nome + ' no estoque. Volte amanhã: o prêmio de amanhã é maior.'
+           : 'Volte amanhã que o prêmio aumenta. No sétimo dia vem o baú do fundo.') + '</p>' +
+    '<div class="bts"><button class="bt" data-ac="fecha">Beleza</button></div>', true);
 }
+
 
 /* ═══ DESAFIO DA SEMANA ════════════════════════════════════════
    Mesma semente para todo mundo na semana: o tabuleiro e a ordem
@@ -863,6 +922,9 @@ function juntaProg(a, b) {
                 melhor: Math.max(da.melhor || 0, db.melhor || 0), nome: da.nome || db.nome || '' };
   r.apelido = a.apelido || b.apelido || '';
   r.mestres = Math.max(a.mestres || 0, b.mestres || 0);
+  r.seq = (a.dia || '') >= (b.dia || '') ? (a.seq || 0) : (b.seq || 0);
+  r.melhorSeq = Math.max(a.melhorSeq || 0, b.melhorSeq || 0);
+  r.semanas = Math.max(a.semanas || 0, b.semanas || 0);
   r.codigos = Array.from(new Set([].concat(a.codigos || [], b.codigos || [])));
   r.cardume = a.cardume || b.cardume || '';
   r.melhores = Object.assign({}, b.melhores || {});
