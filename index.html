@@ -1044,7 +1044,7 @@ body.leve .cartao{animation-duration:.18s}
    MERGULHO · combinar 3 da beira da praia até 4.000 metros
    ═══════════════════════════════════════════════════════════════ */
 
-const VERSAO_JOGO = '2026.10.19';
+const VERSAO_JOGO = '2026.10.20';
 const W = 7, H = 8, TIPOS = 6;
 const NADA = 0, LH = 1, LV = 2, BOMBA = 3, ARCO = 4, ONDA = 5, ONDAV = 6, CARDUME = 7;
 
@@ -3902,6 +3902,17 @@ async function encerraAgora() {
   await venceu();
 }
 
+/* deixa a última jogada terminar antes de jogar o cartão na cara:
+   espera o tabuleiro assentar e o contador de pontos alcançar o
+   total, com teto pra nunca ficar parado esperando à toa.        */
+async function esperaAcalmar(minimo) {
+  J.ocupado = true;
+  await espera(minimo || 600);
+  const limite = Date.now() + 1400;
+  while (Math.round(pontosNaTela) < J.pontos - 1 && Date.now() < limite) await espera(90);
+  await espera(320);
+}
+
 async function venceu() {
   const eraMestre = faseAtual().obj.tipo === 'chefe';
   J.ocupado = true;
@@ -3927,6 +3938,7 @@ async function venceu() {
   limpaPartida();
   prog.estrelas[J.fase] = Math.max(prog.estrelas[J.fase] || 0, e);
   if (J.fase + 1 > prog.max) prog.max = J.fase + 1;
+  await esperaAcalmar(eraMestre ? 300 : 700);
   const ganho = moedasDaFase(e, primeira) + (eraMestre ? 80 : 0);
   prog.moedas += ganho;
   salvaProg();
@@ -3977,6 +3989,7 @@ async function venceu() {
 
 async function perdeu() {
   J.ocupado = true;
+  await esperaAcalmar(750);
   limpaPartida();
   document.body.classList.remove('aperto');
   Musica.tensao(false, 0);

@@ -219,6 +219,17 @@ async function encerraAgora() {
   await venceu();
 }
 
+/* deixa a última jogada terminar antes de jogar o cartão na cara:
+   espera o tabuleiro assentar e o contador de pontos alcançar o
+   total, com teto pra nunca ficar parado esperando à toa.        */
+async function esperaAcalmar(minimo) {
+  J.ocupado = true;
+  await espera(minimo || 600);
+  const limite = Date.now() + 1400;
+  while (Math.round(pontosNaTela) < J.pontos - 1 && Date.now() < limite) await espera(90);
+  await espera(320);
+}
+
 async function venceu() {
   const eraMestre = faseAtual().obj.tipo === 'chefe';
   J.ocupado = true;
@@ -244,6 +255,7 @@ async function venceu() {
   limpaPartida();
   prog.estrelas[J.fase] = Math.max(prog.estrelas[J.fase] || 0, e);
   if (J.fase + 1 > prog.max) prog.max = J.fase + 1;
+  await esperaAcalmar(eraMestre ? 300 : 700);
   const ganho = moedasDaFase(e, primeira) + (eraMestre ? 80 : 0);
   prog.moedas += ganho;
   salvaProg();
@@ -294,6 +306,7 @@ async function venceu() {
 
 async function perdeu() {
   J.ocupado = true;
+  await esperaAcalmar(750);
   limpaPartida();
   document.body.classList.remove('aperto');
   Musica.tensao(false, 0);
