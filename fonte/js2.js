@@ -26,10 +26,17 @@ function novaPeca(t) { return { id: ++uid, t: t, sp: NADA }; }
 /* o baú não combina com nada, não sai com especial e só quer chegar no fundo */
 function novoBau() { return { id: ++uid, t: -1, sp: NADA, bau: true }; }
 
+/* TOPO diz em que fileira cada coluna começa. Coluna mais curta
+   significa menos casas, e é isso que dá formato ao tabuleiro:
+   arco, pirâmide, degraus, taça. Fora do formato não existe casa. */
+let TOPO = Array(W).fill(0);
+const temCasa = (r, c) => r >= TOPO[c] && r < H && c >= 0 && c < W;
+
 function montaTabuleiro() {
   do {
     grid = Array.from({ length: H }, () => Array(W).fill(null));
-    for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) grid[r][c] = novaPeca(tipoSeguro(r, c));
+    for (let r = 0; r < H; r++) for (let c = 0; c < W; c++)
+      if (temCasa(r, c)) grid[r][c] = novaPeca(tipoSeguro(r, c));
   } while (acharCorridas().length || !temJogada());
 }
 
@@ -40,9 +47,9 @@ function acharCorridas() {
     let c = 0;
     while (c < W) {
       const p = grid[r][c];
-      if (!p || p.bau) { c++; continue; }
+      if (!p || p.bau || p.gaiola) { c++; continue; }
       let k = c + 1;
-      while (k < W && grid[r][k] && !grid[r][k].bau && grid[r][k].t === p.t) k++;
+      while (k < W && grid[r][k] && !grid[r][k].bau && !grid[r][k].gaiola && grid[r][k].t === p.t) k++;
       if (k - c >= 3) out.push({ dir: 'h', r: r, c: c, len: k - c, t: p.t });
       c = k;
     }
@@ -51,9 +58,9 @@ function acharCorridas() {
     let r = 0;
     while (r < H) {
       const p = grid[r][c];
-      if (!p || p.bau) { r++; continue; }
+      if (!p || p.bau || p.gaiola) { r++; continue; }
       let k = r + 1;
-      while (k < H && grid[k][c] && !grid[k][c].bau && grid[k][c].t === p.t) k++;
+      while (k < H && grid[k][c] && !grid[k][c].bau && !grid[k][c].gaiola && grid[k][c].t === p.t) k++;
       if (k - r >= 3) out.push({ dir: 'v', r: r, c: c, len: k - r, t: p.t });
       r = k;
     }
@@ -172,7 +179,7 @@ function expandir(conj, corAlvo) {
     if (!p || !p.sp) continue;
     const area = areaEspecial(r, c, p, corAlvo);
     const vale = VALOR_ESP[p.sp] || 0;
-    bonusEspeciais += vale;
+    bonusEspeciais += vale * (typeof J !== 'undefined' && J.soltoSozinho && J.cascata === 1 ? .5 : 1);
     efeitosPendentes.push({ r: r, c: c, sp: p.sp, vale: vale, alvos: (p.sp === ARCO || p.sp === CARDUME) ? area.slice() : null });
     for (const a of area) {
       if (!conj.has(a)) conj.add(a);
@@ -303,14 +310,17 @@ function gravidade() {
   const caindo = [];
   for (let c = 0; c < W; c++) {
     let escreve = H - 1;
-    for (let r = H - 1; r >= 0; r--) {
+    for (let r = H - 1; r >= TOPO[c]; r--) {
       if (grid[r][c]) {
-        if (r !== escreve) { grid[escreve][c] = grid[r][c]; grid[r][c] = null; caindo.push(grid[escreve][c]); }
+        if (r !== escreve) {
+          grid[escreve][c] = grid[r][c]; grid[r][c] = null; caindo.push(grid[escreve][c]);
+          if (grid[escreve][c].bau) J.bauParado = 0;   /* desceu por mérito seu: a rede de segurança zera */
+        }
         escreve--;
       }
     }
     let acima = -1;
-    for (let r = escreve; r >= 0; r--) {
+    for (let r = escreve; r >= TOPO[c]; r--) {
       /* enquanto faltar baú, ele entra junto com as peças novas, de pouco em pouco */
       /* um baú por coluna: empilhados eles se atrapalham */
       let colunaLivre = true;

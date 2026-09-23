@@ -34,7 +34,7 @@ function montaCasas() {
   celulasBox.innerHTML = '';
   for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) {
     const d = document.createElement('div');
-    d.className = 'casa' + (r === H - 1 ? ' fundo' : '');
+    d.className = 'casa' + (r === H - 1 ? ' fundo' : '') + (r < TOPO[c] ? ' fora' : '');
     d.innerHTML = '<i></i>';
     celulasBox.appendChild(d);
   }
@@ -46,7 +46,8 @@ function pintaPapel() {
   for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) {
     const d = casas[r * W + c];
     d.classList.remove('papel', 'papel2');
-    if (papel[r][c] >= 2) d.classList.add('papel2');
+    if (papel[r][c] >= 3) d.classList.add('papel3');
+    else if (papel[r][c] === 2) d.classList.add('papel2');
     else if (papel[r][c] === 1) d.classList.add('papel');
   }
 }
@@ -54,8 +55,9 @@ function quebraPapel(r, c) {
   const d = celulasBox.children[r * W + c];
   d.classList.add('rasga');
   setTimeout(() => {
-    d.classList.remove('rasga', 'papel', 'papel2');
-    if (papel[r][c] >= 2) d.classList.add('papel2');
+    d.classList.remove('rasga', 'papel', 'papel2', 'papel3');
+    if (papel[r][c] >= 3) d.classList.add('papel3');
+    else if (papel[r][c] === 2) d.classList.add('papel2');
     else if (papel[r][c] === 1) d.classList.add('papel');
   }, 340);
 }
@@ -77,6 +79,8 @@ function corpoDaPeca(p) {
 }
 function classeEsp(p) {
   if (p.bau) return 'e-bau';
+  if (p.gaiola) return 'preso' + (p.gaiola >= 2 ? ' preso2' : '');
+  if (p.bolha) return 'com-bolha';
   return p.sp === LH ? 'esp-lh' : p.sp === LV ? 'esp-lv' : p.sp === BOMBA ? 'esp-bomba' : p.sp === ARCO ? 'esp-arco'
        : p.sp === ONDA || p.sp === ONDAV ? 'esp-onda' : p.sp === CARDUME ? 'esp-cardume' : '';
 }
@@ -128,6 +132,7 @@ function montaPecas() {
   pecasBox.innerHTML = ''; els.clear();
   for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) {
     const p = grid[r][c];
+    if (!p) continue;                      /* casa fora do formato */
     const el = criaEl(p); pecasBox.appendChild(el); els.set(p.id, el);
     posiciona(el, r, c, true);
     if (typeof el.firstChild.animate === 'function')
@@ -294,7 +299,7 @@ async function entregaBaus() {
     if (el) { el.classList.add('entrega'); const e = el; setTimeout(() => e.remove(), 560); }
     els.delete(p.id);
     grid[H - 1][c] = null;
-    J.bauFeito++; J.bauNaTela = Math.max(0, J.bauNaTela - 1);
+    J.bauFeito++; J.bauNaTela = Math.max(0, J.bauNaTela - 1); J.bauParado = 0;
     J.pontos += 500;
     faisca(H - 1, c, '+500', '#FFD35C', true);
     respingos(H - 1, c, '#FFD35C', 10);
@@ -321,11 +326,32 @@ async function limpar(conj, novos) {
     const r = linha(k), c = coluna(k), p = grid[r][c];
     if (p.sp) temEsp = true;
     J.coletado[p.t]++;
-    ganho += 60 * Math.min(J.cascata, 10);
+    ganho += 60 * Math.min(J.cascata, 10) * (J.soltoSozinho && J.cascata === 1 ? .5 : 1);
     sr += r; sc += c;
     const el = els.get(p.id);
     if (el) el.classList.add('some');
     if (papel[r][c] > 0) { papel[r][c]--; J.papelFeito++; quebraPapel(r, c); }
+    /* estourar do lado abre a gaiola do bicho preso */
+    for (const [dr, dc] of [[-1,0],[1,0],[0,-1],[0,1]]) {
+      const q = dentro(r + dr, c + dc) ? grid[r + dr][c + dc] : null;
+      if (!q || !q.gaiola) continue;
+      q.gaiola--;
+      if (q.gaiola <= 0) {
+        q.gaiola = 0;
+        J.presosFeitos = (J.presosFeitos || 0) + 1;
+        J.pontos += 220;
+        estilhacos(r + dr, c + dc, '#BFF5EE', 10);
+        ondaChoque(r + dr, c + dc, 2, '#BFF5EE');
+        Som.liga(); Som.especial();
+      }
+      atualizaEl(q);
+    }
+    if (p && p.bolha) { J.bolhasFeitas = (J.bolhasFeitas || 0) + 1; J.pontos += 160; }
+    /* briga com o mestre: casa limpa machuca, casa com tinta não */
+    if (faseAtual().obj.tipo === 'chefe' && papel[r][c] === 0) {
+      J.dano = (J.dano || 0) + (p && p.sp ? 3 : 1);
+      J.bateu = true;
+    }
     if (vivas.length <= 14 || Math.random() < 0.5) {
       respingos(r, c, corDe(p.t), vivas.length > 10 ? 4 : 7);
       estilhacos(r, c, corDe(p.t), vivas.length > 12 ? 2 : 4);
@@ -521,6 +547,7 @@ function aoSoltar(e) {
 }
 
 async function tentaTroca(a, b) {
+  J.soltoSozinho = false;
   if (J.ocupado || J.fim) return;
   limpaMarca();
   const pa = grid[a.r][a.c], pb = grid[b.r][b.c];
@@ -555,6 +582,7 @@ async function tentaTroca(a, b) {
   gastaJogada();
   let conj = null;
   if (soltaEsp) {
+    J.soltoSozinho = true;    /* disparar o especial sem casar cor paga menos */
     const alvo = pa.sp ? b : a;                 /* a peça especial está no lugar novo */
     conj = new Set([chave(alvo.r, alvo.c)]);
     expandir(conj, null);
@@ -569,6 +597,9 @@ async function tentaTroca(a, b) {
   await resolver(conj, [chave(b.r, b.c), chave(a.r, a.c)]);
   passoCrescer();
   await passoBau();
+  await passoBolha();
+  garanteBolhas();
+  await passoMestre();
   salvaPartida();
   J.ocupado = false;
   await confere();
@@ -587,6 +618,9 @@ async function disparaEspecial(cel) {
   await resolver(conj, [chave(cel.r, cel.c)]);
   passoCrescer();
   await passoBau();
+  await passoBolha();
+  garanteBolhas();
+  await passoMestre();
   salvaPartida();
   J.ocupado = false;
   await confere();
@@ -632,8 +666,13 @@ async function estouroFinal() {
 async function passoBau() {
   const f = faseAtual();
   if (f.obj.tipo !== 'bau' || J.fim) return false;
-  J.contaBau = (J.contaBau || 0) + 1;
-  if (J.contaBau % 4 !== 0) return false;
+  /* Antes ele afundava de quatro em quatro jogadas, e isso virou
+     espera: dava pra mexer peça à toa até o baú descer sozinho.
+     Agora é só rede de segurança: se você mesmo fez o baú andar,
+     o contador zera e ele nunca desce de graça.                  */
+  J.bauParado = (J.bauParado || 0) + 1;
+  if (J.bauParado < 6) return false;
+  J.bauParado = 0;
   let afundou = false;
   for (let r = H - 2; r >= 0; r--) for (let c = 0; c < W; c++) {
     const p = grid[r][c], baixo = grid[r + 1][c];
@@ -645,11 +684,94 @@ async function passoBau() {
   }
   if (afundou) {
     Som.liga(); Som.cai(3); vibra(TREMIDA.toque);
-    faixaTexto('O baú afunda');
+    faixaTexto('O baú é pesado e escorrega');
     await espera(340);
     await resolver(null, null);
   }
   return afundou;
+}
+
+/* ═══ O MESTRE REVIDA ═══════════════════════════════════════════
+   De duas em duas jogadas ele rouba uma jogada e cospe tinta. A
+   casa com tinta protege ele, então limpar a tinta é parte da
+   briga. Quanto mais machucado, mais tinta ele cospe.            */
+async function passoMestre() {
+  const f = faseAtual();
+  if (f.obj.tipo !== 'chefe' || J.fim) return false;
+  if (J.bateu) { sacodeMestre(); J.bateu = false; }
+  J.contaMestre = (J.contaMestre || 0) + 1;
+  if (J.contaMestre % (f.obj.golpe || 2) !== 0) { atualizaHud(); return false; }
+  const vida = Math.max(0, f.obj.vida - (J.dano || 0));
+  if (vida <= 0) return false;
+  const fase3 = vida < f.obj.vida * .35, fase2 = vida < f.obj.vida * .65;
+  const quantas = fase3 ? 5 : fase2 ? 4 : 3;
+  const livres = [];
+  for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) if (papel[r][c] === 0) livres.push([r, c]);
+  for (let k = 0; k < quantas && livres.length; k++) {
+    const idx = sorteia(livres.length), [r, c] = livres.splice(idx, 1)[0];
+    papel[r][c] = 1;
+    const casa = celulasBox.children[r * W + c];
+    casa.classList.add('cresceu');
+    setTimeout(() => casa.classList.remove('cresceu'), 520);
+  }
+  pintaPapel();
+  J.mov = Math.max(0, J.mov - 1);
+  Som.liga(); Som.nao(); vibra(TREMIDA.forte);
+  faixaTexto(fase3 ? 'O mestre está furioso!' : 'O mestre cospe tinta');
+  const ret = document.querySelector('.retrato-mestre');
+  if (ret) { ret.classList.remove('ataca'); void ret.offsetWidth; ret.classList.add('ataca'); }
+  atualizaHud();
+  await espera(420);
+  return true;
+}
+function sacodeMestre() {
+  const ret = document.querySelector('.retrato-mestre');
+  if (!ret) return;
+  ret.classList.remove('apanha'); void ret.offsetWidth; ret.classList.add('apanha');
+}
+
+/* ═══ BOLHAS DE AR ══════════════════════════════════════════════
+   Sobem uma casa a cada duas jogadas. Chegando na superfície,
+   escapam e uma nova nasce lá embaixo.                           */
+async function passoBolha() {
+  const f = faseAtual();
+  if (f.obj.tipo !== 'bolhas' || J.fim) return false;
+  J.contaBolha = (J.contaBolha || 0) + 1;
+  if (J.contaBolha % (f.obj.sobe || 2) !== 0) return false;
+  let mexeu = false, fugiu = 0;
+  for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) {
+    const p = grid[r][c];
+    if (!p || !p.bolha || p.subiuAgora) continue;
+    if (r === 0) {
+      p.bolha = false;
+      fugiu++;
+      const el = els.get(p.id);
+      if (el) { el.classList.remove('com-bolha'); }
+      respingos(r, c, '#BFF5EE', 6);
+      atualizaEl(p);
+      continue;
+    }
+    const cima = grid[r - 1][c];
+    if (!cima || cima.bau || cima.gaiola || cima.bolha) continue;
+    grid[r - 1][c] = p; grid[r][c] = cima;
+    p.subiuAgora = true;
+    posiciona(els.get(p.id), r - 1, c); posiciona(els.get(cima.id), r, c);
+    mexeu = true;
+  }
+  for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) if (grid[r][c]) grid[r][c].subiuAgora = false;
+  if (fugiu) {
+    J.bolhasFugiram = (J.bolhasFugiram || 0) + fugiu;
+    Som.liga(); Som.nao();
+    faixaTexto(fugiu === 1 ? 'Uma bolha escapou' : fugiu + ' bolhas escaparam');
+    nasceBolha(fugiu);
+    atualizaHud();
+  }
+  if (mexeu) {
+    Som.liga(); Som.pop(2);
+    await espera(280);
+    await resolver(null, null);
+  }
+  return mexeu;
 }
 
 /* ═══ ALGA QUE VOLTA A CRESCER ══════════════════════════════════
@@ -678,8 +800,15 @@ function passoCrescer() {
   J.contaCresce = (J.contaCresce || 0) + 1;
   if (J.mov > 3 && casasCobertas(papel) > 0 && J.contaCresce % f.obj.cresce === 0) {
     const cand = [];
-    for (let r = 0; r < H; r++) for (let c = 0; c < W; c++)
-      if (papel[r][c] === 0 && J.papelBase[r][c] > 0) cand.push([r, c]);
+    for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) {
+      if (papel[r][c] !== 0) continue;
+      if (f.obj.espalha) {                       /* a mancha pula para qualquer vizinha */
+        let vizinha = false;
+        for (const [dr, dc] of [[-1,0],[1,0],[0,-1],[0,1]])
+          if (dentro(r + dr, c + dc) && papel[r + dr][c + dc] > 0) { vizinha = true; break; }
+        if (vizinha) cand.push([r, c]);
+      } else if (J.papelBase[r][c] > 0) cand.push([r, c]);
+    }
     if (cand.length) J.alvoCresce = cand[sorteia(cand.length)];
   }
   pintaAvisoCresce();

@@ -137,6 +137,31 @@ const PROPS = {
     '<path d="M306 32q-2 12 2 22M318 32q2 12-1 24" stroke="' + p.acento + '" stroke-width="1.6" fill="none"/></g>'
 };
 
+/* retrato do mestre, desenhado na hora com a cor dele */
+function desenhaMestre(idx) {
+  const M = MESTRES[idx % MESTRES.length], c = M.cor, c2 = M.cor2;
+  const olhos = '<circle cx="38" cy="44" r="8" fill="#0A0D1A"/><circle cx="62" cy="44" r="8" fill="#0A0D1A"/>' +
+                '<circle cx="40.5" cy="41" r="2.8" fill="#fff"/><circle cx="64.5" cy="41" r="2.8" fill="#fff"/>';
+  const corpos = {
+    lula: '<path d="M50 12c18 0 28 14 28 30 0 10-4 16-10 20H32c-6-4-10-10-10-20 0-16 10-30 28-30Z" fill="' + c + '"/>' +
+      '<path d="M30 62q-6 18-16 26M40 64q-4 20-10 30M60 64q4 20 10 30M70 62q6 18 16 26M50 66v32" fill="none" stroke="' + c + '" stroke-width="7" stroke-linecap="round"/>' +
+      '<path d="M50 12c10 0 17 8 20 18-12-6-28-6-40 0 3-10 10-18 20-18Z" fill="' + c2 + '" opacity=".55"/>',
+    enguia: '<path d="M14 84c14-6 18-22 14-36C24 32 32 14 54 12c20-2 32 12 32 28 0 14-10 24-24 24" fill="none" stroke="' + c + '" stroke-width="16" stroke-linecap="round"/>' +
+      '<path d="M62 64c-10 0-16 6-16 14" fill="none" stroke="' + c + '" stroke-width="14" stroke-linecap="round"/>' +
+      '<path d="M30 30l-10-8M78 26l10-8M22 52l-12 2" stroke="' + c + '" stroke-width="5" stroke-linecap="round" opacity=".8"/>',
+    caranguejo: '<path d="M22 56c0-16 12-26 28-26s28 10 28 26c0 12-12 20-28 20s-28-8-28-20Z" fill="' + c + '"/>' +
+      '<path d="M22 44C12 40 8 30 12 20c8 2 14 10 14 20M78 44c10-4 14-14 10-24-8 2-14 10-14 20" fill="' + c + '"/>' +
+      '<path d="M26 70l-12 14M38 76l-8 18M62 76l8 18M74 70l12 14" fill="none" stroke="' + c + '" stroke-width="6" stroke-linecap="round"/>' +
+      '<path d="M34 62q16 8 32 0" fill="none" stroke="' + c2 + '" stroke-width="4" stroke-linecap="round"/>',
+    serpente: '<path d="M86 88c-16 2-26-8-26-22 0-12 8-18 8-28 0-12-10-20-22-20S24 26 24 38c0 10 6 14 6 22" fill="none" stroke="' + c + '" stroke-width="15" stroke-linecap="round"/>' +
+      '<path d="M46 18c-14 0-24 10-24 22 0 8 6 14 14 16 10 2 18-4 18-14 0-8-4-12-8-14Z" fill="' + c + '"/>' +
+      '<path d="M34 50q10 10 22 2" fill="none" stroke="' + c2 + '" stroke-width="5" stroke-linecap="round"/>'
+  };
+  return '<svg viewBox="0 0 100 100" class="retrato-mestre" aria-hidden="true">' +
+    '<circle cx="50" cy="50" r="46" fill="' + c2 + '" opacity=".28"/>' +
+    (corpos[M.forma] || corpos.lula) + olhos + '</svg>';
+}
+
 function acasoCena(i, k) { return ((Math.sin(i * 91.7 + k * 13.3) * 43758.5453) % 1 + 1) % 1; }
 
 function particulas(m, acento) {
@@ -247,9 +272,11 @@ function instalaMundo(m, i) {
   const escuro = luminancia(c[3]) > .45 ? .72 : .5;
   raiz.setProperty('--mesa-a', rgba('#' + mistura(c[3], '#000000', escuro), .68));
   raiz.setProperty('--mesa-b', rgba('#' + mistura(c[3], '#000000', escuro + .16), .78));
-  raiz.setProperty('--bl-a', amb.bloq.a); raiz.setProperty('--bl-b', amb.bloq.b);
-  raiz.setProperty('--bl-a2', amb.bloq.a2); raiz.setProperty('--bl-b2', amb.bloq.b2);
-  document.body.dataset.tex = amb.bloq.tex;
+  const fa = (typeof J !== 'undefined' && J && J.fase >= 0) ? fase(J.fase) : null;
+  const bl = fa && fa.obj.corrente ? BLOQUEIOS.corrente : fa && fa.obj.mancha ? BLOQUEIOS.mancha : amb.bloq;
+  raiz.setProperty('--bl-a', bl.a); raiz.setProperty('--bl-b', bl.b);
+  raiz.setProperty('--bl-a2', bl.a2); raiz.setProperty('--bl-b2', bl.b2);
+  document.body.dataset.tex = bl.tex;
   document.body.dataset.mundo = m;
   const cx = document.getElementById('cena');
   cx.style.filter = amb.tom || '';

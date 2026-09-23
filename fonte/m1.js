@@ -2,7 +2,7 @@
    MERGULHO · combinar 3 da beira da praia até 4.000 metros
    ═══════════════════════════════════════════════════════════════ */
 
-const VERSAO_JOGO = '2026.10.12';
+const VERSAO_JOGO = '2026.10.15';
 const W = 7, H = 8, TIPOS = 6;
 const NADA = 0, LH = 1, LV = 2, BOMBA = 3, ARCO = 4, ONDA = 5, ONDAV = 6, CARDUME = 7;
 
@@ -51,6 +51,10 @@ const BLOQUEIOS = {
                 dica:'Coral morto endureceu no fundo. Estoure peças em cima para quebrar.' },
   lodo:       { verbo:'Limpar', um:'casa com lodo', varios:'casas com lodo', tex:'fibra', a:'#A9A2C0', b:'#7B7498', a2:'#5C5680', b2:'#3A3550',
                 dica:'O lodo assentou no fundo. Estoure peças em cima para limpar.' },
+  corrente:   { verbo:'Quebrar', um:'elo', varios:'elos', tex:'elo', a:'#D8DEE6', b:'#A8B2BE', a2:'#7E8A98', b2:'#57626E',
+                dica:'Cada elo da corrente aguenta três estouros. Bata sempre no mesmo lugar.' },
+  mancha:     { verbo:'Limpar', um:'mancha', varios:'manchas', tex:'mancha', a:'#FF8E7A', b:'#E0564A', a2:'#B63A36', b2:'#7E2320',
+                dica:'A maré vermelha se espalha para as casas vizinhas. A próxima a nascer pisca antes.' },
   breu:       { verbo:'Acender', um:'casa apagada', varios:'casas apagadas', tex:'breu', a:'#000000', b:'#000000', a2:'#000000', b2:'#000000',
                 dica:'Algumas casas estão apagadas. Estoure peças em cima para acender.' }
 };
@@ -124,40 +128,40 @@ const MUNDOS = [
              'papel'    limpar tudo que cobre o fundo (areia, alga, rede, lodo, breu)
    marcas: pontuação de 1, 2 e 3 estrelas (medidas por simulação) */
 const BASE = [
-  { m:0, prof:2,    nome:'Primeiro fôlego',    mov:23, obj:{tipo:'pontos'},                                        marcas:[10400,14800,19100] },
-  { m:0, prof:4,    nome:'Pé na areia',        mov:25, obj:{tipo:'coletar', itens:[[0,14]]},                       marcas:[5300,7600,10600] },
-  { m:0, prof:6,    nome:'Maré baixa',         mov:27, obj:{tipo:'papel', padrao:'bandeja', camadas:1},            marcas:[5400,7700,10700] },
-  { m:0, prof:8,    nome:'Poça de maré',       mov:23, obj:{tipo:'especiais', n:3},                                        marcas:[3800,5400,7500] },
-  { m:0, prof:10,   nome:'Água morna',         mov:27, obj:{tipo:'coletar', itens:[[1,15],[4,15]]},                marcas:[5900,8500,11900] },
-  { m:0, prof:12,   nome:'Onde o sol alcança', mov:29, obj:{tipo:'papel', padrao:'xadrez', camadas:1},             marcas:[6000,8600,12100] },
+  { m:0, prof:2,    nome:'Primeiro fôlego',    mov:23, obj:{tipo:'pontos'},                                        marcas:[9800,14500,19200] },
+  { m:0, prof:4,    nome:'Pé na areia',        mov:25, obj:{tipo:'coletar', itens:[[0,14]]},                       marcas:[4500,6700,9500] },
+  { m:0, prof:6,    nome:'Maré baixa',         mov:27, obj:{tipo:'papel', padrao:'bandeja', camadas:1},            marcas:[5500,8200,11600] },
+  { m:0, prof:8,    nome:'Poça de maré',       mov:23, obj:{tipo:'especiais', n:3},                                        marcas:[4000,6000,8500] },
+  { m:0, prof:10,   nome:'Água morna',         mov:27, obj:{tipo:'coletar', itens:[[1,15],[4,15]]},                marcas:[5800,8600,12300] },
+  { m:0, prof:12,   nome:'Onde o sol alcança', mov:29, obj:{tipo:'papel', padrao:'xadrez', camadas:1},             marcas:[6600,9800,14000] },
 
-  { m:1, prof:15,   nome:'Porta do recife',    mov:36, obj:{tipo:'pontos'},                                        marcas:[19900,27200,34500] },
-  { m:1, prof:18,   nome:'Jardim de coral',    mov:25, obj:{tipo:'papel', padrao:'faixas', camadas:1},             marcas:[4500,7400,10200] },
-  { m:1, prof:22,   nome:'Cardume',            mov:23, obj:{tipo:'coletar', itens:[[3,16],[5,16]]},                marcas:[5600,9300,12800] },
-  { m:1, prof:26,   nome:'Correnteza',         mov:22, obj:{tipo:'bau', n:2},                                        marcas:[4600,7600,10500] },
-  { m:1, prof:30,   nome:'Toca do polvo',      mov:22, obj:{tipo:'coletar', itens:[[0,13],[2,13],[4,13]]},         marcas:[5000,8200,11400] },
-  { m:1, prof:35,   nome:'Parede de coral',    mov:34, obj:{tipo:'papel', padrao:'losango', camadas:2, cresce:4},            marcas:[8200,13500,18700] },
+  { m:1, prof:15,   nome:'Porta do recife',    mov:36, obj:{tipo:'pontos'},                                        marcas:[20400,28900,37300] },
+  { m:1, prof:18,   nome:'Jardim de coral',    mov:25, obj:{tipo:'papel', padrao:'faixas', camadas:1},             marcas:[4800,8500,11500] },
+  { m:1, prof:22,   nome:'Cardume',            mov:23, obj:{tipo:'coletar', itens:[[3,16],[5,16]]},                marcas:[6200,10900,14800] },
+  { m:1, prof:26,   nome:'Correnteza',         mov:22, obj:{tipo:'bau', n:2},                                        marcas:[4800,8500,11500] },
+  { m:1, prof:30,   nome:'Toca do polvo',      mov:22, obj:{tipo:'coletar', itens:[[0,13],[2,13],[4,13]]},         marcas:[5600,9900,13500] },
+  { m:1, prof:35,   nome:'Parede de coral',    mov:34, obj:{tipo:'papel', padrao:'losango', camadas:2, cresce:4},            marcas:[8800,15600,21100] },
 
-  { m:2, prof:45,   nome:'O casco',            mov:48, obj:{tipo:'pontos'},                                        marcas:[29300,38100,46900] },
-  { m:2, prof:60,   nome:'Convés tombado',     mov:30, obj:{tipo:'papel', padrao:'colunas', camadas:1},            marcas:[7600,12600,17400] },
-  { m:2, prof:75,   nome:'Porão',              mov:23, obj:{tipo:'coletar', itens:[[1,18],[2,18]]},                marcas:[6400,10600,14700] },
-  { m:2, prof:90,   nome:'Âncora perdida',     mov:22, obj:{tipo:'bau', n:2},                                        marcas:[5000,8300,11500] },
-  { m:2, prof:110,  nome:'Rede fantasma',      mov:35, obj:{tipo:'papel', padrao:'bandejao', camadas:1},           marcas:[8200,13500,18700] },
-  { m:2, prof:130,  nome:'Proa na areia',      mov:20, obj:{tipo:'coletar', itens:[[3,14],[4,14],[5,14]]},         marcas:[5500,9100,12500] },
+  { m:2, prof:45,   nome:'O casco',            mov:56, obj:{tipo:'pontos'},                                        marcas:[33900,45400,56900] },
+  { m:2, prof:60,   nome:'Convés tombado',     mov:29, obj:{tipo:'papel', padrao:'colunas', camadas:1},            marcas:[6800,12100,16400] },
+  { m:2, prof:75,   nome:'Porão',              mov:20, obj:{tipo:'coletar', itens:[[1,18],[2,18]]},                marcas:[6100,10700,14500] },
+  { m:2, prof:90,   nome:'Âncora perdida',     mov:19, obj:{tipo:'bau', n:2},                                        marcas:[4200,7400,10000] },
+  { m:2, prof:110,  nome:'Rede fantasma',      mov:34, obj:{tipo:'papel', padrao:'bandejao', camadas:1},           marcas:[8000,14100,19100] },
+  { m:2, prof:130,  nome:'Proa na areia',      mov:18, obj:{tipo:'coletar', itens:[[3,14],[4,14],[5,14]]},         marcas:[5500,9700,13100] },
 
-  { m:3, prof:200,  nome:'Último azul',        mov:23, obj:{tipo:'especiais', n:5},                                        marcas:[6300,10400,14300] },
-  { m:3, prof:350,  nome:'Neve marinha',       mov:31, obj:{tipo:'papel', padrao:'cruz', camadas:2, cresce:5},               marcas:[7500,12500,17200] },
-  { m:3, prof:500,  nome:'Luz de lanterna',    mov:24, obj:{tipo:'coletar', itens:[[4,22]]},                       marcas:[6700,11100,15300] },
-  { m:3, prof:650,  nome:'Migração',           mov:21, obj:{tipo:'papel', padrao:'ondas', camadas:1},              marcas:[4500,7400,10200] },
-  { m:3, prof:800,  nome:'Sem sol',            mov:23, obj:{tipo:'bau', n:3},                                        marcas:[5900,9800,13500] },
-  { m:3, prof:1000, nome:'Mil metros',         mov:26, obj:{tipo:'papel', padrao:'alvo', camadas:1},               marcas:[6300,10500,14500] },
+  { m:3, prof:200,  nome:'Último azul',        mov:23, obj:{tipo:'especiais', n:5},                                        marcas:[6300,11200,15200] },
+  { m:3, prof:350,  nome:'Neve marinha',       mov:27, obj:{tipo:'papel', padrao:'cruz', camadas:2, cresce:5},               marcas:[7600,13400,18100] },
+  { m:3, prof:500,  nome:'Luz de lanterna',    mov:24, obj:{tipo:'coletar', itens:[[4,22]]},                       marcas:[6900,12300,16600] },
+  { m:3, prof:650,  nome:'Migração',           mov:21, obj:{tipo:'papel', padrao:'ondas', camadas:1},              marcas:[4600,8100,10900] },
+  { m:3, prof:800,  nome:'Sem sol',            mov:23, obj:{tipo:'bau', n:3},                                        marcas:[6000,10700,14400] },
+  { m:3, prof:1000, nome:'Mil metros',         mov:26, obj:{tipo:'papel', padrao:'alvo', camadas:1},               marcas:[6000,10700,14500] },
 
-  { m:4, prof:1500, nome:'Breu',               mov:30, obj:{tipo:'papel', padrao:'bandeja', camadas:2},            marcas:[7400,12300,17000] },
-  { m:4, prof:2000, nome:'Isca de luz',        mov:22, obj:{tipo:'coletar', itens:[[4,17],[5,17]]},                marcas:[6600,11000,15100] },
-  { m:4, prof:2500, nome:'Chaminé quente',     mov:30, obj:{tipo:'bau', n:4},                                        marcas:[8000,13300,18300] },
-  { m:4, prof:3000, nome:'Gigantes lentos',    mov:44, obj:{tipo:'papel', padrao:'xadrez', camadas:2, cresce:4},             marcas:[11500,19100,26300] },
-  { m:4, prof:3500, nome:'Pressão',            mov:22, obj:{tipo:'coletar', itens:[[0,14],[1,14],[2,14],[3,14]]},  marcas:[6100,10100,14000] },
-  { m:4, prof:4000, nome:'O fundo',            mov:42, obj:{tipo:'papel', padrao:'bandejao', camadas:2},           marcas:[11100,18300,25300] }
+  { m:4, prof:1500, nome:'Breu',               mov:29, obj:{tipo:'papel', padrao:'bandeja', camadas:2},            marcas:[8200,14600,19800] },
+  { m:4, prof:2000, nome:'Isca de luz',        mov:20, obj:{tipo:'coletar', itens:[[4,17],[5,17]]},                marcas:[5200,9300,12600] },
+  { m:4, prof:2500, nome:'Chaminé quente',     mov:30, obj:{tipo:'bau', n:4},                                        marcas:[7800,13900,18800] },
+  { m:4, prof:3000, nome:'Gigantes lentos',    mov:45, obj:{tipo:'papel', padrao:'xadrez', camadas:2, cresce:4},             marcas:[11800,20900,28400] },
+  { m:4, prof:3500, nome:'Pressão',            mov:20, obj:{tipo:'coletar', itens:[[0,14],[1,14],[2,14],[3,14]]},  marcas:[6300,11100,15100] },
+  { m:4, prof:4000, nome:'O fundo',            mov:41, obj:{tipo:'papel', padrao:'bandejao', camadas:2},           marcas:[11700,20800,28200] }
 ];
 const POR_MUNDO = 6;
 const CICLO = 30;   /* uma expedição inteira: do raso ao fundo */
@@ -184,12 +188,17 @@ const r100 = x => Math.round(x / 100) * 100;
 function fase(i) {
   if (i < BASE.length) return BASE[i];
   if (geradas[i]) return geradas[i];
+  if (ehMestre(i)) return (geradas[i] = faseMestre(i));
   if (geradasN > 400) { for (const k in geradas) delete geradas[k]; geradasN = 0; }   /* não deixa a memória crescer sem fim */
   const r = semente(i);
   const pos = i % CICLO, m = Math.floor(pos / 6), base = BASE[pos];
   const dif = Math.min(1, .45 + (i - CICLO) / 420);    /* já começa no aperto da fase 30 e sobe devagar */
   const nome = ZONAS[m][(i * 7 + Math.floor(r() * 3)) % ZONAS[m].length];  /* nomes seguidos nunca repetem */
-  const tipo = r() < .35 ? base.obj.tipo : ['pontos','coletar','coletar','papel','papel','bau','especiais'][Math.floor(r() * 7)];
+  const menu = ['pontos','coletar','coletar','papel','papel','bau','especiais','presos','bolhas','corrente','mancha'];
+  const antes = i > CICLO ? (function () { const a = fase(i - 1); return a.obj.corrente ? 'corrente' : a.obj.mancha ? 'mancha' : a.obj.tipo; })() : '';
+  let tipo = r() < .30 ? base.obj.tipo : menu[Math.floor(r() * menu.length)];
+  /* duas fases seguidas com o mesmo objetivo cansa: sorteia de novo */
+  for (let t = 0; t < 4 && tipo === antes; t++) tipo = menu[Math.floor(r() * menu.length)];
   let mov, obj;
   if (tipo === 'pontos') {
     mov = Math.max(18, Math.round(base.mov - dif * 2 + r() * 3));
@@ -209,6 +218,22 @@ function fase(i) {
     const n = 2 + Math.floor(r() * 2 + dif);
     mov = Math.max(21, Math.round(19 + n * 5 - dif * 2));
     obj = { tipo:'bau', n: n };
+  } else if (tipo === 'presos') {
+    const n = 3 + Math.floor(r() * 2 + dif * 2);
+    mov = Math.max(22, Math.round(19 + n * 4.2 - dif * 2));
+    obj = { tipo:'presos', n: n, rede: 1 };
+  } else if (tipo === 'bolhas') {
+    const n = 4 + Math.floor(r() * 2 + dif * 3);
+    mov = Math.max(22, Math.round(19 + n * 3.6 - dif * 2));
+    obj = { tipo:'bolhas', n: n, sobe: 3, juntas: 3 };
+  } else if (tipo === 'corrente') {
+    const pd = PADROES_GER[Math.floor(r() * PADROES_GER.length)];
+    mov = Math.max(20, Math.round(pd[1] * 1.55 * (1.0 - .10 * dif)));
+    obj = { tipo:'papel', padrao: pd[0], camadas: 3, corrente: true };
+  } else if (tipo === 'mancha') {
+    const pd = PADROES_GER[Math.floor(r() * PADROES_GER.length)];
+    mov = Math.max(20, Math.round(pd[1] * 1.35 * (1.0 - .10 * dif)));
+    obj = { tipo:'papel', padrao: pd[0], camadas: 1, cresce: 3, espalha: true, mancha: true };
   } else {
     const pd = PADROES_GER[Math.floor(r() * PADROES_GER.length)];
     const camadas = r() < .28 + .34 * dif ? 2 : 1;
@@ -218,14 +243,21 @@ function fase(i) {
   }
   /* pontos por jogada medidos com o bot: sobem junto com o aperto da fase */
   /* pontos por jogada medidos com o bot, por tipo de objetivo */
-  const porJogada = tipo === 'pontos' ? 970 + 470 * dif : tipo === 'bau' ? 560 + 130 * dif
-                  : tipo === 'especiais' ? 580 + 150 * dif : tipo === 'papel' ? 745 + 35 * dif : 630 + 230 * dif;
-  const p50 = Math.round(mov * porJogada);
+  const tp = obj.corrente ? 'corrente' : obj.mancha ? 'mancha' : tipo;
+  const porJogada = tp === 'pontos' ? 970 + 470 * dif : tp === 'bau' ? 560 + 130 * dif
+                  : tp === 'especiais' ? 580 + 150 * dif : tp === 'presos' ? 1080 + 120 * dif
+                  : tp === 'bolhas' ? 1160 + 120 * dif : tp === 'corrente' ? 860 + 110 * dif
+                  : tp === 'mancha' ? 640 + 90 * dif : tp === 'papel' ? 745 + 35 * dif : 630 + 230 * dif;
+  /* formato do tabuleiro: quanto menos casa, menos jogada precisa */
+  const fm = FORMATOS[Math.floor(r() * FORMATOS.length)];
+  const casas = fm.topo.reduce((a, t) => a + (8 - t), 0), cheio = 56;
+  mov = Math.max(16, Math.round(mov * .88 * (.55 + .45 * casas / cheio)));   /* aperto: o retorno foi que sobrava jogada demais */
+  const p50 = Math.round(mov * porJogada * .85 * (.45 + .55 * casas / cheio));
   let marcas;
   if (tipo === 'pontos') { const m0 = r100(p50 * (.44 + .06 * dif)), m2 = r100(p50 * .84); marcas = [m0, r100((m0 + m2) / 2), m2]; }
   else marcas = [r100(p50 * .35), r100(p50 * .6), r100(p50 * .84)];
   geradasN++;
-  return (geradas[i] = { m, prof: base.prof, nome, mov, obj, marcas, exped: Math.floor(i / CICLO) + 1 });
+  return (geradas[i] = { m, prof: base.prof, nome, mov, obj, marcas, forma: fm.topo, formaNome: fm.nome, exped: Math.floor(i / CICLO) + 1 });
 }
 const expedicao = i => Math.floor(i / CICLO) + 1;
 
@@ -242,6 +274,52 @@ const PODERES = [
 ];
 const moedasDaFase = (estrelas, primeira) => 5 + 6 * estrelas + (primeira ? 10 : 0);
 const hoje = () => new Date().toISOString().slice(0, 10);
+
+/* ═══ FORMATOS DE TABULEIRO ═════════════════════════════════════
+   Cada número diz em que fileira aquela coluna começa. Zero é
+   coluna inteira; dois é coluna que começa duas casas abaixo.
+   É isso que tira o quadrado de todas as fases.                  */
+const FORMATOS = [
+  { nome:'cheio',     topo:[0,0,0,0,0,0,0] },
+  { nome:'arco',      topo:[2,1,0,0,0,1,2] },
+  { nome:'pirâmide',  topo:[3,2,1,0,1,2,3] },
+  { nome:'taça',      topo:[0,1,2,3,2,1,0] },
+  { nome:'escada',    topo:[0,0,1,1,2,2,3] },
+  { nome:'escada2',   topo:[3,2,2,1,1,0,0] },
+  { nome:'torres',    topo:[0,2,0,2,0,2,0] },
+  { nome:'ilha',      topo:[2,0,0,1,0,0,2] },
+  { nome:'ombros',    topo:[1,1,0,0,0,1,1] },
+  { nome:'dentes',    topo:[0,1,0,1,0,1,0] }
+];
+
+/* ═══ OS MESTRES ════════════════════════════════════════════════
+   A cada 100 fases o mergulho esbarra num bicho grande. Ele não
+   fica no tabuleiro: encara a pessoa de cima, com barra de vida.
+   Cada peça que você estoura machuca ele; de duas em duas jogadas
+   ele revida, roubando uma jogada e cuspindo tinta. Casa com
+   tinta não machuca, então limpar a tinta faz parte da briga.   */
+const MESTRES = [
+  { nome:'Lula-gigante',   cor:'#B07CFF', cor2:'#5A2E8C', forma:'lula',
+    fala:'Oito braços, nenhuma pressa. Ele já viu mergulhador demais.' },
+  { nome:'Enguia-elétrica', cor:'#6BFFE0', cor2:'#0A6C7A', forma:'enguia',
+    fala:'A água em volta dela formiga. Não é medo seu, é corrente mesmo.' },
+  { nome:'Caranguejo-rei',  cor:'#FF8A5C', cor2:'#8C2F14', forma:'caranguejo',
+    fala:'Ele subiu na pedra mais alta e acha que o fundo é dele.' },
+  { nome:'Serpente-do-abismo', cor:'#FF7390', cor2:'#6E1030', forma:'serpente',
+    fala:'Ninguém sabe onde ela termina. Só que a cabeça está bem aqui.' }
+];
+const ehMestre = i => (i + 1) % 100 === 0;
+function faseMestre(i) {
+  const volta = Math.floor((i + 1) / 100);          /* 1º mestre na fase 100 */
+  const mestre = (volta - 1) % MESTRES.length;
+  const m = 4, dif = Math.min(1, .45 + (i - CICLO) / 420);
+  const vida = 58 + volta * 14;
+  const mov = 30 + Math.min(8, volta * 2);
+  const p50 = Math.round(mov * (980 + 320 * dif));
+  return { m: m, prof: 4000 + volta * 500, nome: MESTRES[mestre].nome, mov: mov, mestre: mestre,
+           obj: { tipo:'chefe', vida: vida, golpe: 2, mestre: mestre },
+           marcas: [r100(p50 * .45), r100(p50 * .66), r100(p50 * .86)] };
+}
 
 /* ── desafio da semana ─────────────────────────────────────────
    Uma fase só, igual pro mundo inteiro na semana, tabuleiro e

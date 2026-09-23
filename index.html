@@ -664,6 +664,51 @@ body.leve #descida.roda{animation-duration:.45s}
 
 body.leve .podio{-webkit-backdrop-filter:none;backdrop-filter:none;background:rgba(4,30,48,.72)}
 
+.casa.fora{visibility:hidden;pointer-events:none}
+
+/* ── o mestre ───────────────────────────────────────────────── */
+.mestre-hud{display:flex;align-items:center;gap:12px}
+.retrato-mestre{width:56px;height:56px;flex:0 0 auto;filter:drop-shadow(0 3px 6px rgba(0,20,40,.5))}
+.mestre-txt{flex:1;min-width:0}
+.vida-mestre{height:10px;border-radius:999px;background:rgba(0,0,0,.35);overflow:hidden;margin:5px 0 4px;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.18)}
+.vida-mestre i{display:block;height:100%;border-radius:999px;transition:width .45s cubic-bezier(.2,.9,.3,1)}
+.retrato-mestre.apanha{animation:mestre-apanha .32s ease}
+@keyframes mestre-apanha{0%,100%{transform:none;filter:none}40%{transform:translateX(-4px) scale(.94);filter:brightness(2.2)}}
+.retrato-mestre.ataca{animation:mestre-ataca .55s ease}
+@keyframes mestre-ataca{0%,100%{transform:none}30%{transform:scale(1.16) rotate(-5deg)}60%{transform:scale(1.08) rotate(4deg)}}
+.retrato-mestre.derrotado{animation:mestre-cai 1s forwards}
+@keyframes mestre-cai{to{transform:translateY(26px) rotate(22deg) scale(.7);opacity:0}}
+.intro-mestre{display:grid;place-items:center;margin-bottom:6px}
+.intro-mestre .retrato-mestre{width:110px;height:110px;animation:mestre-respira 3s ease-in-out infinite}
+@keyframes mestre-respira{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+
+/* ── bicho preso na rede ────────────────────────────────────── */
+.peca.preso .corpo::after{content:"";position:absolute;inset:6%;border-radius:22%;pointer-events:none;
+  background:repeating-linear-gradient(45deg,rgba(255,255,255,.75) 0 2px,transparent 2px 9px),
+             repeating-linear-gradient(-45deg,rgba(255,255,255,.75) 0 2px,transparent 2px 9px);
+  box-shadow:inset 0 0 0 2.5px rgba(255,255,255,.8);filter:drop-shadow(0 1px 2px rgba(0,20,40,.5))}
+.peca.preso2 .corpo::after{background:repeating-linear-gradient(45deg,rgba(255,255,255,.9) 0 2.6px,transparent 2.6px 7px),
+             repeating-linear-gradient(-45deg,rgba(255,255,255,.9) 0 2.6px,transparent 2.6px 7px);
+  box-shadow:inset 0 0 0 3px rgba(255,255,255,.95)}
+.peca.preso .corpo{filter:saturate(.75) brightness(.9)}
+
+/* ── bolha de ar subindo ────────────────────────────────────── */
+.peca.com-bolha .corpo::after{content:"";position:absolute;inset:-6%;border-radius:50%;pointer-events:none;
+  border:3px solid rgba(214,247,255,.9);
+  background:radial-gradient(circle at 32% 28%,rgba(255,255,255,.55),rgba(191,245,238,.12) 55%,transparent 70%);
+  box-shadow:0 0 12px rgba(191,245,238,.6),inset 0 0 10px rgba(255,255,255,.4);
+  animation:bolha-treme 2.4s ease-in-out infinite}
+@keyframes bolha-treme{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+
+/* ── terceira camada: o elo da corrente ─────────────────────── */
+.casa.papel3 i{background:var(--bl-tex2),linear-gradient(180deg,#8E99A6,#5A6674);
+  box-shadow:inset 0 2px 0 rgba(255,255,255,.35),inset 0 0 0 3px rgba(255,255,255,.22),0 2px 4px rgba(0,0,0,.4)}
+[data-tex="elo"]{--bl-tex1:radial-gradient(circle at 50% 50%,transparent 0 26%,rgba(0,0,0,.35) 27% 33%,transparent 34%) 0 0/16px 16px;
+  --bl-tex2:radial-gradient(circle at 50% 50%,transparent 0 22%,rgba(0,0,0,.45) 23% 31%,transparent 32%) 0 0/14px 14px}
+[data-tex="mancha"]{--bl-tex1:radial-gradient(circle at 30% 35%,rgba(255,255,255,.35) 0 12%,transparent 13%),radial-gradient(circle at 70% 60%,rgba(0,0,0,.2) 0 16%,transparent 17%);
+  --bl-tex2:radial-gradient(circle at 40% 30%,rgba(255,255,255,.28) 0 14%,transparent 15%)}
+
 /* ── encerrar a fase de pontuação quando quiser ─────────────── */
 .bt-encerra{position:absolute;right:10px;bottom:8px;z-index:4;border:0;cursor:pointer;border-radius:999px;
   padding:6px 13px 7px;font-family:var(--display);font-weight:800;font-size:12.5px;color:#fff;
@@ -681,7 +726,11 @@ body.leve .podio{-webkit-backdrop-filter:none;backdrop-filter:none;background:rg
   background:rgba(10,108,122,.07);text-align:left}
 .linha-rank .pos{flex:0 0 auto;width:30px;font-family:var(--display);font-weight:800;font-size:15px;color:#0A6C7A}
 .linha-rank .nome{flex:1;min-width:0;font-weight:800;font-size:14.5px;color:var(--tinta);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.linha-rank .val{flex:0 0 auto;font-family:var(--display);font-weight:800;font-size:15px;color:var(--tinta)}
+.linha-rank .val{flex:0 0 auto;font-family:var(--display);font-weight:800;font-size:15px;color:var(--tinta);text-align:right;line-height:1.1}
+.linha-rank .val small{display:block;font-family:Nunito,sans-serif;font-size:10.5px;font-weight:700;opacity:.72;letter-spacing:.01em}
+.tag-mestre{font-style:normal;font-size:10.5px;background:rgba(176,124,255,.25);color:#7A3CD0;border-radius:999px;padding:1px 6px;margin-left:4px}
+[data-mundo="3"] .tag-mestre,[data-mundo="4"] .tag-mestre{color:#D9C3FF}
+.lista-rank .longe{margin-top:12px;border-top:2px dashed rgba(10,108,122,.25);padding-top:8px}
 .linha-rank.eu{background:rgba(255,106,61,.16);box-shadow:inset 0 0 0 2px var(--boia)}
 .linha-rank.eu.longe{margin-top:12px}
 .cartao p.cod-cardume{font-size:13px;color:#4F7F8C;margin:2px 0 8px}
@@ -822,6 +871,15 @@ body.leve .cartao{animation-duration:.18s}
   </symbol>
   <symbol id="p-giro" viewBox="0 0 100 100">
     <path d="M74 44a26 26 0 1 1-12-18M74 20v24H50"/>
+  </symbol>
+  <symbol id="i-gaiola" viewBox="0 0 100 100">
+    <circle cx="50" cy="52" r="34" fill="none" stroke="currentColor" stroke-width="6"/>
+    <path d="M26 30L74 74M74 30L26 74M50 18v68M16 52h68" stroke="currentColor" stroke-width="5" stroke-linecap="round"/>
+  </symbol>
+  <symbol id="i-bolha-ar" viewBox="0 0 100 100">
+    <circle cx="50" cy="54" r="30" fill="none" stroke="currentColor" stroke-width="7"/>
+    <circle cx="38" cy="42" r="8" fill="currentColor" opacity=".8"/>
+    <path d="M50 18V6M38 22l-6-9M62 22l6-9" stroke="currentColor" stroke-width="5" stroke-linecap="round"/>
   </symbol>
   <symbol id="p-isca" viewBox="0 0 100 100">
     <circle cx="50" cy="56" r="22" fill="none" stroke="currentColor" stroke-width="7"/>
@@ -982,7 +1040,7 @@ body.leve .cartao{animation-duration:.18s}
    MERGULHO · combinar 3 da beira da praia até 4.000 metros
    ═══════════════════════════════════════════════════════════════ */
 
-const VERSAO_JOGO = '2026.10.12';
+const VERSAO_JOGO = '2026.10.15';
 const W = 7, H = 8, TIPOS = 6;
 const NADA = 0, LH = 1, LV = 2, BOMBA = 3, ARCO = 4, ONDA = 5, ONDAV = 6, CARDUME = 7;
 
@@ -1031,6 +1089,10 @@ const BLOQUEIOS = {
                 dica:'Coral morto endureceu no fundo. Estoure peças em cima para quebrar.' },
   lodo:       { verbo:'Limpar', um:'casa com lodo', varios:'casas com lodo', tex:'fibra', a:'#A9A2C0', b:'#7B7498', a2:'#5C5680', b2:'#3A3550',
                 dica:'O lodo assentou no fundo. Estoure peças em cima para limpar.' },
+  corrente:   { verbo:'Quebrar', um:'elo', varios:'elos', tex:'elo', a:'#D8DEE6', b:'#A8B2BE', a2:'#7E8A98', b2:'#57626E',
+                dica:'Cada elo da corrente aguenta três estouros. Bata sempre no mesmo lugar.' },
+  mancha:     { verbo:'Limpar', um:'mancha', varios:'manchas', tex:'mancha', a:'#FF8E7A', b:'#E0564A', a2:'#B63A36', b2:'#7E2320',
+                dica:'A maré vermelha se espalha para as casas vizinhas. A próxima a nascer pisca antes.' },
   breu:       { verbo:'Acender', um:'casa apagada', varios:'casas apagadas', tex:'breu', a:'#000000', b:'#000000', a2:'#000000', b2:'#000000',
                 dica:'Algumas casas estão apagadas. Estoure peças em cima para acender.' }
 };
@@ -1104,40 +1166,40 @@ const MUNDOS = [
              'papel'    limpar tudo que cobre o fundo (areia, alga, rede, lodo, breu)
    marcas: pontuação de 1, 2 e 3 estrelas (medidas por simulação) */
 const BASE = [
-  { m:0, prof:2,    nome:'Primeiro fôlego',    mov:23, obj:{tipo:'pontos'},                                        marcas:[10400,14800,19100] },
-  { m:0, prof:4,    nome:'Pé na areia',        mov:25, obj:{tipo:'coletar', itens:[[0,14]]},                       marcas:[5300,7600,10600] },
-  { m:0, prof:6,    nome:'Maré baixa',         mov:27, obj:{tipo:'papel', padrao:'bandeja', camadas:1},            marcas:[5400,7700,10700] },
-  { m:0, prof:8,    nome:'Poça de maré',       mov:23, obj:{tipo:'especiais', n:3},                                        marcas:[3800,5400,7500] },
-  { m:0, prof:10,   nome:'Água morna',         mov:27, obj:{tipo:'coletar', itens:[[1,15],[4,15]]},                marcas:[5900,8500,11900] },
-  { m:0, prof:12,   nome:'Onde o sol alcança', mov:29, obj:{tipo:'papel', padrao:'xadrez', camadas:1},             marcas:[6000,8600,12100] },
+  { m:0, prof:2,    nome:'Primeiro fôlego',    mov:23, obj:{tipo:'pontos'},                                        marcas:[9800,14500,19200] },
+  { m:0, prof:4,    nome:'Pé na areia',        mov:25, obj:{tipo:'coletar', itens:[[0,14]]},                       marcas:[4500,6700,9500] },
+  { m:0, prof:6,    nome:'Maré baixa',         mov:27, obj:{tipo:'papel', padrao:'bandeja', camadas:1},            marcas:[5500,8200,11600] },
+  { m:0, prof:8,    nome:'Poça de maré',       mov:23, obj:{tipo:'especiais', n:3},                                        marcas:[4000,6000,8500] },
+  { m:0, prof:10,   nome:'Água morna',         mov:27, obj:{tipo:'coletar', itens:[[1,15],[4,15]]},                marcas:[5800,8600,12300] },
+  { m:0, prof:12,   nome:'Onde o sol alcança', mov:29, obj:{tipo:'papel', padrao:'xadrez', camadas:1},             marcas:[6600,9800,14000] },
 
-  { m:1, prof:15,   nome:'Porta do recife',    mov:36, obj:{tipo:'pontos'},                                        marcas:[19900,27200,34500] },
-  { m:1, prof:18,   nome:'Jardim de coral',    mov:25, obj:{tipo:'papel', padrao:'faixas', camadas:1},             marcas:[4500,7400,10200] },
-  { m:1, prof:22,   nome:'Cardume',            mov:23, obj:{tipo:'coletar', itens:[[3,16],[5,16]]},                marcas:[5600,9300,12800] },
-  { m:1, prof:26,   nome:'Correnteza',         mov:22, obj:{tipo:'bau', n:2},                                        marcas:[4600,7600,10500] },
-  { m:1, prof:30,   nome:'Toca do polvo',      mov:22, obj:{tipo:'coletar', itens:[[0,13],[2,13],[4,13]]},         marcas:[5000,8200,11400] },
-  { m:1, prof:35,   nome:'Parede de coral',    mov:34, obj:{tipo:'papel', padrao:'losango', camadas:2, cresce:4},            marcas:[8200,13500,18700] },
+  { m:1, prof:15,   nome:'Porta do recife',    mov:36, obj:{tipo:'pontos'},                                        marcas:[20400,28900,37300] },
+  { m:1, prof:18,   nome:'Jardim de coral',    mov:25, obj:{tipo:'papel', padrao:'faixas', camadas:1},             marcas:[4800,8500,11500] },
+  { m:1, prof:22,   nome:'Cardume',            mov:23, obj:{tipo:'coletar', itens:[[3,16],[5,16]]},                marcas:[6200,10900,14800] },
+  { m:1, prof:26,   nome:'Correnteza',         mov:22, obj:{tipo:'bau', n:2},                                        marcas:[4800,8500,11500] },
+  { m:1, prof:30,   nome:'Toca do polvo',      mov:22, obj:{tipo:'coletar', itens:[[0,13],[2,13],[4,13]]},         marcas:[5600,9900,13500] },
+  { m:1, prof:35,   nome:'Parede de coral',    mov:34, obj:{tipo:'papel', padrao:'losango', camadas:2, cresce:4},            marcas:[8800,15600,21100] },
 
-  { m:2, prof:45,   nome:'O casco',            mov:48, obj:{tipo:'pontos'},                                        marcas:[29300,38100,46900] },
-  { m:2, prof:60,   nome:'Convés tombado',     mov:30, obj:{tipo:'papel', padrao:'colunas', camadas:1},            marcas:[7600,12600,17400] },
-  { m:2, prof:75,   nome:'Porão',              mov:23, obj:{tipo:'coletar', itens:[[1,18],[2,18]]},                marcas:[6400,10600,14700] },
-  { m:2, prof:90,   nome:'Âncora perdida',     mov:22, obj:{tipo:'bau', n:2},                                        marcas:[5000,8300,11500] },
-  { m:2, prof:110,  nome:'Rede fantasma',      mov:35, obj:{tipo:'papel', padrao:'bandejao', camadas:1},           marcas:[8200,13500,18700] },
-  { m:2, prof:130,  nome:'Proa na areia',      mov:20, obj:{tipo:'coletar', itens:[[3,14],[4,14],[5,14]]},         marcas:[5500,9100,12500] },
+  { m:2, prof:45,   nome:'O casco',            mov:56, obj:{tipo:'pontos'},                                        marcas:[33900,45400,56900] },
+  { m:2, prof:60,   nome:'Convés tombado',     mov:29, obj:{tipo:'papel', padrao:'colunas', camadas:1},            marcas:[6800,12100,16400] },
+  { m:2, prof:75,   nome:'Porão',              mov:20, obj:{tipo:'coletar', itens:[[1,18],[2,18]]},                marcas:[6100,10700,14500] },
+  { m:2, prof:90,   nome:'Âncora perdida',     mov:19, obj:{tipo:'bau', n:2},                                        marcas:[4200,7400,10000] },
+  { m:2, prof:110,  nome:'Rede fantasma',      mov:34, obj:{tipo:'papel', padrao:'bandejao', camadas:1},           marcas:[8000,14100,19100] },
+  { m:2, prof:130,  nome:'Proa na areia',      mov:18, obj:{tipo:'coletar', itens:[[3,14],[4,14],[5,14]]},         marcas:[5500,9700,13100] },
 
-  { m:3, prof:200,  nome:'Último azul',        mov:23, obj:{tipo:'especiais', n:5},                                        marcas:[6300,10400,14300] },
-  { m:3, prof:350,  nome:'Neve marinha',       mov:31, obj:{tipo:'papel', padrao:'cruz', camadas:2, cresce:5},               marcas:[7500,12500,17200] },
-  { m:3, prof:500,  nome:'Luz de lanterna',    mov:24, obj:{tipo:'coletar', itens:[[4,22]]},                       marcas:[6700,11100,15300] },
-  { m:3, prof:650,  nome:'Migração',           mov:21, obj:{tipo:'papel', padrao:'ondas', camadas:1},              marcas:[4500,7400,10200] },
-  { m:3, prof:800,  nome:'Sem sol',            mov:23, obj:{tipo:'bau', n:3},                                        marcas:[5900,9800,13500] },
-  { m:3, prof:1000, nome:'Mil metros',         mov:26, obj:{tipo:'papel', padrao:'alvo', camadas:1},               marcas:[6300,10500,14500] },
+  { m:3, prof:200,  nome:'Último azul',        mov:23, obj:{tipo:'especiais', n:5},                                        marcas:[6300,11200,15200] },
+  { m:3, prof:350,  nome:'Neve marinha',       mov:27, obj:{tipo:'papel', padrao:'cruz', camadas:2, cresce:5},               marcas:[7600,13400,18100] },
+  { m:3, prof:500,  nome:'Luz de lanterna',    mov:24, obj:{tipo:'coletar', itens:[[4,22]]},                       marcas:[6900,12300,16600] },
+  { m:3, prof:650,  nome:'Migração',           mov:21, obj:{tipo:'papel', padrao:'ondas', camadas:1},              marcas:[4600,8100,10900] },
+  { m:3, prof:800,  nome:'Sem sol',            mov:23, obj:{tipo:'bau', n:3},                                        marcas:[6000,10700,14400] },
+  { m:3, prof:1000, nome:'Mil metros',         mov:26, obj:{tipo:'papel', padrao:'alvo', camadas:1},               marcas:[6000,10700,14500] },
 
-  { m:4, prof:1500, nome:'Breu',               mov:30, obj:{tipo:'papel', padrao:'bandeja', camadas:2},            marcas:[7400,12300,17000] },
-  { m:4, prof:2000, nome:'Isca de luz',        mov:22, obj:{tipo:'coletar', itens:[[4,17],[5,17]]},                marcas:[6600,11000,15100] },
-  { m:4, prof:2500, nome:'Chaminé quente',     mov:30, obj:{tipo:'bau', n:4},                                        marcas:[8000,13300,18300] },
-  { m:4, prof:3000, nome:'Gigantes lentos',    mov:44, obj:{tipo:'papel', padrao:'xadrez', camadas:2, cresce:4},             marcas:[11500,19100,26300] },
-  { m:4, prof:3500, nome:'Pressão',            mov:22, obj:{tipo:'coletar', itens:[[0,14],[1,14],[2,14],[3,14]]},  marcas:[6100,10100,14000] },
-  { m:4, prof:4000, nome:'O fundo',            mov:42, obj:{tipo:'papel', padrao:'bandejao', camadas:2},           marcas:[11100,18300,25300] }
+  { m:4, prof:1500, nome:'Breu',               mov:29, obj:{tipo:'papel', padrao:'bandeja', camadas:2},            marcas:[8200,14600,19800] },
+  { m:4, prof:2000, nome:'Isca de luz',        mov:20, obj:{tipo:'coletar', itens:[[4,17],[5,17]]},                marcas:[5200,9300,12600] },
+  { m:4, prof:2500, nome:'Chaminé quente',     mov:30, obj:{tipo:'bau', n:4},                                        marcas:[7800,13900,18800] },
+  { m:4, prof:3000, nome:'Gigantes lentos',    mov:45, obj:{tipo:'papel', padrao:'xadrez', camadas:2, cresce:4},             marcas:[11800,20900,28400] },
+  { m:4, prof:3500, nome:'Pressão',            mov:20, obj:{tipo:'coletar', itens:[[0,14],[1,14],[2,14],[3,14]]},  marcas:[6300,11100,15100] },
+  { m:4, prof:4000, nome:'O fundo',            mov:41, obj:{tipo:'papel', padrao:'bandejao', camadas:2},           marcas:[11700,20800,28200] }
 ];
 const POR_MUNDO = 6;
 const CICLO = 30;   /* uma expedição inteira: do raso ao fundo */
@@ -1164,12 +1226,17 @@ const r100 = x => Math.round(x / 100) * 100;
 function fase(i) {
   if (i < BASE.length) return BASE[i];
   if (geradas[i]) return geradas[i];
+  if (ehMestre(i)) return (geradas[i] = faseMestre(i));
   if (geradasN > 400) { for (const k in geradas) delete geradas[k]; geradasN = 0; }   /* não deixa a memória crescer sem fim */
   const r = semente(i);
   const pos = i % CICLO, m = Math.floor(pos / 6), base = BASE[pos];
   const dif = Math.min(1, .45 + (i - CICLO) / 420);    /* já começa no aperto da fase 30 e sobe devagar */
   const nome = ZONAS[m][(i * 7 + Math.floor(r() * 3)) % ZONAS[m].length];  /* nomes seguidos nunca repetem */
-  const tipo = r() < .35 ? base.obj.tipo : ['pontos','coletar','coletar','papel','papel','bau','especiais'][Math.floor(r() * 7)];
+  const menu = ['pontos','coletar','coletar','papel','papel','bau','especiais','presos','bolhas','corrente','mancha'];
+  const antes = i > CICLO ? (function () { const a = fase(i - 1); return a.obj.corrente ? 'corrente' : a.obj.mancha ? 'mancha' : a.obj.tipo; })() : '';
+  let tipo = r() < .30 ? base.obj.tipo : menu[Math.floor(r() * menu.length)];
+  /* duas fases seguidas com o mesmo objetivo cansa: sorteia de novo */
+  for (let t = 0; t < 4 && tipo === antes; t++) tipo = menu[Math.floor(r() * menu.length)];
   let mov, obj;
   if (tipo === 'pontos') {
     mov = Math.max(18, Math.round(base.mov - dif * 2 + r() * 3));
@@ -1189,6 +1256,22 @@ function fase(i) {
     const n = 2 + Math.floor(r() * 2 + dif);
     mov = Math.max(21, Math.round(19 + n * 5 - dif * 2));
     obj = { tipo:'bau', n: n };
+  } else if (tipo === 'presos') {
+    const n = 3 + Math.floor(r() * 2 + dif * 2);
+    mov = Math.max(22, Math.round(19 + n * 4.2 - dif * 2));
+    obj = { tipo:'presos', n: n, rede: 1 };
+  } else if (tipo === 'bolhas') {
+    const n = 4 + Math.floor(r() * 2 + dif * 3);
+    mov = Math.max(22, Math.round(19 + n * 3.6 - dif * 2));
+    obj = { tipo:'bolhas', n: n, sobe: 3, juntas: 3 };
+  } else if (tipo === 'corrente') {
+    const pd = PADROES_GER[Math.floor(r() * PADROES_GER.length)];
+    mov = Math.max(20, Math.round(pd[1] * 1.55 * (1.0 - .10 * dif)));
+    obj = { tipo:'papel', padrao: pd[0], camadas: 3, corrente: true };
+  } else if (tipo === 'mancha') {
+    const pd = PADROES_GER[Math.floor(r() * PADROES_GER.length)];
+    mov = Math.max(20, Math.round(pd[1] * 1.35 * (1.0 - .10 * dif)));
+    obj = { tipo:'papel', padrao: pd[0], camadas: 1, cresce: 3, espalha: true, mancha: true };
   } else {
     const pd = PADROES_GER[Math.floor(r() * PADROES_GER.length)];
     const camadas = r() < .28 + .34 * dif ? 2 : 1;
@@ -1198,14 +1281,21 @@ function fase(i) {
   }
   /* pontos por jogada medidos com o bot: sobem junto com o aperto da fase */
   /* pontos por jogada medidos com o bot, por tipo de objetivo */
-  const porJogada = tipo === 'pontos' ? 970 + 470 * dif : tipo === 'bau' ? 560 + 130 * dif
-                  : tipo === 'especiais' ? 580 + 150 * dif : tipo === 'papel' ? 745 + 35 * dif : 630 + 230 * dif;
-  const p50 = Math.round(mov * porJogada);
+  const tp = obj.corrente ? 'corrente' : obj.mancha ? 'mancha' : tipo;
+  const porJogada = tp === 'pontos' ? 970 + 470 * dif : tp === 'bau' ? 560 + 130 * dif
+                  : tp === 'especiais' ? 580 + 150 * dif : tp === 'presos' ? 1080 + 120 * dif
+                  : tp === 'bolhas' ? 1160 + 120 * dif : tp === 'corrente' ? 860 + 110 * dif
+                  : tp === 'mancha' ? 640 + 90 * dif : tp === 'papel' ? 745 + 35 * dif : 630 + 230 * dif;
+  /* formato do tabuleiro: quanto menos casa, menos jogada precisa */
+  const fm = FORMATOS[Math.floor(r() * FORMATOS.length)];
+  const casas = fm.topo.reduce((a, t) => a + (8 - t), 0), cheio = 56;
+  mov = Math.max(16, Math.round(mov * .88 * (.55 + .45 * casas / cheio)));   /* aperto: o retorno foi que sobrava jogada demais */
+  const p50 = Math.round(mov * porJogada * .85 * (.45 + .55 * casas / cheio));
   let marcas;
   if (tipo === 'pontos') { const m0 = r100(p50 * (.44 + .06 * dif)), m2 = r100(p50 * .84); marcas = [m0, r100((m0 + m2) / 2), m2]; }
   else marcas = [r100(p50 * .35), r100(p50 * .6), r100(p50 * .84)];
   geradasN++;
-  return (geradas[i] = { m, prof: base.prof, nome, mov, obj, marcas, exped: Math.floor(i / CICLO) + 1 });
+  return (geradas[i] = { m, prof: base.prof, nome, mov, obj, marcas, forma: fm.topo, formaNome: fm.nome, exped: Math.floor(i / CICLO) + 1 });
 }
 const expedicao = i => Math.floor(i / CICLO) + 1;
 
@@ -1222,6 +1312,52 @@ const PODERES = [
 ];
 const moedasDaFase = (estrelas, primeira) => 5 + 6 * estrelas + (primeira ? 10 : 0);
 const hoje = () => new Date().toISOString().slice(0, 10);
+
+/* ═══ FORMATOS DE TABULEIRO ═════════════════════════════════════
+   Cada número diz em que fileira aquela coluna começa. Zero é
+   coluna inteira; dois é coluna que começa duas casas abaixo.
+   É isso que tira o quadrado de todas as fases.                  */
+const FORMATOS = [
+  { nome:'cheio',     topo:[0,0,0,0,0,0,0] },
+  { nome:'arco',      topo:[2,1,0,0,0,1,2] },
+  { nome:'pirâmide',  topo:[3,2,1,0,1,2,3] },
+  { nome:'taça',      topo:[0,1,2,3,2,1,0] },
+  { nome:'escada',    topo:[0,0,1,1,2,2,3] },
+  { nome:'escada2',   topo:[3,2,2,1,1,0,0] },
+  { nome:'torres',    topo:[0,2,0,2,0,2,0] },
+  { nome:'ilha',      topo:[2,0,0,1,0,0,2] },
+  { nome:'ombros',    topo:[1,1,0,0,0,1,1] },
+  { nome:'dentes',    topo:[0,1,0,1,0,1,0] }
+];
+
+/* ═══ OS MESTRES ════════════════════════════════════════════════
+   A cada 100 fases o mergulho esbarra num bicho grande. Ele não
+   fica no tabuleiro: encara a pessoa de cima, com barra de vida.
+   Cada peça que você estoura machuca ele; de duas em duas jogadas
+   ele revida, roubando uma jogada e cuspindo tinta. Casa com
+   tinta não machuca, então limpar a tinta faz parte da briga.   */
+const MESTRES = [
+  { nome:'Lula-gigante',   cor:'#B07CFF', cor2:'#5A2E8C', forma:'lula',
+    fala:'Oito braços, nenhuma pressa. Ele já viu mergulhador demais.' },
+  { nome:'Enguia-elétrica', cor:'#6BFFE0', cor2:'#0A6C7A', forma:'enguia',
+    fala:'A água em volta dela formiga. Não é medo seu, é corrente mesmo.' },
+  { nome:'Caranguejo-rei',  cor:'#FF8A5C', cor2:'#8C2F14', forma:'caranguejo',
+    fala:'Ele subiu na pedra mais alta e acha que o fundo é dele.' },
+  { nome:'Serpente-do-abismo', cor:'#FF7390', cor2:'#6E1030', forma:'serpente',
+    fala:'Ninguém sabe onde ela termina. Só que a cabeça está bem aqui.' }
+];
+const ehMestre = i => (i + 1) % 100 === 0;
+function faseMestre(i) {
+  const volta = Math.floor((i + 1) / 100);          /* 1º mestre na fase 100 */
+  const mestre = (volta - 1) % MESTRES.length;
+  const m = 4, dif = Math.min(1, .45 + (i - CICLO) / 420);
+  const vida = 58 + volta * 14;
+  const mov = 30 + Math.min(8, volta * 2);
+  const p50 = Math.round(mov * (980 + 320 * dif));
+  return { m: m, prof: 4000 + volta * 500, nome: MESTRES[mestre].nome, mov: mov, mestre: mestre,
+           obj: { tipo:'chefe', vida: vida, golpe: 2, mestre: mestre },
+           marcas: [r100(p50 * .45), r100(p50 * .66), r100(p50 * .86)] };
+}
 
 /* ── desafio da semana ─────────────────────────────────────────
    Uma fase só, igual pro mundo inteiro na semana, tabuleiro e
@@ -2067,6 +2203,31 @@ const PROPS = {
     '<path d="M306 32q-2 12 2 22M318 32q2 12-1 24" stroke="' + p.acento + '" stroke-width="1.6" fill="none"/></g>'
 };
 
+/* retrato do mestre, desenhado na hora com a cor dele */
+function desenhaMestre(idx) {
+  const M = MESTRES[idx % MESTRES.length], c = M.cor, c2 = M.cor2;
+  const olhos = '<circle cx="38" cy="44" r="8" fill="#0A0D1A"/><circle cx="62" cy="44" r="8" fill="#0A0D1A"/>' +
+                '<circle cx="40.5" cy="41" r="2.8" fill="#fff"/><circle cx="64.5" cy="41" r="2.8" fill="#fff"/>';
+  const corpos = {
+    lula: '<path d="M50 12c18 0 28 14 28 30 0 10-4 16-10 20H32c-6-4-10-10-10-20 0-16 10-30 28-30Z" fill="' + c + '"/>' +
+      '<path d="M30 62q-6 18-16 26M40 64q-4 20-10 30M60 64q4 20 10 30M70 62q6 18 16 26M50 66v32" fill="none" stroke="' + c + '" stroke-width="7" stroke-linecap="round"/>' +
+      '<path d="M50 12c10 0 17 8 20 18-12-6-28-6-40 0 3-10 10-18 20-18Z" fill="' + c2 + '" opacity=".55"/>',
+    enguia: '<path d="M14 84c14-6 18-22 14-36C24 32 32 14 54 12c20-2 32 12 32 28 0 14-10 24-24 24" fill="none" stroke="' + c + '" stroke-width="16" stroke-linecap="round"/>' +
+      '<path d="M62 64c-10 0-16 6-16 14" fill="none" stroke="' + c + '" stroke-width="14" stroke-linecap="round"/>' +
+      '<path d="M30 30l-10-8M78 26l10-8M22 52l-12 2" stroke="' + c + '" stroke-width="5" stroke-linecap="round" opacity=".8"/>',
+    caranguejo: '<path d="M22 56c0-16 12-26 28-26s28 10 28 26c0 12-12 20-28 20s-28-8-28-20Z" fill="' + c + '"/>' +
+      '<path d="M22 44C12 40 8 30 12 20c8 2 14 10 14 20M78 44c10-4 14-14 10-24-8 2-14 10-14 20" fill="' + c + '"/>' +
+      '<path d="M26 70l-12 14M38 76l-8 18M62 76l8 18M74 70l12 14" fill="none" stroke="' + c + '" stroke-width="6" stroke-linecap="round"/>' +
+      '<path d="M34 62q16 8 32 0" fill="none" stroke="' + c2 + '" stroke-width="4" stroke-linecap="round"/>',
+    serpente: '<path d="M86 88c-16 2-26-8-26-22 0-12 8-18 8-28 0-12-10-20-22-20S24 26 24 38c0 10 6 14 6 22" fill="none" stroke="' + c + '" stroke-width="15" stroke-linecap="round"/>' +
+      '<path d="M46 18c-14 0-24 10-24 22 0 8 6 14 14 16 10 2 18-4 18-14 0-8-4-12-8-14Z" fill="' + c + '"/>' +
+      '<path d="M34 50q10 10 22 2" fill="none" stroke="' + c2 + '" stroke-width="5" stroke-linecap="round"/>'
+  };
+  return '<svg viewBox="0 0 100 100" class="retrato-mestre" aria-hidden="true">' +
+    '<circle cx="50" cy="50" r="46" fill="' + c2 + '" opacity=".28"/>' +
+    (corpos[M.forma] || corpos.lula) + olhos + '</svg>';
+}
+
 function acasoCena(i, k) { return ((Math.sin(i * 91.7 + k * 13.3) * 43758.5453) % 1 + 1) % 1; }
 
 function particulas(m, acento) {
@@ -2177,9 +2338,11 @@ function instalaMundo(m, i) {
   const escuro = luminancia(c[3]) > .45 ? .72 : .5;
   raiz.setProperty('--mesa-a', rgba('#' + mistura(c[3], '#000000', escuro), .68));
   raiz.setProperty('--mesa-b', rgba('#' + mistura(c[3], '#000000', escuro + .16), .78));
-  raiz.setProperty('--bl-a', amb.bloq.a); raiz.setProperty('--bl-b', amb.bloq.b);
-  raiz.setProperty('--bl-a2', amb.bloq.a2); raiz.setProperty('--bl-b2', amb.bloq.b2);
-  document.body.dataset.tex = amb.bloq.tex;
+  const fa = (typeof J !== 'undefined' && J && J.fase >= 0) ? fase(J.fase) : null;
+  const bl = fa && fa.obj.corrente ? BLOQUEIOS.corrente : fa && fa.obj.mancha ? BLOQUEIOS.mancha : amb.bloq;
+  raiz.setProperty('--bl-a', bl.a); raiz.setProperty('--bl-b', bl.b);
+  raiz.setProperty('--bl-a2', bl.a2); raiz.setProperty('--bl-b2', bl.b2);
+  document.body.dataset.tex = bl.tex;
   document.body.dataset.mundo = m;
   const cx = document.getElementById('cena');
   cx.style.filter = amb.tom || '';
@@ -2221,10 +2384,17 @@ function novaPeca(t) { return { id: ++uid, t: t, sp: NADA }; }
 /* o baú não combina com nada, não sai com especial e só quer chegar no fundo */
 function novoBau() { return { id: ++uid, t: -1, sp: NADA, bau: true }; }
 
+/* TOPO diz em que fileira cada coluna começa. Coluna mais curta
+   significa menos casas, e é isso que dá formato ao tabuleiro:
+   arco, pirâmide, degraus, taça. Fora do formato não existe casa. */
+let TOPO = Array(W).fill(0);
+const temCasa = (r, c) => r >= TOPO[c] && r < H && c >= 0 && c < W;
+
 function montaTabuleiro() {
   do {
     grid = Array.from({ length: H }, () => Array(W).fill(null));
-    for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) grid[r][c] = novaPeca(tipoSeguro(r, c));
+    for (let r = 0; r < H; r++) for (let c = 0; c < W; c++)
+      if (temCasa(r, c)) grid[r][c] = novaPeca(tipoSeguro(r, c));
   } while (acharCorridas().length || !temJogada());
 }
 
@@ -2235,9 +2405,9 @@ function acharCorridas() {
     let c = 0;
     while (c < W) {
       const p = grid[r][c];
-      if (!p || p.bau) { c++; continue; }
+      if (!p || p.bau || p.gaiola) { c++; continue; }
       let k = c + 1;
-      while (k < W && grid[r][k] && !grid[r][k].bau && grid[r][k].t === p.t) k++;
+      while (k < W && grid[r][k] && !grid[r][k].bau && !grid[r][k].gaiola && grid[r][k].t === p.t) k++;
       if (k - c >= 3) out.push({ dir: 'h', r: r, c: c, len: k - c, t: p.t });
       c = k;
     }
@@ -2246,9 +2416,9 @@ function acharCorridas() {
     let r = 0;
     while (r < H) {
       const p = grid[r][c];
-      if (!p || p.bau) { r++; continue; }
+      if (!p || p.bau || p.gaiola) { r++; continue; }
       let k = r + 1;
-      while (k < H && grid[k][c] && !grid[k][c].bau && grid[k][c].t === p.t) k++;
+      while (k < H && grid[k][c] && !grid[k][c].bau && !grid[k][c].gaiola && grid[k][c].t === p.t) k++;
       if (k - r >= 3) out.push({ dir: 'v', r: r, c: c, len: k - r, t: p.t });
       r = k;
     }
@@ -2367,7 +2537,7 @@ function expandir(conj, corAlvo) {
     if (!p || !p.sp) continue;
     const area = areaEspecial(r, c, p, corAlvo);
     const vale = VALOR_ESP[p.sp] || 0;
-    bonusEspeciais += vale;
+    bonusEspeciais += vale * (typeof J !== 'undefined' && J.soltoSozinho && J.cascata === 1 ? .5 : 1);
     efeitosPendentes.push({ r: r, c: c, sp: p.sp, vale: vale, alvos: (p.sp === ARCO || p.sp === CARDUME) ? area.slice() : null });
     for (const a of area) {
       if (!conj.has(a)) conj.add(a);
@@ -2498,14 +2668,17 @@ function gravidade() {
   const caindo = [];
   for (let c = 0; c < W; c++) {
     let escreve = H - 1;
-    for (let r = H - 1; r >= 0; r--) {
+    for (let r = H - 1; r >= TOPO[c]; r--) {
       if (grid[r][c]) {
-        if (r !== escreve) { grid[escreve][c] = grid[r][c]; grid[r][c] = null; caindo.push(grid[escreve][c]); }
+        if (r !== escreve) {
+          grid[escreve][c] = grid[r][c]; grid[r][c] = null; caindo.push(grid[escreve][c]);
+          if (grid[escreve][c].bau) J.bauParado = 0;   /* desceu por mérito seu: a rede de segurança zera */
+        }
         escreve--;
       }
     }
     let acima = -1;
-    for (let r = escreve; r >= 0; r--) {
+    for (let r = escreve; r >= TOPO[c]; r--) {
       /* enquanto faltar baú, ele entra junto com as peças novas, de pouco em pouco */
       /* um baú por coluna: empilhados eles se atrapalham */
       let colunaLivre = true;
@@ -2556,7 +2729,7 @@ function montaCasas() {
   celulasBox.innerHTML = '';
   for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) {
     const d = document.createElement('div');
-    d.className = 'casa' + (r === H - 1 ? ' fundo' : '');
+    d.className = 'casa' + (r === H - 1 ? ' fundo' : '') + (r < TOPO[c] ? ' fora' : '');
     d.innerHTML = '<i></i>';
     celulasBox.appendChild(d);
   }
@@ -2568,7 +2741,8 @@ function pintaPapel() {
   for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) {
     const d = casas[r * W + c];
     d.classList.remove('papel', 'papel2');
-    if (papel[r][c] >= 2) d.classList.add('papel2');
+    if (papel[r][c] >= 3) d.classList.add('papel3');
+    else if (papel[r][c] === 2) d.classList.add('papel2');
     else if (papel[r][c] === 1) d.classList.add('papel');
   }
 }
@@ -2576,8 +2750,9 @@ function quebraPapel(r, c) {
   const d = celulasBox.children[r * W + c];
   d.classList.add('rasga');
   setTimeout(() => {
-    d.classList.remove('rasga', 'papel', 'papel2');
-    if (papel[r][c] >= 2) d.classList.add('papel2');
+    d.classList.remove('rasga', 'papel', 'papel2', 'papel3');
+    if (papel[r][c] >= 3) d.classList.add('papel3');
+    else if (papel[r][c] === 2) d.classList.add('papel2');
     else if (papel[r][c] === 1) d.classList.add('papel');
   }, 340);
 }
@@ -2599,6 +2774,8 @@ function corpoDaPeca(p) {
 }
 function classeEsp(p) {
   if (p.bau) return 'e-bau';
+  if (p.gaiola) return 'preso' + (p.gaiola >= 2 ? ' preso2' : '');
+  if (p.bolha) return 'com-bolha';
   return p.sp === LH ? 'esp-lh' : p.sp === LV ? 'esp-lv' : p.sp === BOMBA ? 'esp-bomba' : p.sp === ARCO ? 'esp-arco'
        : p.sp === ONDA || p.sp === ONDAV ? 'esp-onda' : p.sp === CARDUME ? 'esp-cardume' : '';
 }
@@ -2650,6 +2827,7 @@ function montaPecas() {
   pecasBox.innerHTML = ''; els.clear();
   for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) {
     const p = grid[r][c];
+    if (!p) continue;                      /* casa fora do formato */
     const el = criaEl(p); pecasBox.appendChild(el); els.set(p.id, el);
     posiciona(el, r, c, true);
     if (typeof el.firstChild.animate === 'function')
@@ -2816,7 +2994,7 @@ async function entregaBaus() {
     if (el) { el.classList.add('entrega'); const e = el; setTimeout(() => e.remove(), 560); }
     els.delete(p.id);
     grid[H - 1][c] = null;
-    J.bauFeito++; J.bauNaTela = Math.max(0, J.bauNaTela - 1);
+    J.bauFeito++; J.bauNaTela = Math.max(0, J.bauNaTela - 1); J.bauParado = 0;
     J.pontos += 500;
     faisca(H - 1, c, '+500', '#FFD35C', true);
     respingos(H - 1, c, '#FFD35C', 10);
@@ -2843,11 +3021,32 @@ async function limpar(conj, novos) {
     const r = linha(k), c = coluna(k), p = grid[r][c];
     if (p.sp) temEsp = true;
     J.coletado[p.t]++;
-    ganho += 60 * Math.min(J.cascata, 10);
+    ganho += 60 * Math.min(J.cascata, 10) * (J.soltoSozinho && J.cascata === 1 ? .5 : 1);
     sr += r; sc += c;
     const el = els.get(p.id);
     if (el) el.classList.add('some');
     if (papel[r][c] > 0) { papel[r][c]--; J.papelFeito++; quebraPapel(r, c); }
+    /* estourar do lado abre a gaiola do bicho preso */
+    for (const [dr, dc] of [[-1,0],[1,0],[0,-1],[0,1]]) {
+      const q = dentro(r + dr, c + dc) ? grid[r + dr][c + dc] : null;
+      if (!q || !q.gaiola) continue;
+      q.gaiola--;
+      if (q.gaiola <= 0) {
+        q.gaiola = 0;
+        J.presosFeitos = (J.presosFeitos || 0) + 1;
+        J.pontos += 220;
+        estilhacos(r + dr, c + dc, '#BFF5EE', 10);
+        ondaChoque(r + dr, c + dc, 2, '#BFF5EE');
+        Som.liga(); Som.especial();
+      }
+      atualizaEl(q);
+    }
+    if (p && p.bolha) { J.bolhasFeitas = (J.bolhasFeitas || 0) + 1; J.pontos += 160; }
+    /* briga com o mestre: casa limpa machuca, casa com tinta não */
+    if (faseAtual().obj.tipo === 'chefe' && papel[r][c] === 0) {
+      J.dano = (J.dano || 0) + (p && p.sp ? 3 : 1);
+      J.bateu = true;
+    }
     if (vivas.length <= 14 || Math.random() < 0.5) {
       respingos(r, c, corDe(p.t), vivas.length > 10 ? 4 : 7);
       estilhacos(r, c, corDe(p.t), vivas.length > 12 ? 2 : 4);
@@ -3043,6 +3242,7 @@ function aoSoltar(e) {
 }
 
 async function tentaTroca(a, b) {
+  J.soltoSozinho = false;
   if (J.ocupado || J.fim) return;
   limpaMarca();
   const pa = grid[a.r][a.c], pb = grid[b.r][b.c];
@@ -3077,6 +3277,7 @@ async function tentaTroca(a, b) {
   gastaJogada();
   let conj = null;
   if (soltaEsp) {
+    J.soltoSozinho = true;    /* disparar o especial sem casar cor paga menos */
     const alvo = pa.sp ? b : a;                 /* a peça especial está no lugar novo */
     conj = new Set([chave(alvo.r, alvo.c)]);
     expandir(conj, null);
@@ -3091,6 +3292,9 @@ async function tentaTroca(a, b) {
   await resolver(conj, [chave(b.r, b.c), chave(a.r, a.c)]);
   passoCrescer();
   await passoBau();
+  await passoBolha();
+  garanteBolhas();
+  await passoMestre();
   salvaPartida();
   J.ocupado = false;
   await confere();
@@ -3109,6 +3313,9 @@ async function disparaEspecial(cel) {
   await resolver(conj, [chave(cel.r, cel.c)]);
   passoCrescer();
   await passoBau();
+  await passoBolha();
+  garanteBolhas();
+  await passoMestre();
   salvaPartida();
   J.ocupado = false;
   await confere();
@@ -3154,8 +3361,13 @@ async function estouroFinal() {
 async function passoBau() {
   const f = faseAtual();
   if (f.obj.tipo !== 'bau' || J.fim) return false;
-  J.contaBau = (J.contaBau || 0) + 1;
-  if (J.contaBau % 4 !== 0) return false;
+  /* Antes ele afundava de quatro em quatro jogadas, e isso virou
+     espera: dava pra mexer peça à toa até o baú descer sozinho.
+     Agora é só rede de segurança: se você mesmo fez o baú andar,
+     o contador zera e ele nunca desce de graça.                  */
+  J.bauParado = (J.bauParado || 0) + 1;
+  if (J.bauParado < 6) return false;
+  J.bauParado = 0;
   let afundou = false;
   for (let r = H - 2; r >= 0; r--) for (let c = 0; c < W; c++) {
     const p = grid[r][c], baixo = grid[r + 1][c];
@@ -3167,11 +3379,94 @@ async function passoBau() {
   }
   if (afundou) {
     Som.liga(); Som.cai(3); vibra(TREMIDA.toque);
-    faixaTexto('O baú afunda');
+    faixaTexto('O baú é pesado e escorrega');
     await espera(340);
     await resolver(null, null);
   }
   return afundou;
+}
+
+/* ═══ O MESTRE REVIDA ═══════════════════════════════════════════
+   De duas em duas jogadas ele rouba uma jogada e cospe tinta. A
+   casa com tinta protege ele, então limpar a tinta é parte da
+   briga. Quanto mais machucado, mais tinta ele cospe.            */
+async function passoMestre() {
+  const f = faseAtual();
+  if (f.obj.tipo !== 'chefe' || J.fim) return false;
+  if (J.bateu) { sacodeMestre(); J.bateu = false; }
+  J.contaMestre = (J.contaMestre || 0) + 1;
+  if (J.contaMestre % (f.obj.golpe || 2) !== 0) { atualizaHud(); return false; }
+  const vida = Math.max(0, f.obj.vida - (J.dano || 0));
+  if (vida <= 0) return false;
+  const fase3 = vida < f.obj.vida * .35, fase2 = vida < f.obj.vida * .65;
+  const quantas = fase3 ? 5 : fase2 ? 4 : 3;
+  const livres = [];
+  for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) if (papel[r][c] === 0) livres.push([r, c]);
+  for (let k = 0; k < quantas && livres.length; k++) {
+    const idx = sorteia(livres.length), [r, c] = livres.splice(idx, 1)[0];
+    papel[r][c] = 1;
+    const casa = celulasBox.children[r * W + c];
+    casa.classList.add('cresceu');
+    setTimeout(() => casa.classList.remove('cresceu'), 520);
+  }
+  pintaPapel();
+  J.mov = Math.max(0, J.mov - 1);
+  Som.liga(); Som.nao(); vibra(TREMIDA.forte);
+  faixaTexto(fase3 ? 'O mestre está furioso!' : 'O mestre cospe tinta');
+  const ret = document.querySelector('.retrato-mestre');
+  if (ret) { ret.classList.remove('ataca'); void ret.offsetWidth; ret.classList.add('ataca'); }
+  atualizaHud();
+  await espera(420);
+  return true;
+}
+function sacodeMestre() {
+  const ret = document.querySelector('.retrato-mestre');
+  if (!ret) return;
+  ret.classList.remove('apanha'); void ret.offsetWidth; ret.classList.add('apanha');
+}
+
+/* ═══ BOLHAS DE AR ══════════════════════════════════════════════
+   Sobem uma casa a cada duas jogadas. Chegando na superfície,
+   escapam e uma nova nasce lá embaixo.                           */
+async function passoBolha() {
+  const f = faseAtual();
+  if (f.obj.tipo !== 'bolhas' || J.fim) return false;
+  J.contaBolha = (J.contaBolha || 0) + 1;
+  if (J.contaBolha % (f.obj.sobe || 2) !== 0) return false;
+  let mexeu = false, fugiu = 0;
+  for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) {
+    const p = grid[r][c];
+    if (!p || !p.bolha || p.subiuAgora) continue;
+    if (r === 0) {
+      p.bolha = false;
+      fugiu++;
+      const el = els.get(p.id);
+      if (el) { el.classList.remove('com-bolha'); }
+      respingos(r, c, '#BFF5EE', 6);
+      atualizaEl(p);
+      continue;
+    }
+    const cima = grid[r - 1][c];
+    if (!cima || cima.bau || cima.gaiola || cima.bolha) continue;
+    grid[r - 1][c] = p; grid[r][c] = cima;
+    p.subiuAgora = true;
+    posiciona(els.get(p.id), r - 1, c); posiciona(els.get(cima.id), r, c);
+    mexeu = true;
+  }
+  for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) if (grid[r][c]) grid[r][c].subiuAgora = false;
+  if (fugiu) {
+    J.bolhasFugiram = (J.bolhasFugiram || 0) + fugiu;
+    Som.liga(); Som.nao();
+    faixaTexto(fugiu === 1 ? 'Uma bolha escapou' : fugiu + ' bolhas escaparam');
+    nasceBolha(fugiu);
+    atualizaHud();
+  }
+  if (mexeu) {
+    Som.liga(); Som.pop(2);
+    await espera(280);
+    await resolver(null, null);
+  }
+  return mexeu;
 }
 
 /* ═══ ALGA QUE VOLTA A CRESCER ══════════════════════════════════
@@ -3200,8 +3495,15 @@ function passoCrescer() {
   J.contaCresce = (J.contaCresce || 0) + 1;
   if (J.mov > 3 && casasCobertas(papel) > 0 && J.contaCresce % f.obj.cresce === 0) {
     const cand = [];
-    for (let r = 0; r < H; r++) for (let c = 0; c < W; c++)
-      if (papel[r][c] === 0 && J.papelBase[r][c] > 0) cand.push([r, c]);
+    for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) {
+      if (papel[r][c] !== 0) continue;
+      if (f.obj.espalha) {                       /* a mancha pula para qualquer vizinha */
+        let vizinha = false;
+        for (const [dr, dc] of [[-1,0],[1,0],[0,-1],[0,1]])
+          if (dentro(r + dr, c + dc) && papel[r + dr][c + dc] > 0) { vizinha = true; break; }
+        if (vizinha) cand.push([r, c]);
+      } else if (J.papelBase[r][c] > 0) cand.push([r, c]);
+    }
     if (cand.length) J.alvoCresce = cand[sorteia(cand.length)];
   }
   pintaAvisoCresce();
@@ -3362,8 +3664,42 @@ function gastaJogada() {
   Musica.tensao(aperto, 0);
 }
 
+/* põe no tabuleiro o que cada objetivo novo precisa */
+function preparaEspeciaisDaFase() {
+  const f = faseAtual();
+  if (f.obj.tipo === 'presos') {
+    let postos = 0;
+    const quer = Math.min(f.obj.n, 6);
+    for (let tent = 0; tent < 300 && postos < quer; tent++) {
+      const r = 2 + sorteia(H - 3), c = sorteia(W), p = grid[r][c];
+      if (!p || p.gaiola || p.bau || p.sp) continue;
+      let perto = false;
+      for (let y = r - 1; y <= r + 1 && !perto; y++) for (let x = c - 1; x <= c + 1; x++)
+        if (dentro(y, x) && grid[y][x] && grid[y][x].gaiola) { perto = true; break; }
+      if (perto) continue;
+      p.gaiola = f.obj.rede || 2;
+      postos++;
+    }
+  }
+  if (f.obj.tipo === 'bolhas') nasceBolha(f.obj.juntas || 2);
+}
+function nasceBolha(quantas) {
+  for (let k = 0; k < quantas; k++) {
+    for (let tent = 0; tent < 120; tent++) {
+      const r = H - 1 - sorteia(2), c = sorteia(W), p = grid[r][c];
+      if (!p || p.bolha || p.bau || p.gaiola) continue;
+      p.bolha = true;
+      if (typeof atualizaEl === 'function') atualizaEl(p);
+      break;
+    }
+  }
+}
+
 function faltaObjetivo() {
   const f = faseAtual();
+  if (f.obj.tipo === 'chefe') return Math.max(0, f.obj.vida - (J.dano || 0));
+  if (f.obj.tipo === 'presos') return Math.max(0, f.obj.n - (J.presosFeitos || 0));
+  if (f.obj.tipo === 'bolhas') return Math.max(0, f.obj.n - (J.bolhasFeitas || 0));
   if (f.obj.tipo === 'pontos') return Math.max(0, f.marcas[0] - J.pontos);
   if (f.obj.tipo === 'coletar') return f.obj.itens.reduce((a, it) => a + Math.max(0, it[1] - J.coletado[it[0]]), 0);
   if (f.obj.tipo === 'bau') return Math.max(0, f.obj.n - J.bauFeito);
@@ -3371,7 +3707,14 @@ function faltaObjetivo() {
   return Math.max(0, J.papelTotal - J.papelFeito);
 }
 function objetivoFeito() { return faltaObjetivo() === 0; }
-function nomeBloq(f, n) { const b = ambiente(J.desafio ? 0 : J.fase).bloq; return n + ' ' + (n === 1 ? b.um : b.varios); }
+function nomeBloq(f, n) {
+  const b = f.obj.corrente ? BLOQUEIOS.corrente : f.obj.mancha ? BLOQUEIOS.mancha : ambiente(J.desafio ? 0 : J.fase).bloq;
+  return n + ' ' + (n === 1 ? b.um : b.varios);
+}
+function verboBloq(f) {
+  const b = f.obj.corrente ? BLOQUEIOS.corrente : f.obj.mancha ? BLOQUEIOS.mancha : ambiente(J.desafio ? 0 : J.fase).bloq;
+  return b.verbo;
+}
 
 function atualizaHud() {
   const f = faseAtual();
@@ -3416,6 +3759,22 @@ function atualizaHud() {
     const falta = Math.max(0, f.obj.n - (J.criados || 0));
     o.innerHTML = '<div><div class="rotulo">Criar especiais</div></div><div class="alvos">' +
       '<div class="alvo' + (falta ? '' : ' feito') + '"><svg class="ic" viewBox="0 0 100 100"><use href="#i-faisca"/></svg><b>' + (falta || '✓') + '</b></div></div>';
+  } else if (f.obj.tipo === 'chefe') {
+    const M = MESTRES[f.obj.mestre], vida = Math.max(0, f.obj.vida - (J.dano || 0));
+    const pc = Math.round(vida / f.obj.vida * 100);
+    o.innerHTML = '<div class="mestre-hud">' + desenhaMestre(f.obj.mestre) +
+      '<div class="mestre-txt"><div class="rotulo">' + M.nome + '</div>' +
+      '<div class="vida-mestre"><i style="width:' + pc + '%;background:linear-gradient(90deg,' + M.cor2 + ',' + M.cor + ')"></i></div>' +
+      '<div class="valor">' + (vida ? vida + ' de vida' : 'derrotado!') + '</div></div></div>';
+  } else if (f.obj.tipo === 'presos') {
+    const falta = Math.max(0, f.obj.n - (J.presosFeitos || 0));
+    o.innerHTML = '<div><div class="rotulo">Libertar os presos</div></div><div class="alvos">' +
+      '<div class="alvo' + (falta ? '' : ' feito') + '"><svg class="ic" viewBox="0 0 100 100"><use href="#i-gaiola"/></svg><b>' + (falta || '✓') + '</b></div></div>';
+  } else if (f.obj.tipo === 'bolhas') {
+    const falta = Math.max(0, f.obj.n - (J.bolhasFeitas || 0));
+    o.innerHTML = '<div><div class="rotulo">Estourar as bolhas</div>' +
+      (J.bolhasFugiram ? '<div class="valor">' + J.bolhasFugiram + (J.bolhasFugiram === 1 ? ' fugiu' : ' fugiram') + '</div>' : '') +
+      '</div><div class="alvos"><div class="alvo' + (falta ? '' : ' feito') + '"><svg class="ic" viewBox="0 0 100 100"><use href="#i-bolha-ar"/></svg><b>' + (falta || '✓') + '</b></div></div>';
   } else if (f.obj.tipo === 'bau') {
     const falta = Math.max(0, f.obj.n - J.bauFeito);
     o.innerHTML = '<div><div class="rotulo">Descer até o fundo</div></div><div class="alvos">' +
@@ -3436,7 +3795,7 @@ function atualizaHud() {
     });
   } else {
     const falta = casasCobertas(papel);
-    o.innerHTML = '<div><div class="rotulo">' + ambiente(J.desafio ? 0 : J.fase).bloq.verbo + '</div>' +
+    o.innerHTML = '<div><div class="rotulo">' + verboBloq(f) + '</div>' +
       '<div class="valor">' + (falta ? nomeBloq(f, falta) : 'tudo limpo ✓') + '</div></div>';
   }
 }
@@ -3508,6 +3867,7 @@ async function encerraAgora() {
 }
 
 async function venceu() {
+  const eraMestre = faseAtual().obj.tipo === 'chefe';
   J.ocupado = true;
   if (J.mov > 0) {
     faixaTexto('Sobrou jogada!');
@@ -3531,7 +3891,7 @@ async function venceu() {
   limpaPartida();
   prog.estrelas[J.fase] = Math.max(prog.estrelas[J.fase] || 0, e);
   if (J.fase + 1 > prog.max) prog.max = J.fase + 1;
-  const ganho = moedasDaFase(e, primeira);
+  const ganho = moedasDaFase(e, primeira) + (eraMestre ? 80 : 0);
   prog.moedas += ganho;
   salvaProg();
   salvaNaNuvemDepois();
@@ -3557,6 +3917,13 @@ async function venceu() {
     '</div>'
   );
   tiraBotaoEncerrar();
+  if (eraMestre) {
+    prog.mestres = (prog.mestres || 0) + 1;
+    const ret = document.querySelector('.retrato-mestre');
+    if (ret) ret.classList.add('derrotado');
+    faixaTexto('Mestre derrotado!');
+    fogos(); await espera(700);
+  }
   await estouroFinal();          /* o resto dos especiais estoura antes do cartão */
   if (Conta.ligada) Conta.garante().then(() => {
     if (!Ranking.ligado) return;
@@ -3584,6 +3951,9 @@ async function perdeu() {
   else if (f.obj.tipo === 'coletar') { const n = faltaObjetivo(); falta = 'Faltou juntar ' + n + (n === 1 ? ' peça.' : ' peças.'); }
   else if (f.obj.tipo === 'bau') { const n = faltaObjetivo(); falta = n === 1 ? 'Faltou um baú chegar no fundo.' : 'Faltaram ' + n + ' baús chegarem no fundo.'; }
   else if (f.obj.tipo === 'especiais') { const n = faltaObjetivo(); falta = n === 1 ? 'Faltou criar um especial.' : 'Faltou criar ' + n + ' especiais.'; }
+  else if (f.obj.tipo === 'chefe') { const n = faltaObjetivo(); falta = 'O mestre ainda tinha ' + n + ' de vida.'; }
+  else if (f.obj.tipo === 'presos') { const n = faltaObjetivo(); falta = n === 1 ? 'Faltou libertar um bicho.' : 'Faltaram ' + n + ' bichos presos.'; }
+  else if (f.obj.tipo === 'bolhas') { const n = faltaObjetivo(); falta = n === 1 ? 'Faltou estourar uma bolha.' : 'Faltaram ' + n + ' bolhas.'; }
   else { const n = casasCobertas(papel); falta = (n === 1 ? 'Sobrou ' : 'Sobraram ') + nomeBloq(f, n) + '.'; }
   await espera(400);
   cartao(
@@ -3848,6 +4218,9 @@ function abreDesafio() {
         bauFeito: 0, bauNaTela: 0, bauPendentes: 0, criados: 0, objBatido: false, contaCresce: 0, alvoCresce: null };
   papel = Array.from({ length: H }, () => Array(W).fill(0));
   J.papelBase = papel.map(l => l.slice());
+  TOPO = (f.forma || Array(W).fill(0)).slice();
+  for (let c = 0; c < W; c++) for (let r = 0; r < TOPO[c]; r++) { papel[r][c] = 0; if (J.papelBase) J.papelBase[r][c] = 0; }
+  J.papelTotal = contaPapel(papel);
   pontosNaTela = 0;
   montaTabuleiro();
   fechaCartao();
@@ -3970,6 +4343,8 @@ function mostraAjustes() {
       '<div class="ajuste"><div class="txt"><b>' + a.nome + '</b><small>' + a.texto + '</small></div>' +
       '<button class="chave' + (valorAjuste(a.k) ? ' on' : '') + '" data-ac="mudar" data-k="' + a.k + '" ' +
       'role="switch" aria-checked="' + valorAjuste(a.k) + '" aria-label="' + a.nome + '"><span></span></button></div>').join('') +
+    '<div class="ajuste"><div class="txt"><b>Código de presente</b><small>' + (prog.codigos && prog.codigos.length ? prog.codigos.length + ' usado(s)' : 'se alguém te passar um') + '</small></div>' +
+      '<button class="bt-compra" data-ac="codigo">Usar</button></div>' +
     '<div class="ajuste"><div class="txt"><b>Seu nome no ranking</b><small>' + (prog.apelido || 'ainda sem nome') + '</small></div>' +
       '<button class="bt-compra" data-ac="apelido">' + (prog.apelido ? 'Trocar' : 'Escolher') + '</button></div>' +
     '<div class="ajuste"><div class="txt"><b>Progresso</b><small>' +
@@ -4116,6 +4491,8 @@ function juntaProg(a, b) {
   r.desafio = { semana: (da.melhor || 0) >= (db.melhor || 0) ? da.semana : db.semana,
                 melhor: Math.max(da.melhor || 0, db.melhor || 0), nome: da.nome || db.nome || '' };
   r.apelido = a.apelido || b.apelido || '';
+  r.mestres = Math.max(a.mestres || 0, b.mestres || 0);
+  r.codigos = Array.from(new Set([].concat(a.codigos || [], b.codigos || [])));
   r.cardume = a.cardume || b.cardume || '';
   r.melhores = Object.assign({}, b.melhores || {});
   for (const k in (a.melhores || {})) r.melhores[k] = Math.max(a.melhores[k] || 0, r.melhores[k] || 0);
@@ -4235,8 +4612,11 @@ const Ranking = {
   },
   async subeFicha() {
     if (!this.ligado) return;
+    let soma = 0;
+    for (const k in (prog.melhores || {})) soma += prog.melhores[k] || 0;
     return this.manda('/mergulho/placar/' + Conta.sessao.uid,
-      { nome: this.nome(), max: prog.max, estrelas: totalEstrelas(), cardume: prog.cardume || '', quando: Date.now() });
+      { nome: this.nome(), max: prog.max, estrelas: totalEstrelas(), pontos: soma,
+        mestres: prog.mestres || 0, cardume: prog.cardume || '', quando: Date.now() });
   },
   async pontuaFase(i, pontos) {
     if (!this.ligado) return;
@@ -4247,7 +4627,7 @@ const Ranking = {
     salvaProg();
     return this.manda('/mergulho/fases/' + i + '/' + Conta.sessao.uid, { nome: this.nome(), pontos: pontos });
   },
-  geral() { return this.pega('/mergulho/placar', 'orderBy="max"&limitToLast=50'); },
+  geral() { return this.pega('/mergulho/placar', 'orderBy="estrelas"&limitToLast=50'); },
   cardume(cod) { return this.pega('/mergulho/placar', 'orderBy="cardume"&equalTo="' + cod + '"&limitToLast=60'); },
   daFase(i) { return this.pega('/mergulho/fases/' + i, 'orderBy="pontos"&limitToLast=25'); },
   daSemana(sem) { return this.pega('/mergulho/desafio/' + sem, 'orderBy="pontos"&limitToLast=30'); }
@@ -4260,6 +4640,23 @@ function codigoCardume() {
   return s;
 }
 const medalha = k => k === 0 ? '🥇' : k === 1 ? '🥈' : k === 2 ? '🥉' : (k + 1) + 'º';
+
+/* ranking de gente: manda a estrela, depois a fase, depois o ponto.
+   Assim não basta atravessar as fases correndo: tem que jogar bem. */
+function linhasGente(lista) {
+  if (!lista) return '<p class="vazio">Sem internet pra buscar agora.</p>';
+  if (!lista.length) return '<p class="vazio">Ninguém aqui ainda. Seja o primeiro.</p>';
+  const meu = Conta.dentro ? Conta.sessao.uid : '';
+  const ord = lista.slice().sort((a, b) =>
+    (b.estrelas || 0) - (a.estrelas || 0) || (b.max || 0) - (a.max || 0) || (b.pontos || 0) - (a.pontos || 0));
+  const minha = ord.findIndex(x => x.id === meu);
+  const linha = (x, k) => '<div class="linha-rank' + (x.id === meu ? ' eu' : '') + '"><span class="pos">' + medalha(k) + '</span>' +
+    '<span class="nome">' + (x.nome || 'mergulhador') + (x.mestres ? ' <i class="tag-mestre" title="mestres derrotados">' + x.mestres + '⚔</i>' : '') + '</span>' +
+    '<span class="val"><b>' + (x.estrelas || 0) + '★</b><small>fase ' + ((x.max || 0) + 1) + (x.pontos ? ' · ' + nf(x.pontos) + ' pts' : '') + '</small></span></div>';
+  let h = ord.slice(0, 20).map(linha).join('');
+  if (minha >= 20) h += '<div class="longe">' + linha(ord[minha], minha) + '</div>';
+  return h;
+}
 
 function linhasRanking(lista, campo, sufixo) {
   if (!lista) return '<p class="vazio">Sem internet pra buscar agora.</p>';
@@ -4308,13 +4705,13 @@ async function mostraRanking(aba) {
              '<div class="bts"><button class="bt vidro" data-ac="entracardume">Entrar num</button><button class="bt" data-ac="criacardume">Criar cardume</button></div>';
     } else {
       const lista = await Ranking.cardume(prog.cardume);
-      html = '<p class="cod-cardume">Código <b>' + prog.cardume + '</b> · passe pra quem você quer na disputa</p>' +
-             linhasRanking(lista, 'max', '') +
+      html = '<p class="cod-cardume">Código <b>' + prog.cardume + '</b> · manda pro grupo</p>' +
+             linhasGente(lista) +
              '<div class="bts"><button class="bt-texto" data-ac="copiacardume">Copiar código</button>' +
              '<button class="bt-texto" data-ac="saicardume">Sair do cardume</button></div>';
     }
   } else if (abaRank === 'geral') {
-    html = linhasRanking(await Ranking.geral(), 'max', '');
+    html = '<p class="cod-cardume">Quem tem mais estrela lidera; empate desempata pela fase</p>' + linhasGente(await Ranking.geral());
   } else if (abaRank === 'fase') {
     /* dentro da partida mostra a fase aberta; fora dela, a fase onde a pessoa está */
     const i = (document.body.classList.contains('em-jogo') && J && J.fase >= 0) ? J.fase : prog.max;
@@ -4325,6 +4722,30 @@ async function mostraRanking(aba) {
   }
   if (alvo() && document.querySelector('.abas .aba.on')) alvo().innerHTML = html;
 }
+const PRESENTES = { 'MERGULHO5000': 5000, 'CARDUME1000': 1000, 'ABISMO500': 500, 'MARE250': 250 };
+function mostraCodigo(aviso) {
+  cartao('<h3>Código de presente</h3><p>Se alguém te passou um código, digite aqui.</p>' +
+    (aviso ? '<p class="aviso">' + aviso + '</p>' : '') +
+    '<input class="campo" id="campo-codigo" maxlength="16" placeholder="CÓDIGO" style="text-transform:uppercase;text-align:center;letter-spacing:.14em">' +
+    '<div class="bts"><button class="bt vidro" data-ac="fecha">Fechar</button>' +
+    '<button class="bt" data-ac="usacodigo">Usar</button></div>', true);
+}
+function usaCodigo() {
+  const c = document.getElementById('campo-codigo');
+  const cod = ((c ? c.value : '') || '').trim().toUpperCase();
+  prog.codigos = prog.codigos || [];
+  if (!PRESENTES[cod]) return mostraCodigo('Esse código não existe.');
+  if (prog.codigos.indexOf(cod) >= 0) return mostraCodigo('Esse código você já usou.');
+  prog.codigos.push(cod);
+  prog.moedas += PRESENTES[cod];
+  salvaProg();
+  pintaMoedas();
+  salvaNaNuvemDepois();
+  Som.liga(); Som.vitoria();
+  cartao('<h3>Caiu na conta</h3><p>Mais ' + nf(PRESENTES[cod]) + ' moedas para você. Agora são ' + nf(prog.moedas) + '.</p>' +
+    '<div class="bts"><button class="bt" data-ac="fecha">Beleza</button></div>', true);
+}
+
 function pedeApelido() {
   cartao('<h3>Como quer aparecer?</h3><p>Esse nome é o que a turma vê no ranking. Seu e-mail não aparece pra ninguém.</p>' +
     '<input class="campo" id="campo-apelido" maxlength="16" placeholder="seu apelido" value="' + (prog.apelido || '') + '">' +
@@ -4392,15 +4813,15 @@ async function pintaPodio() {
   const lista = await Ranking.geral();
   if (!lista || !lista.length) { caixa.hidden = true; return; }
   const meu = Conta.dentro ? Conta.sessao.uid : '';
-  const ord = lista.slice().sort((a, b) => (b.max || 0) - (a.max || 0) || (b.estrelas || 0) - (a.estrelas || 0));
+  const ord = lista.slice().sort((a, b) => (b.estrelas || 0) - (a.estrelas || 0) || (b.max || 0) - (a.max || 0));
   const minha = ord.findIndex(x => x.id === meu);
   let h = '<div class="podio-topo"><b>Ranking</b><span>ver tudo</span></div>';
   h += ord.slice(0, 3).map((x, k) => '<div class="linha-podio' + (x.id === meu ? ' eu' : '') + '"><span class="pos">' + medalha(k) + '</span>' +
-       '<span class="nome">' + (x.nome || 'mergulhador') + '</span><span class="val">fase ' + ((x.max || 0) + 1) + '</span></div>').join('');
+       '<span class="nome">' + (x.nome || 'mergulhador') + '</span><span class="val">' + (x.estrelas || 0) + '★</span></div>').join('');
   if (minha >= 3) {
     const x = ord[minha];
     h += '<div class="linha-podio eu"><span class="pos">' + (minha + 1) + 'º</span><span class="nome">' + (x.nome || 'você') +
-         '</span><span class="val">fase ' + ((x.max || 0) + 1) + '</span></div>';
+         '</span><span class="val">' + (x.estrelas || 0) + '★</span></div>';
   }
   caixa.innerHTML = h;
   caixa.hidden = false;
@@ -4615,8 +5036,13 @@ function abreFase(i, ignoraParada) {
                                    : Array.from({ length: H }, () => Array(W).fill(0));
   J.papelBase = papel.map(l => l.slice());
   J.papelTotal = contaPapel(papel);
+  J.presosFeitos = 0; J.bolhasFeitas = 0; J.bolhasFugiram = 0; J.contaBolha = 0;
+  TOPO = (f.forma || Array(W).fill(0)).slice();
+  for (let c = 0; c < W; c++) for (let r = 0; r < TOPO[c]; r++) { papel[r][c] = 0; if (J.papelBase) J.papelBase[r][c] = 0; }
+  J.papelTotal = contaPapel(papel);
   pontosNaTela = 0;
   montaTabuleiro();
+  preparaEspeciaisDaFase();
   fechaCartao();
   tela('tela-jogo');
   requestAnimationFrame(() => {
@@ -4631,10 +5057,36 @@ function abreFase(i, ignoraParada) {
     else comecaFase();
   });
 }
+function garanteBolhas() {
+  const f = faseAtual();
+  if (f.obj.tipo !== 'bolhas') return;
+  const quer = f.obj.juntas || 2;
+  let n = 0;
+  for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) if (grid[r][c] && grid[r][c].bolha) n++;
+  if (n < quer) nasceBolha(quer - n);
+}
 function comecaFase() {
   const f = faseAtual();
+  garanteBolhas();
   if (!prog.vistos.bau && f.obj.tipo === 'bau') { prog.vistos.bau = true; salvaProg(); return mostraAviso('O baú', '#i-bau',
     'O baú só quer chegar na última fileira. Ele não combina com nada e nenhum especial leva ele embora. Estoure as peças debaixo dele para ele descer, ou empurre ele de lado trocando com a peça vizinha. E não se assuste se ele descer sozinho: o baú é pesado e afunda uma casa a cada quatro jogadas.'); }
+  if (f.obj.tipo === 'chefe' && !J.viuMestre) {
+    J.viuMestre = true;
+    const M = MESTRES[f.obj.mestre];
+    return cartao('<div class="intro-mestre">' + desenhaMestre(f.obj.mestre) + '</div>' +
+      '<p class="prof-faixa">fase ' + (J.fase + 1) + ' · ' + metros(f.prof) + '</p>' +
+      '<h3>' + M.nome + '</h3><p>' + M.fala + '</p>' +
+      '<p>Cada peça que você estoura machuca ele. De duas em duas jogadas ele revida: rouba uma jogada e cospe tinta, e casa com tinta não machuca. Limpe a tinta e continue batendo.</p>' +
+      '<div class="bts"><button class="bt" data-ac="comeca">Encarar</button></div>');
+  }
+  if (!prog.vistos.presos && f.obj.tipo === 'presos') { prog.vistos.presos = true; salvaProg(); return mostraAviso('Bicho preso', '#i-gaiola',
+    'Os bichos presos na rede não combinam com ninguém. Estoure qualquer peça bem do lado deles e a rede se abre.'); }
+  if (!prog.vistos.bolhas && f.obj.tipo === 'bolhas') { prog.vistos.bolhas = true; salvaProg(); return mostraAviso('Bolhas de ar', '#i-bolha-ar',
+    'As bolhas sobem sozinhas de duas em duas jogadas. Combine a peça que carrega a bolha para estourar antes que ela chegue na superfície e escape.'); }
+  if (!prog.vistos.corrente && f.obj.corrente) { prog.vistos.corrente = true; salvaProg(); return mostraAviso('A corrente', null,
+    'Cada elo aguenta três estouros. Não adianta espalhar: bata sempre no mesmo lugar até o elo arrebentar.'); }
+  if (!prog.vistos.mancha && f.obj.mancha) { prog.vistos.mancha = true; salvaProg(); return mostraAviso('Maré vermelha', null,
+    'A mancha se espalha para as casas vizinhas se você demorar. A próxima a nascer pisca antes, então dá pra chegar na frente.'); }
   if (!prog.vistos.cresce && f.obj.cresce) { prog.vistos.cresce = true; salvaProg(); return mostraAviso('A alga volta', null,
     'Nesta fase a alga cresce de novo se você demorar. A casa que vai voltar pisca antes, então dá pra chegar na frente. Nas últimas jogadas ela para de crescer.'); }
   J.ocupado = false;
@@ -4733,6 +5185,8 @@ function iniciar() {
     else if (ac === 'encerra') encerraAgora();
     else if (ac === 'rank') mostraRanking();
     else if (ac === 'apelido') pedeApelido();
+    else if (ac === 'codigo') mostraCodigo();
+    else if (ac === 'usacodigo') usaCodigo();
     else if (ac === 'aba') mostraRanking(b.dataset.id);
     else if (ac === 'salvaapelido') salvaApelido();
     else if (ac === 'criacardume') criaCardume();

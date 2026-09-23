@@ -656,6 +656,51 @@ body.leve #descida.roda{animation-duration:.45s}
 
 body.leve .podio{-webkit-backdrop-filter:none;backdrop-filter:none;background:rgba(4,30,48,.72)}
 
+.casa.fora{visibility:hidden;pointer-events:none}
+
+/* ── o mestre ───────────────────────────────────────────────── */
+.mestre-hud{display:flex;align-items:center;gap:12px}
+.retrato-mestre{width:56px;height:56px;flex:0 0 auto;filter:drop-shadow(0 3px 6px rgba(0,20,40,.5))}
+.mestre-txt{flex:1;min-width:0}
+.vida-mestre{height:10px;border-radius:999px;background:rgba(0,0,0,.35);overflow:hidden;margin:5px 0 4px;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.18)}
+.vida-mestre i{display:block;height:100%;border-radius:999px;transition:width .45s cubic-bezier(.2,.9,.3,1)}
+.retrato-mestre.apanha{animation:mestre-apanha .32s ease}
+@keyframes mestre-apanha{0%,100%{transform:none;filter:none}40%{transform:translateX(-4px) scale(.94);filter:brightness(2.2)}}
+.retrato-mestre.ataca{animation:mestre-ataca .55s ease}
+@keyframes mestre-ataca{0%,100%{transform:none}30%{transform:scale(1.16) rotate(-5deg)}60%{transform:scale(1.08) rotate(4deg)}}
+.retrato-mestre.derrotado{animation:mestre-cai 1s forwards}
+@keyframes mestre-cai{to{transform:translateY(26px) rotate(22deg) scale(.7);opacity:0}}
+.intro-mestre{display:grid;place-items:center;margin-bottom:6px}
+.intro-mestre .retrato-mestre{width:110px;height:110px;animation:mestre-respira 3s ease-in-out infinite}
+@keyframes mestre-respira{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+
+/* ── bicho preso na rede ────────────────────────────────────── */
+.peca.preso .corpo::after{content:"";position:absolute;inset:6%;border-radius:22%;pointer-events:none;
+  background:repeating-linear-gradient(45deg,rgba(255,255,255,.75) 0 2px,transparent 2px 9px),
+             repeating-linear-gradient(-45deg,rgba(255,255,255,.75) 0 2px,transparent 2px 9px);
+  box-shadow:inset 0 0 0 2.5px rgba(255,255,255,.8);filter:drop-shadow(0 1px 2px rgba(0,20,40,.5))}
+.peca.preso2 .corpo::after{background:repeating-linear-gradient(45deg,rgba(255,255,255,.9) 0 2.6px,transparent 2.6px 7px),
+             repeating-linear-gradient(-45deg,rgba(255,255,255,.9) 0 2.6px,transparent 2.6px 7px);
+  box-shadow:inset 0 0 0 3px rgba(255,255,255,.95)}
+.peca.preso .corpo{filter:saturate(.75) brightness(.9)}
+
+/* ── bolha de ar subindo ────────────────────────────────────── */
+.peca.com-bolha .corpo::after{content:"";position:absolute;inset:-6%;border-radius:50%;pointer-events:none;
+  border:3px solid rgba(214,247,255,.9);
+  background:radial-gradient(circle at 32% 28%,rgba(255,255,255,.55),rgba(191,245,238,.12) 55%,transparent 70%);
+  box-shadow:0 0 12px rgba(191,245,238,.6),inset 0 0 10px rgba(255,255,255,.4);
+  animation:bolha-treme 2.4s ease-in-out infinite}
+@keyframes bolha-treme{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+
+/* ── terceira camada: o elo da corrente ─────────────────────── */
+.casa.papel3 i{background:var(--bl-tex2),linear-gradient(180deg,#8E99A6,#5A6674);
+  box-shadow:inset 0 2px 0 rgba(255,255,255,.35),inset 0 0 0 3px rgba(255,255,255,.22),0 2px 4px rgba(0,0,0,.4)}
+[data-tex="elo"]{--bl-tex1:radial-gradient(circle at 50% 50%,transparent 0 26%,rgba(0,0,0,.35) 27% 33%,transparent 34%) 0 0/16px 16px;
+  --bl-tex2:radial-gradient(circle at 50% 50%,transparent 0 22%,rgba(0,0,0,.45) 23% 31%,transparent 32%) 0 0/14px 14px}
+[data-tex="mancha"]{--bl-tex1:radial-gradient(circle at 30% 35%,rgba(255,255,255,.35) 0 12%,transparent 13%),radial-gradient(circle at 70% 60%,rgba(0,0,0,.2) 0 16%,transparent 17%);
+  --bl-tex2:radial-gradient(circle at 40% 30%,rgba(255,255,255,.28) 0 14%,transparent 15%)}
+
 /* ── encerrar a fase de pontuação quando quiser ─────────────── */
 .bt-encerra{position:absolute;right:10px;bottom:8px;z-index:4;border:0;cursor:pointer;border-radius:999px;
   padding:6px 13px 7px;font-family:var(--display);font-weight:800;font-size:12.5px;color:#fff;
@@ -673,7 +718,11 @@ body.leve .podio{-webkit-backdrop-filter:none;backdrop-filter:none;background:rg
   background:rgba(10,108,122,.07);text-align:left}
 .linha-rank .pos{flex:0 0 auto;width:30px;font-family:var(--display);font-weight:800;font-size:15px;color:#0A6C7A}
 .linha-rank .nome{flex:1;min-width:0;font-weight:800;font-size:14.5px;color:var(--tinta);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.linha-rank .val{flex:0 0 auto;font-family:var(--display);font-weight:800;font-size:15px;color:var(--tinta)}
+.linha-rank .val{flex:0 0 auto;font-family:var(--display);font-weight:800;font-size:15px;color:var(--tinta);text-align:right;line-height:1.1}
+.linha-rank .val small{display:block;font-family:Nunito,sans-serif;font-size:10.5px;font-weight:700;opacity:.72;letter-spacing:.01em}
+.tag-mestre{font-style:normal;font-size:10.5px;background:rgba(176,124,255,.25);color:#7A3CD0;border-radius:999px;padding:1px 6px;margin-left:4px}
+[data-mundo="3"] .tag-mestre,[data-mundo="4"] .tag-mestre{color:#D9C3FF}
+.lista-rank .longe{margin-top:12px;border-top:2px dashed rgba(10,108,122,.25);padding-top:8px}
 .linha-rank.eu{background:rgba(255,106,61,.16);box-shadow:inset 0 0 0 2px var(--boia)}
 .linha-rank.eu.longe{margin-top:12px}
 .cartao p.cod-cardume{font-size:13px;color:#4F7F8C;margin:2px 0 8px}

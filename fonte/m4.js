@@ -16,8 +16,42 @@ function gastaJogada() {
   Musica.tensao(aperto, 0);
 }
 
+/* põe no tabuleiro o que cada objetivo novo precisa */
+function preparaEspeciaisDaFase() {
+  const f = faseAtual();
+  if (f.obj.tipo === 'presos') {
+    let postos = 0;
+    const quer = Math.min(f.obj.n, 6);
+    for (let tent = 0; tent < 300 && postos < quer; tent++) {
+      const r = 2 + sorteia(H - 3), c = sorteia(W), p = grid[r][c];
+      if (!p || p.gaiola || p.bau || p.sp) continue;
+      let perto = false;
+      for (let y = r - 1; y <= r + 1 && !perto; y++) for (let x = c - 1; x <= c + 1; x++)
+        if (dentro(y, x) && grid[y][x] && grid[y][x].gaiola) { perto = true; break; }
+      if (perto) continue;
+      p.gaiola = f.obj.rede || 2;
+      postos++;
+    }
+  }
+  if (f.obj.tipo === 'bolhas') nasceBolha(f.obj.juntas || 2);
+}
+function nasceBolha(quantas) {
+  for (let k = 0; k < quantas; k++) {
+    for (let tent = 0; tent < 120; tent++) {
+      const r = H - 1 - sorteia(2), c = sorteia(W), p = grid[r][c];
+      if (!p || p.bolha || p.bau || p.gaiola) continue;
+      p.bolha = true;
+      if (typeof atualizaEl === 'function') atualizaEl(p);
+      break;
+    }
+  }
+}
+
 function faltaObjetivo() {
   const f = faseAtual();
+  if (f.obj.tipo === 'chefe') return Math.max(0, f.obj.vida - (J.dano || 0));
+  if (f.obj.tipo === 'presos') return Math.max(0, f.obj.n - (J.presosFeitos || 0));
+  if (f.obj.tipo === 'bolhas') return Math.max(0, f.obj.n - (J.bolhasFeitas || 0));
   if (f.obj.tipo === 'pontos') return Math.max(0, f.marcas[0] - J.pontos);
   if (f.obj.tipo === 'coletar') return f.obj.itens.reduce((a, it) => a + Math.max(0, it[1] - J.coletado[it[0]]), 0);
   if (f.obj.tipo === 'bau') return Math.max(0, f.obj.n - J.bauFeito);
@@ -25,7 +59,14 @@ function faltaObjetivo() {
   return Math.max(0, J.papelTotal - J.papelFeito);
 }
 function objetivoFeito() { return faltaObjetivo() === 0; }
-function nomeBloq(f, n) { const b = ambiente(J.desafio ? 0 : J.fase).bloq; return n + ' ' + (n === 1 ? b.um : b.varios); }
+function nomeBloq(f, n) {
+  const b = f.obj.corrente ? BLOQUEIOS.corrente : f.obj.mancha ? BLOQUEIOS.mancha : ambiente(J.desafio ? 0 : J.fase).bloq;
+  return n + ' ' + (n === 1 ? b.um : b.varios);
+}
+function verboBloq(f) {
+  const b = f.obj.corrente ? BLOQUEIOS.corrente : f.obj.mancha ? BLOQUEIOS.mancha : ambiente(J.desafio ? 0 : J.fase).bloq;
+  return b.verbo;
+}
 
 function atualizaHud() {
   const f = faseAtual();
@@ -70,6 +111,22 @@ function atualizaHud() {
     const falta = Math.max(0, f.obj.n - (J.criados || 0));
     o.innerHTML = '<div><div class="rotulo">Criar especiais</div></div><div class="alvos">' +
       '<div class="alvo' + (falta ? '' : ' feito') + '"><svg class="ic" viewBox="0 0 100 100"><use href="#i-faisca"/></svg><b>' + (falta || '✓') + '</b></div></div>';
+  } else if (f.obj.tipo === 'chefe') {
+    const M = MESTRES[f.obj.mestre], vida = Math.max(0, f.obj.vida - (J.dano || 0));
+    const pc = Math.round(vida / f.obj.vida * 100);
+    o.innerHTML = '<div class="mestre-hud">' + desenhaMestre(f.obj.mestre) +
+      '<div class="mestre-txt"><div class="rotulo">' + M.nome + '</div>' +
+      '<div class="vida-mestre"><i style="width:' + pc + '%;background:linear-gradient(90deg,' + M.cor2 + ',' + M.cor + ')"></i></div>' +
+      '<div class="valor">' + (vida ? vida + ' de vida' : 'derrotado!') + '</div></div></div>';
+  } else if (f.obj.tipo === 'presos') {
+    const falta = Math.max(0, f.obj.n - (J.presosFeitos || 0));
+    o.innerHTML = '<div><div class="rotulo">Libertar os presos</div></div><div class="alvos">' +
+      '<div class="alvo' + (falta ? '' : ' feito') + '"><svg class="ic" viewBox="0 0 100 100"><use href="#i-gaiola"/></svg><b>' + (falta || '✓') + '</b></div></div>';
+  } else if (f.obj.tipo === 'bolhas') {
+    const falta = Math.max(0, f.obj.n - (J.bolhasFeitas || 0));
+    o.innerHTML = '<div><div class="rotulo">Estourar as bolhas</div>' +
+      (J.bolhasFugiram ? '<div class="valor">' + J.bolhasFugiram + (J.bolhasFugiram === 1 ? ' fugiu' : ' fugiram') + '</div>' : '') +
+      '</div><div class="alvos"><div class="alvo' + (falta ? '' : ' feito') + '"><svg class="ic" viewBox="0 0 100 100"><use href="#i-bolha-ar"/></svg><b>' + (falta || '✓') + '</b></div></div>';
   } else if (f.obj.tipo === 'bau') {
     const falta = Math.max(0, f.obj.n - J.bauFeito);
     o.innerHTML = '<div><div class="rotulo">Descer até o fundo</div></div><div class="alvos">' +
@@ -90,7 +147,7 @@ function atualizaHud() {
     });
   } else {
     const falta = casasCobertas(papel);
-    o.innerHTML = '<div><div class="rotulo">' + ambiente(J.desafio ? 0 : J.fase).bloq.verbo + '</div>' +
+    o.innerHTML = '<div><div class="rotulo">' + verboBloq(f) + '</div>' +
       '<div class="valor">' + (falta ? nomeBloq(f, falta) : 'tudo limpo ✓') + '</div></div>';
   }
 }
@@ -162,6 +219,7 @@ async function encerraAgora() {
 }
 
 async function venceu() {
+  const eraMestre = faseAtual().obj.tipo === 'chefe';
   J.ocupado = true;
   if (J.mov > 0) {
     faixaTexto('Sobrou jogada!');
@@ -185,7 +243,7 @@ async function venceu() {
   limpaPartida();
   prog.estrelas[J.fase] = Math.max(prog.estrelas[J.fase] || 0, e);
   if (J.fase + 1 > prog.max) prog.max = J.fase + 1;
-  const ganho = moedasDaFase(e, primeira);
+  const ganho = moedasDaFase(e, primeira) + (eraMestre ? 80 : 0);
   prog.moedas += ganho;
   salvaProg();
   salvaNaNuvemDepois();
@@ -211,6 +269,13 @@ async function venceu() {
     '</div>'
   );
   tiraBotaoEncerrar();
+  if (eraMestre) {
+    prog.mestres = (prog.mestres || 0) + 1;
+    const ret = document.querySelector('.retrato-mestre');
+    if (ret) ret.classList.add('derrotado');
+    faixaTexto('Mestre derrotado!');
+    fogos(); await espera(700);
+  }
   await estouroFinal();          /* o resto dos especiais estoura antes do cartão */
   if (Conta.ligada) Conta.garante().then(() => {
     if (!Ranking.ligado) return;
@@ -238,6 +303,9 @@ async function perdeu() {
   else if (f.obj.tipo === 'coletar') { const n = faltaObjetivo(); falta = 'Faltou juntar ' + n + (n === 1 ? ' peça.' : ' peças.'); }
   else if (f.obj.tipo === 'bau') { const n = faltaObjetivo(); falta = n === 1 ? 'Faltou um baú chegar no fundo.' : 'Faltaram ' + n + ' baús chegarem no fundo.'; }
   else if (f.obj.tipo === 'especiais') { const n = faltaObjetivo(); falta = n === 1 ? 'Faltou criar um especial.' : 'Faltou criar ' + n + ' especiais.'; }
+  else if (f.obj.tipo === 'chefe') { const n = faltaObjetivo(); falta = 'O mestre ainda tinha ' + n + ' de vida.'; }
+  else if (f.obj.tipo === 'presos') { const n = faltaObjetivo(); falta = n === 1 ? 'Faltou libertar um bicho.' : 'Faltaram ' + n + ' bichos presos.'; }
+  else if (f.obj.tipo === 'bolhas') { const n = faltaObjetivo(); falta = n === 1 ? 'Faltou estourar uma bolha.' : 'Faltaram ' + n + ' bolhas.'; }
   else { const n = casasCobertas(papel); falta = (n === 1 ? 'Sobrou ' : 'Sobraram ') + nomeBloq(f, n) + '.'; }
   await espera(400);
   cartao(
@@ -502,6 +570,9 @@ function abreDesafio() {
         bauFeito: 0, bauNaTela: 0, bauPendentes: 0, criados: 0, objBatido: false, contaCresce: 0, alvoCresce: null };
   papel = Array.from({ length: H }, () => Array(W).fill(0));
   J.papelBase = papel.map(l => l.slice());
+  TOPO = (f.forma || Array(W).fill(0)).slice();
+  for (let c = 0; c < W; c++) for (let r = 0; r < TOPO[c]; r++) { papel[r][c] = 0; if (J.papelBase) J.papelBase[r][c] = 0; }
+  J.papelTotal = contaPapel(papel);
   pontosNaTela = 0;
   montaTabuleiro();
   fechaCartao();
@@ -624,6 +695,8 @@ function mostraAjustes() {
       '<div class="ajuste"><div class="txt"><b>' + a.nome + '</b><small>' + a.texto + '</small></div>' +
       '<button class="chave' + (valorAjuste(a.k) ? ' on' : '') + '" data-ac="mudar" data-k="' + a.k + '" ' +
       'role="switch" aria-checked="' + valorAjuste(a.k) + '" aria-label="' + a.nome + '"><span></span></button></div>').join('') +
+    '<div class="ajuste"><div class="txt"><b>Código de presente</b><small>' + (prog.codigos && prog.codigos.length ? prog.codigos.length + ' usado(s)' : 'se alguém te passar um') + '</small></div>' +
+      '<button class="bt-compra" data-ac="codigo">Usar</button></div>' +
     '<div class="ajuste"><div class="txt"><b>Seu nome no ranking</b><small>' + (prog.apelido || 'ainda sem nome') + '</small></div>' +
       '<button class="bt-compra" data-ac="apelido">' + (prog.apelido ? 'Trocar' : 'Escolher') + '</button></div>' +
     '<div class="ajuste"><div class="txt"><b>Progresso</b><small>' +
@@ -770,6 +843,8 @@ function juntaProg(a, b) {
   r.desafio = { semana: (da.melhor || 0) >= (db.melhor || 0) ? da.semana : db.semana,
                 melhor: Math.max(da.melhor || 0, db.melhor || 0), nome: da.nome || db.nome || '' };
   r.apelido = a.apelido || b.apelido || '';
+  r.mestres = Math.max(a.mestres || 0, b.mestres || 0);
+  r.codigos = Array.from(new Set([].concat(a.codigos || [], b.codigos || [])));
   r.cardume = a.cardume || b.cardume || '';
   r.melhores = Object.assign({}, b.melhores || {});
   for (const k in (a.melhores || {})) r.melhores[k] = Math.max(a.melhores[k] || 0, r.melhores[k] || 0);
@@ -889,8 +964,11 @@ const Ranking = {
   },
   async subeFicha() {
     if (!this.ligado) return;
+    let soma = 0;
+    for (const k in (prog.melhores || {})) soma += prog.melhores[k] || 0;
     return this.manda('/mergulho/placar/' + Conta.sessao.uid,
-      { nome: this.nome(), max: prog.max, estrelas: totalEstrelas(), cardume: prog.cardume || '', quando: Date.now() });
+      { nome: this.nome(), max: prog.max, estrelas: totalEstrelas(), pontos: soma,
+        mestres: prog.mestres || 0, cardume: prog.cardume || '', quando: Date.now() });
   },
   async pontuaFase(i, pontos) {
     if (!this.ligado) return;
@@ -901,7 +979,7 @@ const Ranking = {
     salvaProg();
     return this.manda('/mergulho/fases/' + i + '/' + Conta.sessao.uid, { nome: this.nome(), pontos: pontos });
   },
-  geral() { return this.pega('/mergulho/placar', 'orderBy="max"&limitToLast=50'); },
+  geral() { return this.pega('/mergulho/placar', 'orderBy="estrelas"&limitToLast=50'); },
   cardume(cod) { return this.pega('/mergulho/placar', 'orderBy="cardume"&equalTo="' + cod + '"&limitToLast=60'); },
   daFase(i) { return this.pega('/mergulho/fases/' + i, 'orderBy="pontos"&limitToLast=25'); },
   daSemana(sem) { return this.pega('/mergulho/desafio/' + sem, 'orderBy="pontos"&limitToLast=30'); }
@@ -914,6 +992,23 @@ function codigoCardume() {
   return s;
 }
 const medalha = k => k === 0 ? '🥇' : k === 1 ? '🥈' : k === 2 ? '🥉' : (k + 1) + 'º';
+
+/* ranking de gente: manda a estrela, depois a fase, depois o ponto.
+   Assim não basta atravessar as fases correndo: tem que jogar bem. */
+function linhasGente(lista) {
+  if (!lista) return '<p class="vazio">Sem internet pra buscar agora.</p>';
+  if (!lista.length) return '<p class="vazio">Ninguém aqui ainda. Seja o primeiro.</p>';
+  const meu = Conta.dentro ? Conta.sessao.uid : '';
+  const ord = lista.slice().sort((a, b) =>
+    (b.estrelas || 0) - (a.estrelas || 0) || (b.max || 0) - (a.max || 0) || (b.pontos || 0) - (a.pontos || 0));
+  const minha = ord.findIndex(x => x.id === meu);
+  const linha = (x, k) => '<div class="linha-rank' + (x.id === meu ? ' eu' : '') + '"><span class="pos">' + medalha(k) + '</span>' +
+    '<span class="nome">' + (x.nome || 'mergulhador') + (x.mestres ? ' <i class="tag-mestre" title="mestres derrotados">' + x.mestres + '⚔</i>' : '') + '</span>' +
+    '<span class="val"><b>' + (x.estrelas || 0) + '★</b><small>fase ' + ((x.max || 0) + 1) + (x.pontos ? ' · ' + nf(x.pontos) + ' pts' : '') + '</small></span></div>';
+  let h = ord.slice(0, 20).map(linha).join('');
+  if (minha >= 20) h += '<div class="longe">' + linha(ord[minha], minha) + '</div>';
+  return h;
+}
 
 function linhasRanking(lista, campo, sufixo) {
   if (!lista) return '<p class="vazio">Sem internet pra buscar agora.</p>';
@@ -962,13 +1057,13 @@ async function mostraRanking(aba) {
              '<div class="bts"><button class="bt vidro" data-ac="entracardume">Entrar num</button><button class="bt" data-ac="criacardume">Criar cardume</button></div>';
     } else {
       const lista = await Ranking.cardume(prog.cardume);
-      html = '<p class="cod-cardume">Código <b>' + prog.cardume + '</b> · passe pra quem você quer na disputa</p>' +
-             linhasRanking(lista, 'max', '') +
+      html = '<p class="cod-cardume">Código <b>' + prog.cardume + '</b> · manda pro grupo</p>' +
+             linhasGente(lista) +
              '<div class="bts"><button class="bt-texto" data-ac="copiacardume">Copiar código</button>' +
              '<button class="bt-texto" data-ac="saicardume">Sair do cardume</button></div>';
     }
   } else if (abaRank === 'geral') {
-    html = linhasRanking(await Ranking.geral(), 'max', '');
+    html = '<p class="cod-cardume">Quem tem mais estrela lidera; empate desempata pela fase</p>' + linhasGente(await Ranking.geral());
   } else if (abaRank === 'fase') {
     /* dentro da partida mostra a fase aberta; fora dela, a fase onde a pessoa está */
     const i = (document.body.classList.contains('em-jogo') && J && J.fase >= 0) ? J.fase : prog.max;
@@ -979,6 +1074,30 @@ async function mostraRanking(aba) {
   }
   if (alvo() && document.querySelector('.abas .aba.on')) alvo().innerHTML = html;
 }
+const PRESENTES = { 'MERGULHO5000': 5000, 'CARDUME1000': 1000, 'ABISMO500': 500, 'MARE250': 250 };
+function mostraCodigo(aviso) {
+  cartao('<h3>Código de presente</h3><p>Se alguém te passou um código, digite aqui.</p>' +
+    (aviso ? '<p class="aviso">' + aviso + '</p>' : '') +
+    '<input class="campo" id="campo-codigo" maxlength="16" placeholder="CÓDIGO" style="text-transform:uppercase;text-align:center;letter-spacing:.14em">' +
+    '<div class="bts"><button class="bt vidro" data-ac="fecha">Fechar</button>' +
+    '<button class="bt" data-ac="usacodigo">Usar</button></div>', true);
+}
+function usaCodigo() {
+  const c = document.getElementById('campo-codigo');
+  const cod = ((c ? c.value : '') || '').trim().toUpperCase();
+  prog.codigos = prog.codigos || [];
+  if (!PRESENTES[cod]) return mostraCodigo('Esse código não existe.');
+  if (prog.codigos.indexOf(cod) >= 0) return mostraCodigo('Esse código você já usou.');
+  prog.codigos.push(cod);
+  prog.moedas += PRESENTES[cod];
+  salvaProg();
+  pintaMoedas();
+  salvaNaNuvemDepois();
+  Som.liga(); Som.vitoria();
+  cartao('<h3>Caiu na conta</h3><p>Mais ' + nf(PRESENTES[cod]) + ' moedas para você. Agora são ' + nf(prog.moedas) + '.</p>' +
+    '<div class="bts"><button class="bt" data-ac="fecha">Beleza</button></div>', true);
+}
+
 function pedeApelido() {
   cartao('<h3>Como quer aparecer?</h3><p>Esse nome é o que a turma vê no ranking. Seu e-mail não aparece pra ninguém.</p>' +
     '<input class="campo" id="campo-apelido" maxlength="16" placeholder="seu apelido" value="' + (prog.apelido || '') + '">' +
@@ -1046,15 +1165,15 @@ async function pintaPodio() {
   const lista = await Ranking.geral();
   if (!lista || !lista.length) { caixa.hidden = true; return; }
   const meu = Conta.dentro ? Conta.sessao.uid : '';
-  const ord = lista.slice().sort((a, b) => (b.max || 0) - (a.max || 0) || (b.estrelas || 0) - (a.estrelas || 0));
+  const ord = lista.slice().sort((a, b) => (b.estrelas || 0) - (a.estrelas || 0) || (b.max || 0) - (a.max || 0));
   const minha = ord.findIndex(x => x.id === meu);
   let h = '<div class="podio-topo"><b>Ranking</b><span>ver tudo</span></div>';
   h += ord.slice(0, 3).map((x, k) => '<div class="linha-podio' + (x.id === meu ? ' eu' : '') + '"><span class="pos">' + medalha(k) + '</span>' +
-       '<span class="nome">' + (x.nome || 'mergulhador') + '</span><span class="val">fase ' + ((x.max || 0) + 1) + '</span></div>').join('');
+       '<span class="nome">' + (x.nome || 'mergulhador') + '</span><span class="val">' + (x.estrelas || 0) + '★</span></div>').join('');
   if (minha >= 3) {
     const x = ord[minha];
     h += '<div class="linha-podio eu"><span class="pos">' + (minha + 1) + 'º</span><span class="nome">' + (x.nome || 'você') +
-         '</span><span class="val">fase ' + ((x.max || 0) + 1) + '</span></div>';
+         '</span><span class="val">' + (x.estrelas || 0) + '★</span></div>';
   }
   caixa.innerHTML = h;
   caixa.hidden = false;
@@ -1269,8 +1388,13 @@ function abreFase(i, ignoraParada) {
                                    : Array.from({ length: H }, () => Array(W).fill(0));
   J.papelBase = papel.map(l => l.slice());
   J.papelTotal = contaPapel(papel);
+  J.presosFeitos = 0; J.bolhasFeitas = 0; J.bolhasFugiram = 0; J.contaBolha = 0;
+  TOPO = (f.forma || Array(W).fill(0)).slice();
+  for (let c = 0; c < W; c++) for (let r = 0; r < TOPO[c]; r++) { papel[r][c] = 0; if (J.papelBase) J.papelBase[r][c] = 0; }
+  J.papelTotal = contaPapel(papel);
   pontosNaTela = 0;
   montaTabuleiro();
+  preparaEspeciaisDaFase();
   fechaCartao();
   tela('tela-jogo');
   requestAnimationFrame(() => {
@@ -1285,10 +1409,36 @@ function abreFase(i, ignoraParada) {
     else comecaFase();
   });
 }
+function garanteBolhas() {
+  const f = faseAtual();
+  if (f.obj.tipo !== 'bolhas') return;
+  const quer = f.obj.juntas || 2;
+  let n = 0;
+  for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) if (grid[r][c] && grid[r][c].bolha) n++;
+  if (n < quer) nasceBolha(quer - n);
+}
 function comecaFase() {
   const f = faseAtual();
+  garanteBolhas();
   if (!prog.vistos.bau && f.obj.tipo === 'bau') { prog.vistos.bau = true; salvaProg(); return mostraAviso('O baú', '#i-bau',
     'O baú só quer chegar na última fileira. Ele não combina com nada e nenhum especial leva ele embora. Estoure as peças debaixo dele para ele descer, ou empurre ele de lado trocando com a peça vizinha. E não se assuste se ele descer sozinho: o baú é pesado e afunda uma casa a cada quatro jogadas.'); }
+  if (f.obj.tipo === 'chefe' && !J.viuMestre) {
+    J.viuMestre = true;
+    const M = MESTRES[f.obj.mestre];
+    return cartao('<div class="intro-mestre">' + desenhaMestre(f.obj.mestre) + '</div>' +
+      '<p class="prof-faixa">fase ' + (J.fase + 1) + ' · ' + metros(f.prof) + '</p>' +
+      '<h3>' + M.nome + '</h3><p>' + M.fala + '</p>' +
+      '<p>Cada peça que você estoura machuca ele. De duas em duas jogadas ele revida: rouba uma jogada e cospe tinta, e casa com tinta não machuca. Limpe a tinta e continue batendo.</p>' +
+      '<div class="bts"><button class="bt" data-ac="comeca">Encarar</button></div>');
+  }
+  if (!prog.vistos.presos && f.obj.tipo === 'presos') { prog.vistos.presos = true; salvaProg(); return mostraAviso('Bicho preso', '#i-gaiola',
+    'Os bichos presos na rede não combinam com ninguém. Estoure qualquer peça bem do lado deles e a rede se abre.'); }
+  if (!prog.vistos.bolhas && f.obj.tipo === 'bolhas') { prog.vistos.bolhas = true; salvaProg(); return mostraAviso('Bolhas de ar', '#i-bolha-ar',
+    'As bolhas sobem sozinhas de duas em duas jogadas. Combine a peça que carrega a bolha para estourar antes que ela chegue na superfície e escape.'); }
+  if (!prog.vistos.corrente && f.obj.corrente) { prog.vistos.corrente = true; salvaProg(); return mostraAviso('A corrente', null,
+    'Cada elo aguenta três estouros. Não adianta espalhar: bata sempre no mesmo lugar até o elo arrebentar.'); }
+  if (!prog.vistos.mancha && f.obj.mancha) { prog.vistos.mancha = true; salvaProg(); return mostraAviso('Maré vermelha', null,
+    'A mancha se espalha para as casas vizinhas se você demorar. A próxima a nascer pisca antes, então dá pra chegar na frente.'); }
   if (!prog.vistos.cresce && f.obj.cresce) { prog.vistos.cresce = true; salvaProg(); return mostraAviso('A alga volta', null,
     'Nesta fase a alga cresce de novo se você demorar. A casa que vai voltar pisca antes, então dá pra chegar na frente. Nas últimas jogadas ela para de crescer.'); }
   J.ocupado = false;
@@ -1387,6 +1537,8 @@ function iniciar() {
     else if (ac === 'encerra') encerraAgora();
     else if (ac === 'rank') mostraRanking();
     else if (ac === 'apelido') pedeApelido();
+    else if (ac === 'codigo') mostraCodigo();
+    else if (ac === 'usacodigo') usaCodigo();
     else if (ac === 'aba') mostraRanking(b.dataset.id);
     else if (ac === 'salvaapelido') salvaApelido();
     else if (ac === 'criacardume') criaCardume();
