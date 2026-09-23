@@ -147,7 +147,8 @@ function atualizaHud() {
     });
   } else {
     const falta = casasCobertas(papel);
-    o.innerHTML = '<div><div class="rotulo">' + verboBloq(f) + '</div>' +
+    const aviso = f.obj.mancha ? ' <i class="tag-cresce">espalha</i>' : f.obj.cresce ? ' <i class="tag-cresce">volta a crescer</i>' : '';
+    o.innerHTML = '<div><div class="rotulo">' + verboBloq(f) + aviso + '</div>' +
       '<div class="valor">' + (falta ? nomeBloq(f, falta) : 'tudo limpo ✓') + '</div></div>';
   }
 }
@@ -695,7 +696,7 @@ function mostraAjustes() {
       '<div class="ajuste"><div class="txt"><b>' + a.nome + '</b><small>' + a.texto + '</small></div>' +
       '<button class="chave' + (valorAjuste(a.k) ? ' on' : '') + '" data-ac="mudar" data-k="' + a.k + '" ' +
       'role="switch" aria-checked="' + valorAjuste(a.k) + '" aria-label="' + a.nome + '"><span></span></button></div>').join('') +
-    '<div class="ajuste"><div class="txt"><b>Código de presente</b><small>' + (prog.codigos && prog.codigos.length ? prog.codigos.length + ' usado(s)' : 'se alguém te passar um') + '</small></div>' +
+    '<div class="ajuste"><div class="txt"><b>Código de presente</b><small>se alguém te passar um</small></div>' +
       '<button class="bt-compra" data-ac="codigo">Usar</button></div>' +
     '<div class="ajuste"><div class="txt"><b>Seu nome no ranking</b><small>' + (prog.apelido || 'ainda sem nome') + '</small></div>' +
       '<button class="bt-compra" data-ac="apelido">' + (prog.apelido ? 'Trocar' : 'Escolher') + '</button></div>' +
@@ -1082,7 +1083,14 @@ async function mostraRanking(aba) {
   }
   if (alvo() && document.querySelector('.abas .aba.on')) alvo().innerHTML = html;
 }
-const PRESENTES = { 'MERGULHO5000': 5000, 'CARDUME1000': 1000, 'ABISMO500': 500, 'MARE250': 250 };
+const PRESENTES = {
+  /* seu, de 20 mil */
+  'ABISMO20000': 20000,
+  /* cinco de 5 mil, pra distribuir; cada pessoa usa cada código uma vez */
+  'PEROLA5000': 5000, 'CARDUME5000': 5000, 'MARESIA5000': 5000, 'NAUFRAGIO5000': 5000, 'CORRENTEZA5000': 5000,
+  /* os antigos continuam valendo para quem ainda não usou */
+  'MERGULHO5000': 5000, 'CARDUME1000': 1000, 'ABISMO500': 500, 'MARE250': 250
+};
 function mostraCodigo(aviso) {
   cartao('<h3>Código de presente</h3><p>Se alguém te passou um código, digite aqui.</p>' +
     (aviso ? '<p class="aviso">' + aviso + '</p>' : '') +
@@ -1092,7 +1100,7 @@ function mostraCodigo(aviso) {
 }
 function usaCodigo() {
   const c = document.getElementById('campo-codigo');
-  const cod = ((c ? c.value : '') || '').trim().toUpperCase();
+  const cod = ((c ? c.value : '') || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
   prog.codigos = prog.codigos || [];
   if (!PRESENTES[cod]) return mostraCodigo('Esse código não existe.');
   if (prog.codigos.indexOf(cod) >= 0) return mostraCodigo('Esse código você já usou.');
@@ -1447,8 +1455,9 @@ function comecaFase() {
     'Cada elo aguenta três estouros. Não adianta espalhar: bata sempre no mesmo lugar até o elo arrebentar.'); }
   if (!prog.vistos.mancha && f.obj.mancha) { prog.vistos.mancha = true; salvaProg(); return mostraAviso('Maré vermelha', null,
     'A mancha se espalha para as casas vizinhas se você demorar. A próxima a nascer pisca antes, então dá pra chegar na frente.'); }
-  if (!prog.vistos.cresce && f.obj.cresce) { prog.vistos.cresce = true; salvaProg(); return mostraAviso('A alga volta', null,
-    'Nesta fase a alga cresce de novo se você demorar. A casa que vai voltar pisca antes, então dá pra chegar na frente. Nas últimas jogadas ela para de crescer.'); }
+  if (!prog.vistos.cresce2 && f.obj.cresce && !f.obj.mancha) { prog.vistos.cresce2 = true; salvaProg(); return mostraAviso('A alga volta a crescer', null,
+    'Aqui a alga não fica quieta: a cada poucas jogadas ela nasce de novo numa casa que você já limpou. É o castigo da fase, então limpar rápido conta mais que limpar bonito. ' +
+    'A casa que vai brotar pisca antes, dá pra chegar na frente. E nas três últimas jogadas ela para de crescer, para a fase sempre ter fim.'); }
   J.ocupado = false;
   reiniciaDica();
   Som.liga(); Som.sobe(0);

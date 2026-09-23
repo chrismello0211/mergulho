@@ -728,8 +728,12 @@ body.leve .podio{-webkit-backdrop-filter:none;backdrop-filter:none;background:rg
 .linha-rank .nome{flex:1;min-width:0;font-weight:800;font-size:14.5px;color:var(--tinta);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .linha-rank .val{flex:0 0 auto;font-family:var(--display);font-weight:800;font-size:15px;color:var(--tinta);text-align:right;line-height:1.1}
 .linha-rank .val small{display:block;font-family:Nunito,sans-serif;font-size:10.5px;font-weight:700;opacity:.72;letter-spacing:.01em}
+.tag-cresce{font-style:normal;font-size:10px;font-weight:800;letter-spacing:.02em;text-transform:uppercase;
+  background:rgba(255,106,61,.22);color:#FFD6C4;border-radius:999px;padding:2px 7px;margin-left:6px;vertical-align:middle}
 .tag-mestre{font-style:normal;font-size:10.5px;background:rgba(176,124,255,.25);color:#7A3CD0;border-radius:999px;padding:1px 6px;margin-left:4px}
-[data-mundo="3"] .tag-mestre,[data-mundo="4"] .tag-mestre{color:#D9C3FF}
+[data-mundo="3"] .tag-mestre,[data-mundo="4"] .tag-cresce{font-style:normal;font-size:10px;font-weight:800;letter-spacing:.02em;text-transform:uppercase;
+  background:rgba(255,106,61,.22);color:#FFD6C4;border-radius:999px;padding:2px 7px;margin-left:6px;vertical-align:middle}
+.tag-mestre{color:#D9C3FF}
 .lista-rank .longe{margin-top:12px;border-top:2px dashed rgba(10,108,122,.25);padding-top:8px}
 .linha-rank.eu{background:rgba(255,106,61,.16);box-shadow:inset 0 0 0 2px var(--boia)}
 .linha-rank.eu.longe{margin-top:12px}
@@ -1040,7 +1044,7 @@ body.leve .cartao{animation-duration:.18s}
    MERGULHO · combinar 3 da beira da praia até 4.000 metros
    ═══════════════════════════════════════════════════════════════ */
 
-const VERSAO_JOGO = '2026.10.18';
+const VERSAO_JOGO = '2026.10.19';
 const W = 7, H = 8, TIPOS = 6;
 const NADA = 0, LH = 1, LV = 2, BOMBA = 3, ARCO = 4, ONDA = 5, ONDAV = 6, CARDUME = 7;
 
@@ -3509,6 +3513,7 @@ function passoCrescer() {
       casa.classList.add('cresceu');
       setTimeout(() => casa.classList.remove('cresceu'), 520);
       Som.liga(); Som.cresce();
+      faixaTexto(f.obj.mancha ? 'A mancha se espalhou' : 'A alga voltou a crescer', 1700);
       atualizaHud();
     }
   }
@@ -3825,7 +3830,8 @@ function atualizaHud() {
     });
   } else {
     const falta = casasCobertas(papel);
-    o.innerHTML = '<div><div class="rotulo">' + verboBloq(f) + '</div>' +
+    const aviso = f.obj.mancha ? ' <i class="tag-cresce">espalha</i>' : f.obj.cresce ? ' <i class="tag-cresce">volta a crescer</i>' : '';
+    o.innerHTML = '<div><div class="rotulo">' + verboBloq(f) + aviso + '</div>' +
       '<div class="valor">' + (falta ? nomeBloq(f, falta) : 'tudo limpo ✓') + '</div></div>';
   }
 }
@@ -4373,7 +4379,7 @@ function mostraAjustes() {
       '<div class="ajuste"><div class="txt"><b>' + a.nome + '</b><small>' + a.texto + '</small></div>' +
       '<button class="chave' + (valorAjuste(a.k) ? ' on' : '') + '" data-ac="mudar" data-k="' + a.k + '" ' +
       'role="switch" aria-checked="' + valorAjuste(a.k) + '" aria-label="' + a.nome + '"><span></span></button></div>').join('') +
-    '<div class="ajuste"><div class="txt"><b>Código de presente</b><small>' + (prog.codigos && prog.codigos.length ? prog.codigos.length + ' usado(s)' : 'se alguém te passar um') + '</small></div>' +
+    '<div class="ajuste"><div class="txt"><b>Código de presente</b><small>se alguém te passar um</small></div>' +
       '<button class="bt-compra" data-ac="codigo">Usar</button></div>' +
     '<div class="ajuste"><div class="txt"><b>Seu nome no ranking</b><small>' + (prog.apelido || 'ainda sem nome') + '</small></div>' +
       '<button class="bt-compra" data-ac="apelido">' + (prog.apelido ? 'Trocar' : 'Escolher') + '</button></div>' +
@@ -4760,7 +4766,14 @@ async function mostraRanking(aba) {
   }
   if (alvo() && document.querySelector('.abas .aba.on')) alvo().innerHTML = html;
 }
-const PRESENTES = { 'MERGULHO5000': 5000, 'CARDUME1000': 1000, 'ABISMO500': 500, 'MARE250': 250 };
+const PRESENTES = {
+  /* seu, de 20 mil */
+  'ABISMO20000': 20000,
+  /* cinco de 5 mil, pra distribuir; cada pessoa usa cada código uma vez */
+  'PEROLA5000': 5000, 'CARDUME5000': 5000, 'MARESIA5000': 5000, 'NAUFRAGIO5000': 5000, 'CORRENTEZA5000': 5000,
+  /* os antigos continuam valendo para quem ainda não usou */
+  'MERGULHO5000': 5000, 'CARDUME1000': 1000, 'ABISMO500': 500, 'MARE250': 250
+};
 function mostraCodigo(aviso) {
   cartao('<h3>Código de presente</h3><p>Se alguém te passou um código, digite aqui.</p>' +
     (aviso ? '<p class="aviso">' + aviso + '</p>' : '') +
@@ -4770,7 +4783,7 @@ function mostraCodigo(aviso) {
 }
 function usaCodigo() {
   const c = document.getElementById('campo-codigo');
-  const cod = ((c ? c.value : '') || '').trim().toUpperCase();
+  const cod = ((c ? c.value : '') || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
   prog.codigos = prog.codigos || [];
   if (!PRESENTES[cod]) return mostraCodigo('Esse código não existe.');
   if (prog.codigos.indexOf(cod) >= 0) return mostraCodigo('Esse código você já usou.');
@@ -5125,8 +5138,9 @@ function comecaFase() {
     'Cada elo aguenta três estouros. Não adianta espalhar: bata sempre no mesmo lugar até o elo arrebentar.'); }
   if (!prog.vistos.mancha && f.obj.mancha) { prog.vistos.mancha = true; salvaProg(); return mostraAviso('Maré vermelha', null,
     'A mancha se espalha para as casas vizinhas se você demorar. A próxima a nascer pisca antes, então dá pra chegar na frente.'); }
-  if (!prog.vistos.cresce && f.obj.cresce) { prog.vistos.cresce = true; salvaProg(); return mostraAviso('A alga volta', null,
-    'Nesta fase a alga cresce de novo se você demorar. A casa que vai voltar pisca antes, então dá pra chegar na frente. Nas últimas jogadas ela para de crescer.'); }
+  if (!prog.vistos.cresce2 && f.obj.cresce && !f.obj.mancha) { prog.vistos.cresce2 = true; salvaProg(); return mostraAviso('A alga volta a crescer', null,
+    'Aqui a alga não fica quieta: a cada poucas jogadas ela nasce de novo numa casa que você já limpou. É o castigo da fase, então limpar rápido conta mais que limpar bonito. ' +
+    'A casa que vai brotar pisca antes, dá pra chegar na frente. E nas três últimas jogadas ela para de crescer, para a fase sempre ter fim.'); }
   J.ocupado = false;
   reiniciaDica();
   Som.liga(); Som.sobe(0);

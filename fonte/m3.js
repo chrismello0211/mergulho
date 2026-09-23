@@ -812,6 +812,7 @@ function passoCrescer() {
       casa.classList.add('cresceu');
       setTimeout(() => casa.classList.remove('cresceu'), 520);
       Som.liga(); Som.cresce();
+      faixaTexto(f.obj.mancha ? 'A mancha se espalhou' : 'A alga voltou a crescer', 1700);
       atualizaHud();
     }
   }
