@@ -94,6 +94,7 @@ function criaEl(p) {
   return el;
 }
 function atualizaEl(p) {
+  if (!p) return;                        /* casa fora do formato */
   const el = els.get(p.id); if (!el) return;
   el.className = 'peca ' + classeEsp(p);
   el.querySelector('.corpo').innerHTML = corpoDaPeca(p);
@@ -282,9 +283,13 @@ function respingos(r, c, cor, n) {
   }
 }
 const ELOGIOS = ['Boa!', 'Isso!', 'Que onda!', 'Mandou bem!', 'Maré cheia!', 'Redemoinho!'];
-function faixaTexto(t) {
+let faixaTimer = null;
+function faixaTexto(t, ms) {
   const f = document.getElementById('faixa');
-  f.textContent = t; f.classList.remove('mostra'); f.offsetHeight; f.classList.add('mostra');
+  f.textContent = t;
+  f.classList.remove('mostra'); f.offsetHeight; f.classList.add('mostra');
+  clearTimeout(faixaTimer);
+  faixaTimer = setTimeout(() => f.classList.remove('mostra'), ms || 2200);
 }
 
 /* ═══ O BAÚ CHEGANDO AO FUNDO ═══════════════════════════════════
@@ -478,10 +483,10 @@ async function resolver(conjInicial, preferidos) {
   J.cascata = 1;
 
   if (!temJogada()) {
-    faixaTexto('Sem jogada, embaralhando');
-    await espera(700);
+    faixaTexto('Sem jogada à vista: embaralhando o tabuleiro', 2600);
+    await espera(1100);
     embaralhaModelo();
-    for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) atualizaEl(grid[r][c]);
+    for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) if (grid[r][c]) atualizaEl(grid[r][c]);
     sincroniza('nasce');
     await espera(400);
   }
@@ -547,6 +552,18 @@ function aoSoltar(e) {
 }
 
 async function tentaTroca(a, b) {
+  try { return await tentaTrocaInterna(a, b); }
+  catch (e) {
+    /* se algo der errado no meio da jogada, o tabuleiro volta a
+       responder em vez de congelar. O erro aparece no console.   */
+    console.error('erro na jogada:', e);
+    J.ocupado = false;
+    faixaTexto('Deu um tranco, mas pode continuar', 2600);
+    try { sincroniza('nasce'); atualizaHud(); } catch (e2) {}
+    return false;
+  }
+}
+async function tentaTrocaInterna(a, b) {
   J.soltoSozinho = false;
   if (J.ocupado || J.fim) return;
   limpaMarca();
@@ -822,6 +839,16 @@ function passoCrescer() {
 let poderAtivo = null, poderAlvo = null;
 
 async function usaPoderNaCelula(cel) {
+  try { return await usaPoderInterno(cel); }
+  catch (e) {
+    console.error('erro no poder:', e);
+    J.ocupado = false;
+    desligaPoder();
+    faixaTexto('Deu um tranco, mas pode continuar', 2600);
+    return false;
+  }
+}
+async function usaPoderInterno(cel) {
   if (J.ocupado || J.fim) return;
   const p = grid[cel.r][cel.c];
   if (!p) return;
