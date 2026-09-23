@@ -143,16 +143,16 @@ function corMaisComum() {
 }
 function areaEspecial(r, c, p, corAlvo) {
   const out = [];
-  if (p.sp === LH) { for (let x = 0; x < W; x++) out.push(chave(r, x)); }
-  else if (p.sp === LV) { for (let y = 0; y < H; y++) out.push(chave(y, c)); }
+  if (p.sp === LH) { for (let x = 0; x < W; x++) if (temCasa(r, x)) out.push(chave(r, x)); }
+  else if (p.sp === LV) { for (let y = 0; y < H; y++) if (temCasa(y, c)) out.push(chave(y, c)); }
   else if (p.sp === BOMBA) {
     /* bomba é bomba: leva tudo em volta, 5x5 cheio */
     for (let dr = -2; dr <= 2; dr++) for (let dc = -2; dc <= 2; dc++)
-      if (dentro(r + dr, c + dc)) out.push(chave(r + dr, c + dc));
+      if (temCasa(r + dr, c + dc)) out.push(chave(r + dr, c + dc));
   } else if (p.sp === ONDA) {
-    for (let dr = -1; dr <= 1; dr++) if (dentro(r + dr, 0)) for (let x = 0; x < W; x++) out.push(chave(r + dr, x));
+    for (let dr = -1; dr <= 1; dr++) for (let x = 0; x < W; x++) if (temCasa(r + dr, x)) out.push(chave(r + dr, x));
   } else if (p.sp === ONDAV) {
-    for (let dc = -1; dc <= 1; dc++) if (dentro(0, c + dc)) for (let y = 0; y < H; y++) out.push(chave(y, c + dc));
+    for (let dc = -1; dc <= 1; dc++) for (let y = 0; y < H; y++) if (temCasa(y, c + dc)) out.push(chave(y, c + dc));
   } else if (p.sp === CARDUME) {
     /* o cardume sai caçando a própria cor pelo tabuleiro */
     const iguais = [];
@@ -199,9 +199,9 @@ function comboTroca(ra, ca, rb, cb) {
 
   /* a camada de efeitos precisa saber o que estourou, porque aqui
      os especiais são desarmados antes do expandir passar          */
-  const tudo = () => { for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) conj.add(chave(y, x)); efeitosPendentes.push({ r: rb, c: cb, sp: 'tudo', vale: 4000 }); bonusEspeciais += 4000; };
-  const linhaToda = r => { for (let x = 0; x < W; x++) conj.add(chave(r, x)); efeitosPendentes.push({ r: r, c: cb, sp: LH, vale: 400 }); bonusEspeciais += 400; };
-  const colunaToda = c => { for (let y = 0; y < H; y++) conj.add(chave(y, c)); efeitosPendentes.push({ r: rb, c: c, sp: LV, vale: 400 }); bonusEspeciais += 400; };
+  const tudo = () => { for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (temCasa(y, x)) conj.add(chave(y, x)); efeitosPendentes.push({ r: rb, c: cb, sp: 'tudo', vale: 4000 }); bonusEspeciais += 4000; };
+  const linhaToda = r => { for (let x = 0; x < W; x++) if (temCasa(r, x)) conj.add(chave(r, x)); efeitosPendentes.push({ r: r, c: cb, sp: LH, vale: 400 }); bonusEspeciais += 400; };
+  const colunaToda = c => { for (let y = 0; y < H; y++) if (temCasa(y, c)) conj.add(chave(y, c)); efeitosPendentes.push({ r: rb, c: c, sp: LV, vale: 400 }); bonusEspeciais += 400; };
 
   if (sa === ARCO && sb === ARCO) {
     a.sp = b.sp = NADA; tudo();
@@ -247,7 +247,7 @@ function comboTroca(ra, ca, rb, cb) {
     efeitosPendentes.push({ r: rb, c: cb, sp: BOMBA, tam: 9, vale: 3500 });
     bonusEspeciais += 3500;
     for (let dr = -3; dr <= 3; dr++) for (let dc = -3; dc <= 3; dc++)
-      if (dentro(rb + dr, cb + dc)) conj.add(chave(rb + dr, cb + dc));
+      if (temCasa(rb + dr, cb + dc)) conj.add(chave(rb + dr, cb + dc));
     conj.add(ka);
   } else {
     conj.add(ka); conj.add(kb);

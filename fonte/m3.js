@@ -651,6 +651,7 @@ async function estouroFinal() {
   await espera(340);
   for (const [r, c] of sobrou) {
     const p = grid[r][c];
+    if (!p) continue;                    /* casa fora do formato: ignora */
     if (!p || !p.sp) continue;
     const conj = new Set([chave(r, c)]);
     expandir(conj, null);
@@ -706,7 +707,7 @@ async function passoMestre() {
   const fase3 = vida < f.obj.vida * .35, fase2 = vida < f.obj.vida * .65;
   const quantas = fase3 ? 5 : fase2 ? 4 : 3;
   const livres = [];
-  for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) if (papel[r][c] === 0) livres.push([r, c]);
+  for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) if (papel[r][c] === 0 && temCasa(r, c)) livres.push([r, c]);
   for (let k = 0; k < quantas && livres.length; k++) {
     const idx = sorteia(livres.length), [r, c] = livres.splice(idx, 1)[0];
     papel[r][c] = 1;
@@ -801,7 +802,7 @@ function passoCrescer() {
   if (J.mov > 3 && casasCobertas(papel) > 0 && J.contaCresce % f.obj.cresce === 0) {
     const cand = [];
     for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) {
-      if (papel[r][c] !== 0) continue;
+      if (papel[r][c] !== 0 || !temCasa(r, c)) continue;
       if (f.obj.espalha) {                       /* a mancha pula para qualquer vizinha */
         let vizinha = false;
         for (const [dr, dc] of [[-1,0],[1,0],[0,-1],[0,1]])

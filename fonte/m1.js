@@ -2,7 +2,7 @@
    MERGULHO · combinar 3 da beira da praia até 4.000 metros
    ═══════════════════════════════════════════════════════════════ */
 
-const VERSAO_JOGO = '2026.10.16';
+const VERSAO_JOGO = '2026.10.17';
 const W = 7, H = 8, TIPOS = 6;
 const NADA = 0, LH = 1, LV = 2, BOMBA = 3, ARCO = 4, ONDA = 5, ONDAV = 6, CARDUME = 7;
 
@@ -249,7 +249,9 @@ function fase(i) {
                   : tp === 'bolhas' ? 1160 + 120 * dif : tp === 'corrente' ? 860 + 110 * dif
                   : tp === 'mancha' ? 640 + 90 * dif : tp === 'papel' ? 745 + 35 * dif : 630 + 230 * dif;
   /* formato do tabuleiro: quanto menos casa, menos jogada precisa */
-  const fm = FORMATOS[Math.floor(r() * FORMATOS.length)];
+  /* o quadrado é o padrão; formato diferente aparece em cerca de
+     quatro de cada dez fases, pra ser variedade e não regra      */
+  const fm = r() < .55 ? FORMATOS[0] : FORMATOS[1 + Math.floor(r() * (FORMATOS.length - 1))];
   const casas = fm.topo.reduce((a, t) => a + (8 - t), 0), cheio = 56;
   mov = Math.max(16, Math.round(mov * .88 * (.55 + .45 * casas / cheio)));   /* aperto: o retorno foi que sobrava jogada demais */
   const p50 = Math.round(mov * porJogada * .85 * (.45 + .55 * casas / cheio));
