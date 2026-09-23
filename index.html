@@ -666,6 +666,35 @@ body.leve .podio{-webkit-backdrop-filter:none;backdrop-filter:none;background:rg
 
 .casa.fora{visibility:hidden;pointer-events:none}
 
+/* ── o portão do mestre no mapa ─────────────────────────────── */
+.mestre-linha{margin:26px 0}
+.portao{display:flex;align-items:center;justify-content:center;gap:10px;padding:14px 8px;border-radius:22px;
+  background:linear-gradient(180deg,rgba(0,0,0,.42),rgba(0,0,0,.24));
+  box-shadow:inset 0 0 0 2px var(--cor-mestre),0 0 26px -4px var(--cor-mestre);position:relative;overflow:hidden}
+.portao::before{content:"";position:absolute;inset:-40% -10%;background:radial-gradient(ellipse at 50% 50%,var(--cor-mestre),transparent 62%);
+  opacity:.2;animation:portao-pulsa 3.4s ease-in-out infinite}
+@keyframes portao-pulsa{0%,100%{opacity:.14;transform:scale(1)}50%{opacity:.3;transform:scale(1.08)}}
+.portao-txt{flex:1;min-width:0;text-align:right;z-index:1}
+.portao-txt.dir{text-align:left}
+.portao-txt b{display:block;font-family:var(--display);font-weight:800;font-size:15px;color:#fff;letter-spacing:.06em;text-transform:uppercase}
+.portao-txt span{display:block;font-size:12px;font-weight:800;color:var(--cor-mestre)}
+.no.no-mestre{width:92px;height:92px;flex:0 0 auto;z-index:1}
+.no.no-mestre .disco{background:radial-gradient(circle at 34% 28%,#2A2340,#0A0A16);
+  box-shadow:0 0 0 3px var(--cor-mestre),0 0 22px -2px var(--cor-mestre),inset 0 -6px 10px rgba(0,0,0,.5)}
+.no.no-mestre svg{position:relative;width:64px;height:64px;margin:0 auto;display:block}
+.no.no-mestre .num-mestre{position:absolute;bottom:-4px;left:50%;transform:translateX(-50%);
+  font-family:var(--display);font-weight:800;font-size:12.5px;color:#fff;background:var(--cor-mestre2);
+  border-radius:999px;padding:1px 9px;box-shadow:0 2px 6px rgba(0,0,0,.5)}
+.no.no-mestre .tropeu{position:absolute;top:-6px;right:-6px;font-size:22px;filter:drop-shadow(0 2px 4px rgba(0,0,0,.5))}
+.no.no-mestre.travada{filter:grayscale(.7) brightness(.7)}
+.no.no-mestre.vencido .disco{box-shadow:0 0 0 3px var(--sol),0 0 18px -4px var(--sol),inset 0 -6px 10px rgba(0,0,0,.5)}
+.cartao .tesouro{margin-top:10px;padding:9px 12px;border-radius:16px;background:rgba(255,211,92,.16);
+  box-shadow:inset 0 0 0 2px rgba(255,211,92,.5)}
+.cartao .tesouro b{display:block;font-family:var(--display);font-weight:800;font-size:15px;color:#B2760F}
+.cartao .tesouro span{display:block;font-size:13px;font-weight:800;color:#7A5A16}
+[data-mundo="3"] .cartao .tesouro b,[data-mundo="4"] .cartao .tesouro b{color:var(--sol)}
+[data-mundo="3"] .cartao .tesouro span,[data-mundo="4"] .cartao .tesouro span{color:#FFE7A3}
+
 /* ── o mestre por trás de tudo ──────────────────────────────── */
 .mestre-fundo{position:absolute;left:50%;top:46%;width:min(150vw,720px);height:min(150vw,720px);
   transform:translate(-50%,-50%);opacity:.14;pointer-events:none;z-index:0;
@@ -1063,7 +1092,7 @@ body.leve .cartao{animation-duration:.18s}
    MERGULHO · combinar 3 da beira da praia até 4.000 metros
    ═══════════════════════════════════════════════════════════════ */
 
-const VERSAO_JOGO = '2026.10.22';
+const VERSAO_JOGO = '2026.10.23';
 const W = 7, H = 8, TIPOS = 6;
 const NADA = 0, LH = 1, LV = 2, BOMBA = 3, ARCO = 4, ONDA = 5, ONDAV = 6, CARDUME = 7;
 
@@ -2222,6 +2251,28 @@ const PROPS = {
     '<rect x="96" y="100" width="16" height="32" rx="4"/><rect x="250" y="100" width="16" height="32" rx="4"/></g>' +
     '<g fill="' + p.vida + '" opacity=".55"><path d="M30 108q10-12 22 0Z"/><path d="M180 108q12-14 26 0Z"/><path d="M330 108q10-12 22 0Z"/></g>' +
     '<g fill="' + p.acento + '" opacity=".4"><circle cx="150" cy="116" r="5"/><circle cx="300" cy="116" r="4"/></g>',
+  arena: p =>
+    /* anfiteatro de pedra com cristais acesos na cor do mestre */
+    '<path d="M0 150Q60 132 120 144T250 138T400 146V170H0Z" fill="' + hex(p.fundo, -.35) + '"/>' +
+    '<path d="M0 120L46 150H0ZM400 120L354 150H400Z" fill="' + hex(p.fundo, -.2) + '"/>' +
+    '<path d="M60 150L96 92L132 150Z" fill="' + hex(p.fundo, -.12) + '"/>' +
+    '<path d="M268 150L306 86L344 150Z" fill="' + hex(p.fundo, -.16) + '"/>' +
+    '<path d="M160 150L200 104L240 150Z" fill="' + hex(p.fundo, -.06) + '"/>' +
+    '<g opacity=".9"><path d="M96 92L104 118L88 118Z" fill="' + p.chefe + '"/>' +
+    '<path d="M306 86L316 116L296 116Z" fill="' + p.chefe + '"/>' +
+    '<path d="M200 104L208 128L192 128Z" fill="' + p.chefe + '"/></g>' +
+    '<g fill="' + p.chefe + '" opacity=".25"><circle cx="96" cy="100" r="26"/><circle cx="306" cy="96" r="30"/><circle cx="200" cy="112" r="22"/></g>' +
+    '<path d="M0 150h400" stroke="' + p.chefe + '" stroke-width="2" opacity=".35"/>',
+  arena: p =>
+    '<path d="M0 132Q100 118 200 128T400 122V170H0Z" fill="' + hex(p.fundo, -.35) + '"/>' +
+    '<g fill="' + hex(p.pedra, -.25) + '" opacity=".9">' +
+    '<path d="M14 130V70l16-10 16 10v70Z"/><path d="M354 130V70l16-10 16 10v70Z"/>' +
+    '<path d="M74 132V92l12-8 12 8v48Z" opacity=".7"/><path d="M302 132V92l12-8 12 8v48Z" opacity=".7"/></g>' +
+    '<g fill="' + p.acento + '"><circle cx="30" cy="62" r="5"/><circle cx="370" cy="62" r="5"/>' +
+    '<circle cx="86" cy="86" r="3.5" opacity=".8"/><circle cx="314" cy="86" r="3.5" opacity=".8"/></g>' +
+    '<g fill="' + p.acento + '" opacity=".22"><circle cx="30" cy="62" r="18"/><circle cx="370" cy="62" r="18"/></g>' +
+    '<path d="M120 130q30-16 60 0M220 130q30-16 60 0" fill="none" stroke="' + hex(p.pedra, -.4) + '" stroke-width="7" stroke-linecap="round"/>' +
+    '<g stroke="' + p.acento + '" stroke-width="2" opacity=".45"><path d="M150 128V104M250 128V104M200 132V112"/></g>',
   longe: p =>
     '<g opacity=".2" fill="' + p.acento + '"><path d="M60 60c0-14 10-22 22-22s22 8 22 22c-4 2-40 2-44 0Z"/>' +
     '<path d="M66 62q-3 16 2 30M78 62q2 18-2 34M92 62q4 14 0 28" stroke="' + p.acento + '" stroke-width="2" fill="none"/>' +
@@ -2325,12 +2376,21 @@ function nadadores(m, amb) {
 
 function paletaChao(amb) {
   const r = amb.reg;
+  const M = (amb.chefe != null) ? MESTRES[amb.chefe % MESTRES.length] : null;
   return { fundo: r.agua[Math.min(amb.banda + 1, 5)], acento: r.acento, vida: r.agua[1],
-           pedra: r.moldura, areia: r.moldura, gelo: hex(r.agua[0], .3), madeira: r.moldura };
+           pedra: r.moldura, areia: r.moldura, gelo: hex(r.agua[0], .3), madeira: r.moldura,
+           chefe: M ? M.cor : r.acento };
 }
 
 function cena(m, amb) {
   let s = '';
+  if (amb.chefe != null) {
+    /* a arena do mestre é só dele: nada de bicho passeando, os
+       outros sumiram quando ele chegou.                         */
+    return '<svg class="chao" viewBox="0 0 400 170" preserveAspectRatio="xMidYMax slice" aria-hidden="true">' +
+      PROPS.arena(paletaChao(amb)) + '</svg>' +
+      '<div class="particulas">' + particulas(4, MESTRES[amb.chefe % MESTRES.length].cor) + '</div>';
+  }
   if (m <= 1) s += '<div class="causticas"></div>';
   if (m <= 2) s += '<div class="raios"><i></i><i></i><i></i><i></i><i></i></div>';
   s += '<svg class="chao" viewBox="0 0 400 170" preserveAspectRatio="xMidYMax slice" aria-hidden="true">' +
@@ -2366,8 +2426,21 @@ function pintaFundoMestre(idx) {
 
 function instalaMundo(m, i) {
   const amb = ambiente(i == null ? 0 : i);
+  /* arena do mestre: chão próprio e água tingida da cor dele */
+  const faseDesta = (typeof fase === 'function' && i != null) ? fase(i) : null;
+  const chefe = faseDesta && faseDesta.obj && faseDesta.obj.tipo === 'chefe' ? MESTRES[faseDesta.obj.mestre] : null;
+  if (chefe) {
+    amb.chao = 'arena';
+    amb.reg = Object.assign({}, amb.reg, {
+      acento: chefe.cor, moldura: chefe.cor2,
+      agua: ['#12203A', '#0E1730', '#0A1024', '#070A18', '#' + mistura(chefe.cor2, '#000000', .55), '#02030A']
+    });
+    amb.tom = '';
+  }
+  const fx = (i != null && ehMestre(i)) ? fase(i) : null;
+  amb.chefe = fx ? fx.obj.mestre : null;
   const trato = amb.reg.trato || 'limpo';
-  const igual = (m === mundoAtual && ambAtual && ambAtual.reg === amb.reg && ambAtual.chao === amb.chao && trato === conjAtual);
+  const igual = (m === mundoAtual && ambAtual && ambAtual.reg === amb.reg && ambAtual.chao === amb.chao && trato === conjAtual && ambAtual.chefe === amb.chefe);
   ambAtual = amb;
   const raiz = document.documentElement.style, c = coresBanda(amb.reg, amb.banda);
   c.forEach((cor, k) => raiz.setProperty('--ag' + (k + 1), cor));
@@ -3959,6 +4032,7 @@ async function venceu() {
   tiraBotaoEncerrar();
   if (eraMestre) {
     prog.mestres = (prog.mestres || 0) + 1;
+    ['arpao', 'troca', 'giro', 'isca', 'folego'].forEach(k => prog.poderes[k] = (prog.poderes[k] || 0) + 1);
     const ret = document.querySelector('.retrato-mestre');
     if (ret) ret.classList.add('derrotado');
     faixaTexto('Mestre derrotado!');
@@ -3990,7 +4064,7 @@ async function venceu() {
   prog.estrelas[J.fase] = Math.max(prog.estrelas[J.fase] || 0, e);
   if (J.fase + 1 > prog.max) prog.max = J.fase + 1;
   await esperaAcalmar(explodiuNoFim ? 900 : eraMestre ? 300 : 700);
-  const ganho = moedasDaFase(e, primeira) + (eraMestre ? 80 : 0);
+  const ganho = moedasDaFase(e, primeira) + (eraMestre ? 150 : 0);
   prog.moedas += ganho;
   salvaProg();
   salvaNaNuvemDepois();
@@ -4008,6 +4082,7 @@ async function venceu() {
     '<p class="placar-final">' + nf(J.pontos) + '<small>pontos</small></p>' +
     '<p class="ganho-moedas"><svg viewBox="0 0 100 100"><use href="#i-moeda"/></svg>+' + ganho + '</p>' +
     '<p class="pos-fase" id="pos-fase"></p>' +
+    (eraMestre ? '<div class="tesouro"><b>Tesouro do mestre</b><span>150 moedas e um de cada poder</span></div>' : '') +
     '<p>' + (fimExp ? 'Foram 4.000 metros. A Expedição ' + expedicao(J.fase + 1) + ' começa de novo no raso, mais apertada.'
              : muda ? frases[e - 1] + ' Daqui pra baixo começa ' + ambiente(J.fase + 1).nome + '.' : frases[e - 1]) + '</p>' +
     '<div class="bts">' +
@@ -4979,6 +5054,29 @@ function leitoMapa() {
 function noDoMapa(i) {
   const f = fase(i), desloc = Math.sin(i * 0.82) * 70, travada = i > prog.max, est = prog.estrelas[i] || 0;
   const parada = paradaEm === i;
+  if (ehMestre(i)) {
+    const M = MESTRES[f.obj.mestre], venceu = (prog.estrelas[i] || 0) > 0;
+    return '<div class="no-linha mestre-linha">' +
+      '<div class="portao" style="--cor-mestre:' + M.cor + ';--cor-mestre2:' + M.cor2 + '">' +
+      '<div class="portao-txt"><b>Mestre</b><span>' + M.nome + '</span></div>' +
+      '<button class="no no-mestre' + (travada ? ' travada' : '') + (venceu ? ' vencido' : '') + '" data-i="' + i + '" ' +
+      (travada ? 'disabled ' : '') + 'aria-label="Mestre ' + M.nome + ', fase ' + (i + 1) + '">' +
+      '<span class="disco"></span>' + (travada ? '<span class="num">' + CADEADO + '</span>' : desenhaMestre(f.obj.mestre)) +
+      '<span class="num-mestre">' + (i + 1) + '</span>' +
+      (venceu ? '<span class="tropeu">🏆</span>' : '') + '</button>' +
+      '<div class="portao-txt dir"><b>' + metros(f.prof) + '</b><span>' + (venceu ? 'derrotado' : 'te espera') + '</span></div>' +
+      '</div></div>';
+  }
+  if (ehMestre(i)) {
+    const M = MESTRES[f.obj.mestre];
+    return '<div class="no-linha mestre-linha" style="--cor-mestre:' + M.cor + '">' +
+      '<div class="selo-mestre"><span>Mestre</span></div>' +
+      '<button class="no no-mestre' + (travada ? ' travada' : '') + (i === prog.max ? ' agora' : '') + '" data-i="' + i + '" data-ac="fase">' +
+      '<span class="aro-mestre"></span>' + desenhaMestre(f.obj.mestre) +
+      '<span class="num-mestre">' + (travada ? CADEADO : (i + 1)) + '</span>' +
+      (est ? '<span class="trio">' + estrelinhas(est) + '</span>' : '') + '</button>' +
+      '<div class="rotulo-mestre"><b>' + M.nome + '</b><small>' + metros(f.prof) + '</small></div></div>';
+  }
   const trio = (!travada && est) ? '<span class="trio">' + [0, 1, 2].map(q => '<svg viewBox="0 0 100 100"><use href="#' + (q < est ? 'i-estrela' : 'i-estrela-off') + '"/></svg>').join('') + '</span>' : '';
   const lado = desloc < 0 ? 'left:calc(50% + ' + (desloc + 52).toFixed(1) + 'px);text-align:left'
                           : 'right:calc(50% - ' + (desloc - 52).toFixed(1) + 'px);text-align:right';

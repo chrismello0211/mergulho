@@ -658,6 +658,35 @@ body.leve .podio{-webkit-backdrop-filter:none;backdrop-filter:none;background:rg
 
 .casa.fora{visibility:hidden;pointer-events:none}
 
+/* ── o portão do mestre no mapa ─────────────────────────────── */
+.mestre-linha{margin:26px 0}
+.portao{display:flex;align-items:center;justify-content:center;gap:10px;padding:14px 8px;border-radius:22px;
+  background:linear-gradient(180deg,rgba(0,0,0,.42),rgba(0,0,0,.24));
+  box-shadow:inset 0 0 0 2px var(--cor-mestre),0 0 26px -4px var(--cor-mestre);position:relative;overflow:hidden}
+.portao::before{content:"";position:absolute;inset:-40% -10%;background:radial-gradient(ellipse at 50% 50%,var(--cor-mestre),transparent 62%);
+  opacity:.2;animation:portao-pulsa 3.4s ease-in-out infinite}
+@keyframes portao-pulsa{0%,100%{opacity:.14;transform:scale(1)}50%{opacity:.3;transform:scale(1.08)}}
+.portao-txt{flex:1;min-width:0;text-align:right;z-index:1}
+.portao-txt.dir{text-align:left}
+.portao-txt b{display:block;font-family:var(--display);font-weight:800;font-size:15px;color:#fff;letter-spacing:.06em;text-transform:uppercase}
+.portao-txt span{display:block;font-size:12px;font-weight:800;color:var(--cor-mestre)}
+.no.no-mestre{width:92px;height:92px;flex:0 0 auto;z-index:1}
+.no.no-mestre .disco{background:radial-gradient(circle at 34% 28%,#2A2340,#0A0A16);
+  box-shadow:0 0 0 3px var(--cor-mestre),0 0 22px -2px var(--cor-mestre),inset 0 -6px 10px rgba(0,0,0,.5)}
+.no.no-mestre svg{position:relative;width:64px;height:64px;margin:0 auto;display:block}
+.no.no-mestre .num-mestre{position:absolute;bottom:-4px;left:50%;transform:translateX(-50%);
+  font-family:var(--display);font-weight:800;font-size:12.5px;color:#fff;background:var(--cor-mestre2);
+  border-radius:999px;padding:1px 9px;box-shadow:0 2px 6px rgba(0,0,0,.5)}
+.no.no-mestre .tropeu{position:absolute;top:-6px;right:-6px;font-size:22px;filter:drop-shadow(0 2px 4px rgba(0,0,0,.5))}
+.no.no-mestre.travada{filter:grayscale(.7) brightness(.7)}
+.no.no-mestre.vencido .disco{box-shadow:0 0 0 3px var(--sol),0 0 18px -4px var(--sol),inset 0 -6px 10px rgba(0,0,0,.5)}
+.cartao .tesouro{margin-top:10px;padding:9px 12px;border-radius:16px;background:rgba(255,211,92,.16);
+  box-shadow:inset 0 0 0 2px rgba(255,211,92,.5)}
+.cartao .tesouro b{display:block;font-family:var(--display);font-weight:800;font-size:15px;color:#B2760F}
+.cartao .tesouro span{display:block;font-size:13px;font-weight:800;color:#7A5A16}
+[data-mundo="3"] .cartao .tesouro b,[data-mundo="4"] .cartao .tesouro b{color:var(--sol)}
+[data-mundo="3"] .cartao .tesouro span,[data-mundo="4"] .cartao .tesouro span{color:#FFE7A3}
+
 /* ── o mestre por trás de tudo ──────────────────────────────── */
 .mestre-fundo{position:absolute;left:50%;top:46%;width:min(150vw,720px);height:min(150vw,720px);
   transform:translate(-50%,-50%);opacity:.14;pointer-events:none;z-index:0;

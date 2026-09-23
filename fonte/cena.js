@@ -130,6 +130,28 @@ const PROPS = {
     '<rect x="96" y="100" width="16" height="32" rx="4"/><rect x="250" y="100" width="16" height="32" rx="4"/></g>' +
     '<g fill="' + p.vida + '" opacity=".55"><path d="M30 108q10-12 22 0Z"/><path d="M180 108q12-14 26 0Z"/><path d="M330 108q10-12 22 0Z"/></g>' +
     '<g fill="' + p.acento + '" opacity=".4"><circle cx="150" cy="116" r="5"/><circle cx="300" cy="116" r="4"/></g>',
+  arena: p =>
+    /* anfiteatro de pedra com cristais acesos na cor do mestre */
+    '<path d="M0 150Q60 132 120 144T250 138T400 146V170H0Z" fill="' + hex(p.fundo, -.35) + '"/>' +
+    '<path d="M0 120L46 150H0ZM400 120L354 150H400Z" fill="' + hex(p.fundo, -.2) + '"/>' +
+    '<path d="M60 150L96 92L132 150Z" fill="' + hex(p.fundo, -.12) + '"/>' +
+    '<path d="M268 150L306 86L344 150Z" fill="' + hex(p.fundo, -.16) + '"/>' +
+    '<path d="M160 150L200 104L240 150Z" fill="' + hex(p.fundo, -.06) + '"/>' +
+    '<g opacity=".9"><path d="M96 92L104 118L88 118Z" fill="' + p.chefe + '"/>' +
+    '<path d="M306 86L316 116L296 116Z" fill="' + p.chefe + '"/>' +
+    '<path d="M200 104L208 128L192 128Z" fill="' + p.chefe + '"/></g>' +
+    '<g fill="' + p.chefe + '" opacity=".25"><circle cx="96" cy="100" r="26"/><circle cx="306" cy="96" r="30"/><circle cx="200" cy="112" r="22"/></g>' +
+    '<path d="M0 150h400" stroke="' + p.chefe + '" stroke-width="2" opacity=".35"/>',
+  arena: p =>
+    '<path d="M0 132Q100 118 200 128T400 122V170H0Z" fill="' + hex(p.fundo, -.35) + '"/>' +
+    '<g fill="' + hex(p.pedra, -.25) + '" opacity=".9">' +
+    '<path d="M14 130V70l16-10 16 10v70Z"/><path d="M354 130V70l16-10 16 10v70Z"/>' +
+    '<path d="M74 132V92l12-8 12 8v48Z" opacity=".7"/><path d="M302 132V92l12-8 12 8v48Z" opacity=".7"/></g>' +
+    '<g fill="' + p.acento + '"><circle cx="30" cy="62" r="5"/><circle cx="370" cy="62" r="5"/>' +
+    '<circle cx="86" cy="86" r="3.5" opacity=".8"/><circle cx="314" cy="86" r="3.5" opacity=".8"/></g>' +
+    '<g fill="' + p.acento + '" opacity=".22"><circle cx="30" cy="62" r="18"/><circle cx="370" cy="62" r="18"/></g>' +
+    '<path d="M120 130q30-16 60 0M220 130q30-16 60 0" fill="none" stroke="' + hex(p.pedra, -.4) + '" stroke-width="7" stroke-linecap="round"/>' +
+    '<g stroke="' + p.acento + '" stroke-width="2" opacity=".45"><path d="M150 128V104M250 128V104M200 132V112"/></g>',
   longe: p =>
     '<g opacity=".2" fill="' + p.acento + '"><path d="M60 60c0-14 10-22 22-22s22 8 22 22c-4 2-40 2-44 0Z"/>' +
     '<path d="M66 62q-3 16 2 30M78 62q2 18-2 34M92 62q4 14 0 28" stroke="' + p.acento + '" stroke-width="2" fill="none"/>' +
@@ -233,12 +255,21 @@ function nadadores(m, amb) {
 
 function paletaChao(amb) {
   const r = amb.reg;
+  const M = (amb.chefe != null) ? MESTRES[amb.chefe % MESTRES.length] : null;
   return { fundo: r.agua[Math.min(amb.banda + 1, 5)], acento: r.acento, vida: r.agua[1],
-           pedra: r.moldura, areia: r.moldura, gelo: hex(r.agua[0], .3), madeira: r.moldura };
+           pedra: r.moldura, areia: r.moldura, gelo: hex(r.agua[0], .3), madeira: r.moldura,
+           chefe: M ? M.cor : r.acento };
 }
 
 function cena(m, amb) {
   let s = '';
+  if (amb.chefe != null) {
+    /* a arena do mestre é só dele: nada de bicho passeando, os
+       outros sumiram quando ele chegou.                         */
+    return '<svg class="chao" viewBox="0 0 400 170" preserveAspectRatio="xMidYMax slice" aria-hidden="true">' +
+      PROPS.arena(paletaChao(amb)) + '</svg>' +
+      '<div class="particulas">' + particulas(4, MESTRES[amb.chefe % MESTRES.length].cor) + '</div>';
+  }
   if (m <= 1) s += '<div class="causticas"></div>';
   if (m <= 2) s += '<div class="raios"><i></i><i></i><i></i><i></i><i></i></div>';
   s += '<svg class="chao" viewBox="0 0 400 170" preserveAspectRatio="xMidYMax slice" aria-hidden="true">' +
@@ -274,8 +305,21 @@ function pintaFundoMestre(idx) {
 
 function instalaMundo(m, i) {
   const amb = ambiente(i == null ? 0 : i);
+  /* arena do mestre: chão próprio e água tingida da cor dele */
+  const faseDesta = (typeof fase === 'function' && i != null) ? fase(i) : null;
+  const chefe = faseDesta && faseDesta.obj && faseDesta.obj.tipo === 'chefe' ? MESTRES[faseDesta.obj.mestre] : null;
+  if (chefe) {
+    amb.chao = 'arena';
+    amb.reg = Object.assign({}, amb.reg, {
+      acento: chefe.cor, moldura: chefe.cor2,
+      agua: ['#12203A', '#0E1730', '#0A1024', '#070A18', '#' + mistura(chefe.cor2, '#000000', .55), '#02030A']
+    });
+    amb.tom = '';
+  }
+  const fx = (i != null && ehMestre(i)) ? fase(i) : null;
+  amb.chefe = fx ? fx.obj.mestre : null;
   const trato = amb.reg.trato || 'limpo';
-  const igual = (m === mundoAtual && ambAtual && ambAtual.reg === amb.reg && ambAtual.chao === amb.chao && trato === conjAtual);
+  const igual = (m === mundoAtual && ambAtual && ambAtual.reg === amb.reg && ambAtual.chao === amb.chao && trato === conjAtual && ambAtual.chefe === amb.chefe);
   ambAtual = amb;
   const raiz = document.documentElement.style, c = coresBanda(amb.reg, amb.banda);
   c.forEach((cor, k) => raiz.setProperty('--ag' + (k + 1), cor));

@@ -235,6 +235,7 @@ async function venceu() {
   tiraBotaoEncerrar();
   if (eraMestre) {
     prog.mestres = (prog.mestres || 0) + 1;
+    ['arpao', 'troca', 'giro', 'isca', 'folego'].forEach(k => prog.poderes[k] = (prog.poderes[k] || 0) + 1);
     const ret = document.querySelector('.retrato-mestre');
     if (ret) ret.classList.add('derrotado');
     faixaTexto('Mestre derrotado!');
@@ -266,7 +267,7 @@ async function venceu() {
   prog.estrelas[J.fase] = Math.max(prog.estrelas[J.fase] || 0, e);
   if (J.fase + 1 > prog.max) prog.max = J.fase + 1;
   await esperaAcalmar(explodiuNoFim ? 900 : eraMestre ? 300 : 700);
-  const ganho = moedasDaFase(e, primeira) + (eraMestre ? 80 : 0);
+  const ganho = moedasDaFase(e, primeira) + (eraMestre ? 150 : 0);
   prog.moedas += ganho;
   salvaProg();
   salvaNaNuvemDepois();
@@ -284,6 +285,7 @@ async function venceu() {
     '<p class="placar-final">' + nf(J.pontos) + '<small>pontos</small></p>' +
     '<p class="ganho-moedas"><svg viewBox="0 0 100 100"><use href="#i-moeda"/></svg>+' + ganho + '</p>' +
     '<p class="pos-fase" id="pos-fase"></p>' +
+    (eraMestre ? '<div class="tesouro"><b>Tesouro do mestre</b><span>150 moedas e um de cada poder</span></div>' : '') +
     '<p>' + (fimExp ? 'Foram 4.000 metros. A Expedição ' + expedicao(J.fase + 1) + ' começa de novo no raso, mais apertada.'
              : muda ? frases[e - 1] + ' Daqui pra baixo começa ' + ambiente(J.fase + 1).nome + '.' : frases[e - 1]) + '</p>' +
     '<div class="bts">' +
@@ -1255,6 +1257,29 @@ function leitoMapa() {
 function noDoMapa(i) {
   const f = fase(i), desloc = Math.sin(i * 0.82) * 70, travada = i > prog.max, est = prog.estrelas[i] || 0;
   const parada = paradaEm === i;
+  if (ehMestre(i)) {
+    const M = MESTRES[f.obj.mestre], venceu = (prog.estrelas[i] || 0) > 0;
+    return '<div class="no-linha mestre-linha">' +
+      '<div class="portao" style="--cor-mestre:' + M.cor + ';--cor-mestre2:' + M.cor2 + '">' +
+      '<div class="portao-txt"><b>Mestre</b><span>' + M.nome + '</span></div>' +
+      '<button class="no no-mestre' + (travada ? ' travada' : '') + (venceu ? ' vencido' : '') + '" data-i="' + i + '" ' +
+      (travada ? 'disabled ' : '') + 'aria-label="Mestre ' + M.nome + ', fase ' + (i + 1) + '">' +
+      '<span class="disco"></span>' + (travada ? '<span class="num">' + CADEADO + '</span>' : desenhaMestre(f.obj.mestre)) +
+      '<span class="num-mestre">' + (i + 1) + '</span>' +
+      (venceu ? '<span class="tropeu">🏆</span>' : '') + '</button>' +
+      '<div class="portao-txt dir"><b>' + metros(f.prof) + '</b><span>' + (venceu ? 'derrotado' : 'te espera') + '</span></div>' +
+      '</div></div>';
+  }
+  if (ehMestre(i)) {
+    const M = MESTRES[f.obj.mestre];
+    return '<div class="no-linha mestre-linha" style="--cor-mestre:' + M.cor + '">' +
+      '<div class="selo-mestre"><span>Mestre</span></div>' +
+      '<button class="no no-mestre' + (travada ? ' travada' : '') + (i === prog.max ? ' agora' : '') + '" data-i="' + i + '" data-ac="fase">' +
+      '<span class="aro-mestre"></span>' + desenhaMestre(f.obj.mestre) +
+      '<span class="num-mestre">' + (travada ? CADEADO : (i + 1)) + '</span>' +
+      (est ? '<span class="trio">' + estrelinhas(est) + '</span>' : '') + '</button>' +
+      '<div class="rotulo-mestre"><b>' + M.nome + '</b><small>' + metros(f.prof) + '</small></div></div>';
+  }
   const trio = (!travada && est) ? '<span class="trio">' + [0, 1, 2].map(q => '<svg viewBox="0 0 100 100"><use href="#' + (q < est ? 'i-estrela' : 'i-estrela-off') + '"/></svg>').join('') + '</span>' : '';
   const lado = desloc < 0 ? 'left:calc(50% + ' + (desloc + 52).toFixed(1) + 'px);text-align:left'
                           : 'right:calc(50% - ' + (desloc - 52).toFixed(1) + 'px);text-align:right';
