@@ -1163,7 +1163,7 @@ body.leve .cartao{animation-duration:.18s}
    MERGULHO · combinar 3 da beira da praia até 4.000 metros
    ═══════════════════════════════════════════════════════════════ */
 
-const VERSAO_JOGO = '2026.10.27';
+const VERSAO_JOGO = '2026.10.28';
 const W = 7, H = 8, TIPOS = 6;
 const NADA = 0, LH = 1, LV = 2, BOMBA = 3, ARCO = 4, ONDA = 5, ONDAV = 6, CARDUME = 7;
 
@@ -1437,7 +1437,10 @@ const PODERES = [
   { id:'folego', nome:'Fôlego',      texto:'Mais 5 jogadas, e dá pra usar depois que acabaram.', preco:260 }
 ];
 const moedasDaFase = (estrelas, primeira) => 5 + 6 * estrelas + (primeira ? 10 : 0);
-const hoje = () => new Date().toISOString().slice(0, 10);
+/* o dia vira à meia-noite de quem está jogando, não em UTC: antes
+   o prêmio novo abria às 21h no Brasil.                          */
+const dataLocal = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+const hoje = () => dataLocal(new Date());
 
 /* ═══ FORMATOS DE TABULEIRO ═════════════════════════════════════
    Cada número diz em que fileira aquela coluna começa. Zero é
@@ -4431,11 +4434,15 @@ const SEMANA = [
 ];
 /* mesma contagem de dia que o resto do jogo usa, pra sequência
    não quebrar por causa de fuso                                  */
-const ontem = () => new Date(Date.now() - 864e5).toISOString().slice(0, 10);
+const ontem = () => dataLocal(new Date(Date.now() - 864e5));
+/* quem jogou na virada do fuso não pode perder a sequência por
+   causa da mudança de contagem: o dia velho, em UTC, também vale */
+const ontemUTC = () => new Date(Date.now() - 864e5).toISOString().slice(0, 10);
+const seguiuOntem = () => prog.dia === ontem() || prog.dia === ontemUTC() || prog.dia === new Date().toISOString().slice(0, 10);
 function diaDaSemana() {
   /* que dia da trilha é hoje, sem ainda marcar como pego */
   if (!prog.dia) return 1;
-  if (prog.dia === ontem()) return ((prog.seq || 0) % 7) + 1;
+  if (seguiuOntem()) return ((prog.seq || 0) % 7) + 1;
   return 1;                                   /* furou: recomeça */
 }
 /* cada semana fechada engorda a próxima: o 7º dia da semana 4 vale
@@ -4450,7 +4457,7 @@ function mostraBau() {
   /* já pegou hoje: mostra o dia em que você está, não o próximo */
   const pegou = jaPegouHoje();
   const dia = pegou ? (prog.seq || 1) : diaDaSemana();
-  const quebrou = !pegou && prog.dia && prog.dia !== ontem() && (prog.seq || 0) > 1;
+  const quebrou = !pegou && prog.dia && !seguiuOntem() && (prog.seq || 0) > 1;
   const semana = (prog.semanas || 0) + 1;
   const trilha = SEMANA.map((_, k) => {
     const d = premioDoDia(k), n = k + 1, passou = n < dia || (n === dia && pegou), hojeE = n === dia && !pegou;
@@ -5163,7 +5170,7 @@ function encaixaInicio() {
 const jaPegouHoje = () => prog.dia === hoje();
 function horasAteAmanha() {
   const agora = new Date();
-  const virada = Date.UTC(agora.getUTCFullYear(), agora.getUTCMonth(), agora.getUTCDate() + 1);
+  const virada = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate() + 1).getTime();
   const falta = virada - agora.getTime();
   const h = Math.floor(falta / 36e5), m = Math.floor((falta % 36e5) / 6e4);
   return h > 0 ? h + 'h' + String(m).padStart(2, '0') : m + ' min';

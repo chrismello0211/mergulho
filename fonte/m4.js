@@ -542,11 +542,15 @@ const SEMANA = [
 ];
 /* mesma contagem de dia que o resto do jogo usa, pra sequência
    não quebrar por causa de fuso                                  */
-const ontem = () => new Date(Date.now() - 864e5).toISOString().slice(0, 10);
+const ontem = () => dataLocal(new Date(Date.now() - 864e5));
+/* quem jogou na virada do fuso não pode perder a sequência por
+   causa da mudança de contagem: o dia velho, em UTC, também vale */
+const ontemUTC = () => new Date(Date.now() - 864e5).toISOString().slice(0, 10);
+const seguiuOntem = () => prog.dia === ontem() || prog.dia === ontemUTC() || prog.dia === new Date().toISOString().slice(0, 10);
 function diaDaSemana() {
   /* que dia da trilha é hoje, sem ainda marcar como pego */
   if (!prog.dia) return 1;
-  if (prog.dia === ontem()) return ((prog.seq || 0) % 7) + 1;
+  if (seguiuOntem()) return ((prog.seq || 0) % 7) + 1;
   return 1;                                   /* furou: recomeça */
 }
 /* cada semana fechada engorda a próxima: o 7º dia da semana 4 vale
@@ -561,7 +565,7 @@ function mostraBau() {
   /* já pegou hoje: mostra o dia em que você está, não o próximo */
   const pegou = jaPegouHoje();
   const dia = pegou ? (prog.seq || 1) : diaDaSemana();
-  const quebrou = !pegou && prog.dia && prog.dia !== ontem() && (prog.seq || 0) > 1;
+  const quebrou = !pegou && prog.dia && !seguiuOntem() && (prog.seq || 0) > 1;
   const semana = (prog.semanas || 0) + 1;
   const trilha = SEMANA.map((_, k) => {
     const d = premioDoDia(k), n = k + 1, passou = n < dia || (n === dia && pegou), hojeE = n === dia && !pegou;
@@ -1274,7 +1278,7 @@ function encaixaInicio() {
 const jaPegouHoje = () => prog.dia === hoje();
 function horasAteAmanha() {
   const agora = new Date();
-  const virada = Date.UTC(agora.getUTCFullYear(), agora.getUTCMonth(), agora.getUTCDate() + 1);
+  const virada = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate() + 1).getTime();
   const falta = virada - agora.getTime();
   const h = Math.floor(falta / 36e5), m = Math.floor((falta % 36e5) / 6e4);
   return h > 0 ? h + 'h' + String(m).padStart(2, '0') : m + ' min';

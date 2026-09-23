@@ -2,7 +2,7 @@
    MERGULHO · combinar 3 da beira da praia até 4.000 metros
    ═══════════════════════════════════════════════════════════════ */
 
-const VERSAO_JOGO = '2026.10.27';
+const VERSAO_JOGO = '2026.10.28';
 const W = 7, H = 8, TIPOS = 6;
 const NADA = 0, LH = 1, LV = 2, BOMBA = 3, ARCO = 4, ONDA = 5, ONDAV = 6, CARDUME = 7;
 
@@ -276,7 +276,10 @@ const PODERES = [
   { id:'folego', nome:'Fôlego',      texto:'Mais 5 jogadas, e dá pra usar depois que acabaram.', preco:260 }
 ];
 const moedasDaFase = (estrelas, primeira) => 5 + 6 * estrelas + (primeira ? 10 : 0);
-const hoje = () => new Date().toISOString().slice(0, 10);
+/* o dia vira à meia-noite de quem está jogando, não em UTC: antes
+   o prêmio novo abria às 21h no Brasil.                          */
+const dataLocal = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+const hoje = () => dataLocal(new Date());
 
 /* ═══ FORMATOS DE TABULEIRO ═════════════════════════════════════
    Cada número diz em que fileira aquela coluna começa. Zero é
