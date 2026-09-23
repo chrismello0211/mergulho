@@ -232,7 +232,7 @@ body:not(.em-jogo) #cena{display:none}
 #fase-prof{margin-left:8px}
 .fase-titulo > span:last-child{font-size:13px;font-weight:900;color:#BFF5EE;white-space:nowrap}
 .painel{
-  border-radius:20px;padding:10px 12px 12px;background:var(--vidro);
+  position:relative;border-radius:20px;padding:10px 12px 12px;background:var(--vidro);
   -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);box-shadow:inset 0 0 0 1px var(--vidro-borda);
 }
 .hud-linha{display:flex;align-items:center}
@@ -655,6 +655,13 @@ body.leve #descida.roda{animation-duration:.45s}
 #tela-inicio[data-aperto="5"] .inicio-bts > * + *{margin-top:7px}
 
 body.leve .podio{-webkit-backdrop-filter:none;backdrop-filter:none;background:rgba(4,30,48,.72)}
+
+/* ── encerrar a fase de pontuação quando quiser ─────────────── */
+.bt-encerra{position:absolute;right:10px;bottom:8px;z-index:4;border:0;cursor:pointer;border-radius:999px;
+  padding:6px 13px 7px;font-family:var(--display);font-weight:800;font-size:12.5px;color:#fff;
+  background:linear-gradient(180deg,#FF8A5C,var(--boia));box-shadow:0 2px 0 var(--boia-2);
+  animation:entra-encerra .45s cubic-bezier(.2,1.5,.4,1)}
+@keyframes entra-encerra{from{opacity:0;transform:translateY(8px) scale(.9)}to{opacity:1;transform:none}}
 
 /* ── ranking ────────────────────────────────────────────────── */
 .abas{display:flex;margin:12px 0 8px;background:rgba(10,108,122,.1);border-radius:999px;padding:4px}

@@ -116,10 +116,49 @@ async function confere() {
   /* fase de pontuação joga até a última jogada: é lá que moram a 2ª e a 3ª estrela */
   if (porPontos) {
     if (J.mov <= 0) return fecha(objetivoFeito() ? venceu : perdeu);
+    /* bateu o objetivo antes da hora: explica uma vez e libera o
+       botão de encerrar, pra ninguém ficar achando que travou */
+    if (objetivoFeito() && !J.avisouPontos) {
+      J.avisouPontos = true;
+      mostraBotaoEncerrar();
+      const vezes = prog.vistos.pontosOk || 0;
+      if (vezes < 2) {
+        prog.vistos.pontosOk = vezes + 1;
+        salvaProg();
+        cartao('<h3>Objetivo batido!</h3>' +
+          '<p>Nesta fase o objetivo é pontuação, então ela não acaba aqui: as jogadas que sobraram valem a segunda e a terceira estrela. ' +
+          'Quando quiser parar, é só tocar em Encerrar, no alto da tela.</p>' +
+          '<div class="bts"><button class="bt vidro" data-ac="encerra">Encerrar agora</button>' +
+          '<button class="bt" data-ac="fecha">Continuar jogando</button></div>', true);
+      }
+    }
     return;
   }
   if (objetivoFeito()) return fecha(venceu);
   if (J.mov <= 0) return fecha(perdeu);
+}
+
+function mostraBotaoEncerrar() {
+  const alvo = document.getElementById('painel') || document.querySelector('.painel');
+  if (!alvo || document.getElementById('bt-encerra')) return;
+  const b = document.createElement('button');
+  b.id = 'bt-encerra';
+  b.className = 'bt-encerra';
+  b.textContent = 'Encerrar';
+  b.onclick = () => { Som.liga(); Som.toque(); encerraAgora(); };
+  alvo.appendChild(b);
+}
+function tiraBotaoEncerrar() { const b = document.getElementById('bt-encerra'); if (b) b.remove(); }
+async function encerraAgora() {
+  fechaCartao();
+  if (J.fim || J.ocupado) return;
+  J.fim = true;
+  apagaDica();
+  clearTimeout(dicaTimer);
+  tiraBotaoEncerrar();
+  J.mov = 0;
+  atualizaHud();
+  await venceu();
 }
 
 async function venceu() {
@@ -171,6 +210,8 @@ async function venceu() {
       '<button class="bt" data-ac="proxima">' + (fimExp ? 'Nova expedição' : muda ? 'Descer para ' + ambiente(J.fase + 1).nome : 'Próxima fase') + '</button>' +
     '</div>'
   );
+  tiraBotaoEncerrar();
+  await estouroFinal();          /* o resto dos especiais estoura antes do cartão */
   if (Conta.ligada) Conta.garante().then(() => {
     if (!Ranking.ligado) return;
     Ranking.pontuaFase(J.fase, J.pontos);
@@ -723,7 +764,7 @@ function juntaProg(a, b) {
   r.estrelas = Object.assign({}, b.estrelas || {});
   for (const k in (a.estrelas || {})) r.estrelas[k] = Math.max(a.estrelas[k] || 0, r.estrelas[k] || 0);
   r.poderes = {};
-  ['arpao', 'troca', 'giro', 'folego'].forEach(k => r.poderes[k] = Math.max((a.poderes || {})[k] || 0, (b.poderes || {})[k] || 0));
+  ['arpao', 'troca', 'giro', 'isca', 'folego'].forEach(k => r.poderes[k] = Math.max((a.poderes || {})[k] || 0, (b.poderes || {})[k] || 0));
   r.vistos = Object.assign({}, b.vistos || {}, a.vistos || {});
   const da = a.desafio || {}, db = b.desafio || {};
   r.desafio = { semana: (da.melhor || 0) >= (db.melhor || 0) ? da.semana : db.semana,
@@ -1247,7 +1288,7 @@ function abreFase(i, ignoraParada) {
 function comecaFase() {
   const f = faseAtual();
   if (!prog.vistos.bau && f.obj.tipo === 'bau') { prog.vistos.bau = true; salvaProg(); return mostraAviso('O baú', '#i-bau',
-    'O baú só quer chegar na última fileira. Ele não combina com nada e nenhum especial leva ele embora. Estoure as peças debaixo dele para ele descer, e empurre ele de lado para escolher a coluna. Ele também é pesado: a cada quatro jogadas afunda uma casa sozinho.'); }
+    'O baú só quer chegar na última fileira. Ele não combina com nada e nenhum especial leva ele embora. Estoure as peças debaixo dele para ele descer, ou empurre ele de lado trocando com a peça vizinha. E não se assuste se ele descer sozinho: o baú é pesado e afunda uma casa a cada quatro jogadas.'); }
   if (!prog.vistos.cresce && f.obj.cresce) { prog.vistos.cresce = true; salvaProg(); return mostraAviso('A alga volta', null,
     'Nesta fase a alga cresce de novo se você demorar. A casa que vai voltar pisca antes, então dá pra chegar na frente. Nas últimas jogadas ela para de crescer.'); }
   J.ocupado = false;
@@ -1343,6 +1384,7 @@ function iniciar() {
     else if (ac === 'compartilha') compartilhaDesafio(b);
     else if (ac === 'mudar') mudaAjuste(b.dataset.k);
     else if (ac === 'procura') procuraVersao(b);
+    else if (ac === 'encerra') encerraAgora();
     else if (ac === 'rank') mostraRanking();
     else if (ac === 'apelido') pedeApelido();
     else if (ac === 'aba') mostraRanking(b.dataset.id);

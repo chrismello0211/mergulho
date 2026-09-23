@@ -240,7 +240,7 @@ body:not(.em-jogo) #cena{display:none}
 #fase-prof{margin-left:8px}
 .fase-titulo > span:last-child{font-size:13px;font-weight:900;color:#BFF5EE;white-space:nowrap}
 .painel{
-  border-radius:20px;padding:10px 12px 12px;background:var(--vidro);
+  position:relative;border-radius:20px;padding:10px 12px 12px;background:var(--vidro);
   -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);box-shadow:inset 0 0 0 1px var(--vidro-borda);
 }
 .hud-linha{display:flex;align-items:center}
@@ -664,6 +664,13 @@ body.leve #descida.roda{animation-duration:.45s}
 
 body.leve .podio{-webkit-backdrop-filter:none;backdrop-filter:none;background:rgba(4,30,48,.72)}
 
+/* ── encerrar a fase de pontuação quando quiser ─────────────── */
+.bt-encerra{position:absolute;right:10px;bottom:8px;z-index:4;border:0;cursor:pointer;border-radius:999px;
+  padding:6px 13px 7px;font-family:var(--display);font-weight:800;font-size:12.5px;color:#fff;
+  background:linear-gradient(180deg,#FF8A5C,var(--boia));box-shadow:0 2px 0 var(--boia-2);
+  animation:entra-encerra .45s cubic-bezier(.2,1.5,.4,1)}
+@keyframes entra-encerra{from{opacity:0;transform:translateY(8px) scale(.9)}to{opacity:1;transform:none}}
+
 /* ── ranking ────────────────────────────────────────────────── */
 .abas{display:flex;margin:12px 0 8px;background:rgba(10,108,122,.1);border-radius:999px;padding:4px}
 .abas .aba{flex:1;border:0;cursor:pointer;border-radius:999px;padding:8px 4px;font-family:Nunito,sans-serif;
@@ -815,6 +822,12 @@ body.leve .cartao{animation-duration:.18s}
   </symbol>
   <symbol id="p-giro" viewBox="0 0 100 100">
     <path d="M74 44a26 26 0 1 1-12-18M74 20v24H50"/>
+  </symbol>
+  <symbol id="p-isca" viewBox="0 0 100 100">
+    <circle cx="50" cy="56" r="22" fill="none" stroke="currentColor" stroke-width="7"/>
+    <circle cx="50" cy="56" r="8" fill="currentColor"/>
+    <path d="M50 34V14M50 14l-9 8M50 14l9 8" fill="none" stroke="currentColor" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M22 78q10-6 20 0M58 78q10-6 20 0" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round"/>
   </symbol>
   <symbol id="p-folego" viewBox="0 0 100 100">
     <path d="M50 16a34 34 0 1 1-.1 0ZM50 34v32M34 50h32"/>
@@ -969,7 +982,7 @@ body.leve .cartao{animation-duration:.18s}
    MERGULHO · combinar 3 da beira da praia até 4.000 metros
    ═══════════════════════════════════════════════════════════════ */
 
-const VERSAO_JOGO = '2026.10.11';
+const VERSAO_JOGO = '2026.10.12';
 const W = 7, H = 8, TIPOS = 6;
 const NADA = 0, LH = 1, LV = 2, BOMBA = 3, ARCO = 4, ONDA = 5, ONDAV = 6, CARDUME = 7;
 
@@ -1204,6 +1217,7 @@ const PODERES = [
   { id:'arpao',  nome:'Arpão',       texto:'Tira do tabuleiro a peça que você tocar.',        preco:140 },
   { id:'troca',  nome:'Troca livre', texto:'Troca duas peças de lugar, mesmo longe uma da outra.', preco:200 },
   { id:'giro',   nome:'Redemoinho',  texto:'Embaralha o tabuleiro inteiro sem gastar jogada.', preco:110 },
+  { id:'isca',   nome:'Isca de luz', texto:'Chama um cardume que vira bolha na peça que você tocar.', preco:190 },
   { id:'folego', nome:'Fôlego',      texto:'Mais 5 jogadas, e dá pra usar depois que acabaram.', preco:260 }
 ];
 const moedasDaFase = (estrelas, primeira) => 5 + 6 * estrelas + (primeira ? 10 : 0);
@@ -1263,7 +1277,7 @@ function casasCobertas(g) { let n = 0; for (let r = 0; r < H; r++) for (let c = 
 const CHAVE = 'mergulho-v1';
 let prog = { estrelas: {}, max: 0, som: true, vistos: {}, moedas: 120,
              musica: true, vibrar: true, leve: null,
-             poderes: { arpao: 1, troca: 1, giro: 1, folego: 1 }, dia: '',
+             poderes: { arpao: 1, troca: 1, giro: 1, isca: 1, folego: 1 }, dia: '',
              email: '', apelido: '', cardume: '', melhores: {},
              desafio: { semana: '', melhor: 0, nome: '' } };
 function carregaProg() {
@@ -3114,6 +3128,27 @@ function salvaPartida() {
   } catch (e) { /* sem espaço: só não guarda */ }
 }
 
+/* fim de fase: o que sobrou de especial no tabuleiro estoura tudo,
+   um atrás do outro, antes de aparecer o cartão de vitória.      */
+async function estouroFinal() {
+  const sobrou = [];
+  for (let r = 0; r < H; r++) for (let c = 0; c < W; c++)
+    if (grid[r][c] && grid[r][c].sp) sobrou.push([r, c]);
+  if (!sobrou.length) return false;
+  faixaTexto('Sobrou fogo!');
+  await espera(340);
+  for (const [r, c] of sobrou) {
+    const p = grid[r][c];
+    if (!p || !p.sp) continue;
+    const conj = new Set([chave(r, c)]);
+    expandir(conj, null);
+    await limpar(conj, null);
+    await resolver(null, null);
+    await espera(120);
+  }
+  return true;
+}
+
 /* o baú é pesado: a cada 4 jogadas ele afunda uma casa sozinho.
    Sem isso ele encalha na penúltima fileira, que quase nunca limpa. */
 async function passoBau() {
@@ -3182,6 +3217,25 @@ async function usaPoderNaCelula(cel) {
   if (J.ocupado || J.fim) return;
   const p = grid[cel.r][cel.c];
   if (!p) return;
+
+  if (poderAtivo === 'isca') {
+    if (p.bau) { Som.liga(); Som.nao(); faixaTexto('O baú não vira bolha'); return; }
+    if (p.sp) { Som.liga(); Som.nao(); faixaTexto('Essa peça já é especial'); return; }
+    gastaPoder('isca');
+    desligaPoder();
+    J.ocupado = true;
+    p.sp = BOMBA;
+    atualizaEl(p);
+    const el = els.get(p.id);
+    if (el) { el.classList.remove('nasce'); void el.offsetWidth; el.classList.add('nasce'); }
+    estilhacos(cel.r, cel.c, '#FFD35C', 10);
+    ondaChoque(cel.r, cel.c, 2.2, '#FFE7A3');
+    Som.liga(); Som.especial(); vibra(24);
+    await espera(420);
+    J.ocupado = false;
+    reiniciaDica();
+    return;
+  }
 
   if (poderAtivo === 'arpao') {
     if (p.bau) { Som.liga(); Som.nao(); faixaTexto('O baú não sai no arpão'); return; }
@@ -3408,10 +3462,49 @@ async function confere() {
   /* fase de pontuação joga até a última jogada: é lá que moram a 2ª e a 3ª estrela */
   if (porPontos) {
     if (J.mov <= 0) return fecha(objetivoFeito() ? venceu : perdeu);
+    /* bateu o objetivo antes da hora: explica uma vez e libera o
+       botão de encerrar, pra ninguém ficar achando que travou */
+    if (objetivoFeito() && !J.avisouPontos) {
+      J.avisouPontos = true;
+      mostraBotaoEncerrar();
+      const vezes = prog.vistos.pontosOk || 0;
+      if (vezes < 2) {
+        prog.vistos.pontosOk = vezes + 1;
+        salvaProg();
+        cartao('<h3>Objetivo batido!</h3>' +
+          '<p>Nesta fase o objetivo é pontuação, então ela não acaba aqui: as jogadas que sobraram valem a segunda e a terceira estrela. ' +
+          'Quando quiser parar, é só tocar em Encerrar, no alto da tela.</p>' +
+          '<div class="bts"><button class="bt vidro" data-ac="encerra">Encerrar agora</button>' +
+          '<button class="bt" data-ac="fecha">Continuar jogando</button></div>', true);
+      }
+    }
     return;
   }
   if (objetivoFeito()) return fecha(venceu);
   if (J.mov <= 0) return fecha(perdeu);
+}
+
+function mostraBotaoEncerrar() {
+  const alvo = document.getElementById('painel') || document.querySelector('.painel');
+  if (!alvo || document.getElementById('bt-encerra')) return;
+  const b = document.createElement('button');
+  b.id = 'bt-encerra';
+  b.className = 'bt-encerra';
+  b.textContent = 'Encerrar';
+  b.onclick = () => { Som.liga(); Som.toque(); encerraAgora(); };
+  alvo.appendChild(b);
+}
+function tiraBotaoEncerrar() { const b = document.getElementById('bt-encerra'); if (b) b.remove(); }
+async function encerraAgora() {
+  fechaCartao();
+  if (J.fim || J.ocupado) return;
+  J.fim = true;
+  apagaDica();
+  clearTimeout(dicaTimer);
+  tiraBotaoEncerrar();
+  J.mov = 0;
+  atualizaHud();
+  await venceu();
 }
 
 async function venceu() {
@@ -3463,6 +3556,8 @@ async function venceu() {
       '<button class="bt" data-ac="proxima">' + (fimExp ? 'Nova expedição' : muda ? 'Descer para ' + ambiente(J.fase + 1).nome : 'Próxima fase') + '</button>' +
     '</div>'
   );
+  tiraBotaoEncerrar();
+  await estouroFinal();          /* o resto dos especiais estoura antes do cartão */
   if (Conta.ligada) Conta.garante().then(() => {
     if (!Ranking.ligado) return;
     Ranking.pontuaFase(J.fase, J.pontos);
@@ -4015,7 +4110,7 @@ function juntaProg(a, b) {
   r.estrelas = Object.assign({}, b.estrelas || {});
   for (const k in (a.estrelas || {})) r.estrelas[k] = Math.max(a.estrelas[k] || 0, r.estrelas[k] || 0);
   r.poderes = {};
-  ['arpao', 'troca', 'giro', 'folego'].forEach(k => r.poderes[k] = Math.max((a.poderes || {})[k] || 0, (b.poderes || {})[k] || 0));
+  ['arpao', 'troca', 'giro', 'isca', 'folego'].forEach(k => r.poderes[k] = Math.max((a.poderes || {})[k] || 0, (b.poderes || {})[k] || 0));
   r.vistos = Object.assign({}, b.vistos || {}, a.vistos || {});
   const da = a.desafio || {}, db = b.desafio || {};
   r.desafio = { semana: (da.melhor || 0) >= (db.melhor || 0) ? da.semana : db.semana,
@@ -4539,7 +4634,7 @@ function abreFase(i, ignoraParada) {
 function comecaFase() {
   const f = faseAtual();
   if (!prog.vistos.bau && f.obj.tipo === 'bau') { prog.vistos.bau = true; salvaProg(); return mostraAviso('O baú', '#i-bau',
-    'O baú só quer chegar na última fileira. Ele não combina com nada e nenhum especial leva ele embora. Estoure as peças debaixo dele para ele descer, e empurre ele de lado para escolher a coluna. Ele também é pesado: a cada quatro jogadas afunda uma casa sozinho.'); }
+    'O baú só quer chegar na última fileira. Ele não combina com nada e nenhum especial leva ele embora. Estoure as peças debaixo dele para ele descer, ou empurre ele de lado trocando com a peça vizinha. E não se assuste se ele descer sozinho: o baú é pesado e afunda uma casa a cada quatro jogadas.'); }
   if (!prog.vistos.cresce && f.obj.cresce) { prog.vistos.cresce = true; salvaProg(); return mostraAviso('A alga volta', null,
     'Nesta fase a alga cresce de novo se você demorar. A casa que vai voltar pisca antes, então dá pra chegar na frente. Nas últimas jogadas ela para de crescer.'); }
   J.ocupado = false;
@@ -4635,6 +4730,7 @@ function iniciar() {
     else if (ac === 'compartilha') compartilhaDesafio(b);
     else if (ac === 'mudar') mudaAjuste(b.dataset.k);
     else if (ac === 'procura') procuraVersao(b);
+    else if (ac === 'encerra') encerraAgora();
     else if (ac === 'rank') mostraRanking();
     else if (ac === 'apelido') pedeApelido();
     else if (ac === 'aba') mostraRanking(b.dataset.id);

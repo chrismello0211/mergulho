@@ -606,6 +606,27 @@ function salvaPartida() {
   } catch (e) { /* sem espaço: só não guarda */ }
 }
 
+/* fim de fase: o que sobrou de especial no tabuleiro estoura tudo,
+   um atrás do outro, antes de aparecer o cartão de vitória.      */
+async function estouroFinal() {
+  const sobrou = [];
+  for (let r = 0; r < H; r++) for (let c = 0; c < W; c++)
+    if (grid[r][c] && grid[r][c].sp) sobrou.push([r, c]);
+  if (!sobrou.length) return false;
+  faixaTexto('Sobrou fogo!');
+  await espera(340);
+  for (const [r, c] of sobrou) {
+    const p = grid[r][c];
+    if (!p || !p.sp) continue;
+    const conj = new Set([chave(r, c)]);
+    expandir(conj, null);
+    await limpar(conj, null);
+    await resolver(null, null);
+    await espera(120);
+  }
+  return true;
+}
+
 /* o baú é pesado: a cada 4 jogadas ele afunda uma casa sozinho.
    Sem isso ele encalha na penúltima fileira, que quase nunca limpa. */
 async function passoBau() {
@@ -674,6 +695,25 @@ async function usaPoderNaCelula(cel) {
   if (J.ocupado || J.fim) return;
   const p = grid[cel.r][cel.c];
   if (!p) return;
+
+  if (poderAtivo === 'isca') {
+    if (p.bau) { Som.liga(); Som.nao(); faixaTexto('O baú não vira bolha'); return; }
+    if (p.sp) { Som.liga(); Som.nao(); faixaTexto('Essa peça já é especial'); return; }
+    gastaPoder('isca');
+    desligaPoder();
+    J.ocupado = true;
+    p.sp = BOMBA;
+    atualizaEl(p);
+    const el = els.get(p.id);
+    if (el) { el.classList.remove('nasce'); void el.offsetWidth; el.classList.add('nasce'); }
+    estilhacos(cel.r, cel.c, '#FFD35C', 10);
+    ondaChoque(cel.r, cel.c, 2.2, '#FFE7A3');
+    Som.liga(); Som.especial(); vibra(24);
+    await espera(420);
+    J.ocupado = false;
+    reiniciaDica();
+    return;
+  }
 
   if (poderAtivo === 'arpao') {
     if (p.bau) { Som.liga(); Som.nao(); faixaTexto('O baú não sai no arpão'); return; }

@@ -2,7 +2,7 @@
    MERGULHO · combinar 3 da beira da praia até 4.000 metros
    ═══════════════════════════════════════════════════════════════ */
 
-const VERSAO_JOGO = '2026.10.11';
+const VERSAO_JOGO = '2026.10.12';
 const W = 7, H = 8, TIPOS = 6;
 const NADA = 0, LH = 1, LV = 2, BOMBA = 3, ARCO = 4, ONDA = 5, ONDAV = 6, CARDUME = 7;
 
@@ -237,6 +237,7 @@ const PODERES = [
   { id:'arpao',  nome:'Arpão',       texto:'Tira do tabuleiro a peça que você tocar.',        preco:140 },
   { id:'troca',  nome:'Troca livre', texto:'Troca duas peças de lugar, mesmo longe uma da outra.', preco:200 },
   { id:'giro',   nome:'Redemoinho',  texto:'Embaralha o tabuleiro inteiro sem gastar jogada.', preco:110 },
+  { id:'isca',   nome:'Isca de luz', texto:'Chama um cardume que vira bolha na peça que você tocar.', preco:190 },
   { id:'folego', nome:'Fôlego',      texto:'Mais 5 jogadas, e dá pra usar depois que acabaram.', preco:260 }
 ];
 const moedasDaFase = (estrelas, primeira) => 5 + 6 * estrelas + (primeira ? 10 : 0);
@@ -296,7 +297,7 @@ function casasCobertas(g) { let n = 0; for (let r = 0; r < H; r++) for (let c = 
 const CHAVE = 'mergulho-v1';
 let prog = { estrelas: {}, max: 0, som: true, vistos: {}, moedas: 120,
              musica: true, vibrar: true, leve: null,
-             poderes: { arpao: 1, troca: 1, giro: 1, folego: 1 }, dia: '',
+             poderes: { arpao: 1, troca: 1, giro: 1, isca: 1, folego: 1 }, dia: '',
              email: '', apelido: '', cardume: '', melhores: {},
              desafio: { semana: '', melhor: 0, nome: '' } };
 function carregaProg() {
