@@ -232,6 +232,16 @@ async function esperaAcalmar(minimo) {
 
 async function venceu() {
   const eraMestre = faseAtual().obj.tipo === 'chefe';
+  tiraBotaoEncerrar();
+  if (eraMestre) {
+    prog.mestres = (prog.mestres || 0) + 1;
+    const ret = document.querySelector('.retrato-mestre');
+    if (ret) ret.classList.add('derrotado');
+    faixaTexto('Mestre derrotado!');
+    fogos(); await espera(700);
+  }
+  const explodiuNoFim = await estouroFinal();   /* o resto dos especiais estoura antes do cartão */
+
   J.ocupado = true;
   if (J.mov > 0) {
     faixaTexto('Sobrou jogada!');
@@ -255,7 +265,7 @@ async function venceu() {
   limpaPartida();
   prog.estrelas[J.fase] = Math.max(prog.estrelas[J.fase] || 0, e);
   if (J.fase + 1 > prog.max) prog.max = J.fase + 1;
-  await esperaAcalmar(eraMestre ? 300 : 700);
+  await esperaAcalmar(explodiuNoFim ? 900 : eraMestre ? 300 : 700);
   const ganho = moedasDaFase(e, primeira) + (eraMestre ? 80 : 0);
   prog.moedas += ganho;
   salvaProg();
@@ -281,15 +291,6 @@ async function venceu() {
       '<button class="bt" data-ac="proxima">' + (fimExp ? 'Nova expedição' : muda ? 'Descer para ' + ambiente(J.fase + 1).nome : 'Próxima fase') + '</button>' +
     '</div>'
   );
-  tiraBotaoEncerrar();
-  if (eraMestre) {
-    prog.mestres = (prog.mestres || 0) + 1;
-    const ret = document.querySelector('.retrato-mestre');
-    if (ret) ret.classList.add('derrotado');
-    faixaTexto('Mestre derrotado!');
-    fogos(); await espera(700);
-  }
-  await estouroFinal();          /* o resto dos especiais estoura antes do cartão */
   if (Conta.ligada) Conta.garante().then(() => {
     if (!Ranking.ligado) return;
     Ranking.pontuaFase(J.fase, J.pontos);

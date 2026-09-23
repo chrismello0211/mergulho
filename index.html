@@ -1044,7 +1044,7 @@ body.leve .cartao{animation-duration:.18s}
    MERGULHO · combinar 3 da beira da praia até 4.000 metros
    ═══════════════════════════════════════════════════════════════ */
 
-const VERSAO_JOGO = '2026.10.20';
+const VERSAO_JOGO = '2026.10.21';
 const W = 7, H = 8, TIPOS = 6;
 const NADA = 0, LH = 1, LV = 2, BOMBA = 3, ARCO = 4, ONDA = 5, ONDAV = 6, CARDUME = 7;
 
@@ -3361,24 +3361,30 @@ function salvaPartida() {
 /* fim de fase: o que sobrou de especial no tabuleiro estoura tudo,
    um atrás do outro, antes de aparecer o cartão de vitória.      */
 async function estouroFinal() {
-  const sobrou = [];
-  for (let r = 0; r < H; r++) for (let c = 0; c < W; c++)
-    if (grid[r][c] && grid[r][c].sp) sobrou.push([r, c]);
-  if (!sobrou.length) return false;
-  faixaTexto('Sobrou fogo!');
-  await espera(340);
-  for (const [r, c] of sobrou) {
-    const p = grid[r][c];
-    if (!p) continue;                    /* casa fora do formato: ignora */
-    if (!p || !p.sp) continue;
-    const conj = new Set([chave(r, c)]);
-    expandir(conj, null);
-    await limpar(conj, null);
-    await resolver(null, null);
-    await espera(120);
+  let explodiu = false;
+  /* varre mais de uma vez: estourar um especial pode criar outro,
+     e o cartão não pode entrar por cima da luz ainda acesa.      */
+  for (let volta = 0; volta < 3; volta++) {
+    const sobrou = [];
+    for (let r = 0; r < H; r++) for (let c = 0; c < W; c++)
+      if (grid[r][c] && grid[r][c].sp) sobrou.push([r, c]);
+    if (!sobrou.length) break;
+    if (!explodiu) { faixaTexto('Sobrou fogo!', 2000); await espera(420); }
+    explodiu = true;
+    for (const [r, c] of sobrou) {
+      const p = grid[r][c];
+      if (!p || !p.sp) continue;
+      const conj = new Set([chave(r, c)]);
+      expandir(conj, null);
+      await limpar(conj, null);
+      await resolver(null, null);
+      await espera(180);
+    }
   }
-  return true;
+  if (explodiu) await espera(900);   /* deixa o brilho terminar antes do cartão */
+  return explodiu;
 }
+
 
 /* o baú é pesado: a cada 4 jogadas ele afunda uma casa sozinho.
    Sem isso ele encalha na penúltima fileira, que quase nunca limpa. */
@@ -3915,6 +3921,16 @@ async function esperaAcalmar(minimo) {
 
 async function venceu() {
   const eraMestre = faseAtual().obj.tipo === 'chefe';
+  tiraBotaoEncerrar();
+  if (eraMestre) {
+    prog.mestres = (prog.mestres || 0) + 1;
+    const ret = document.querySelector('.retrato-mestre');
+    if (ret) ret.classList.add('derrotado');
+    faixaTexto('Mestre derrotado!');
+    fogos(); await espera(700);
+  }
+  const explodiuNoFim = await estouroFinal();   /* o resto dos especiais estoura antes do cartão */
+
   J.ocupado = true;
   if (J.mov > 0) {
     faixaTexto('Sobrou jogada!');
@@ -3938,7 +3954,7 @@ async function venceu() {
   limpaPartida();
   prog.estrelas[J.fase] = Math.max(prog.estrelas[J.fase] || 0, e);
   if (J.fase + 1 > prog.max) prog.max = J.fase + 1;
-  await esperaAcalmar(eraMestre ? 300 : 700);
+  await esperaAcalmar(explodiuNoFim ? 900 : eraMestre ? 300 : 700);
   const ganho = moedasDaFase(e, primeira) + (eraMestre ? 80 : 0);
   prog.moedas += ganho;
   salvaProg();
@@ -3964,15 +3980,6 @@ async function venceu() {
       '<button class="bt" data-ac="proxima">' + (fimExp ? 'Nova expedição' : muda ? 'Descer para ' + ambiente(J.fase + 1).nome : 'Próxima fase') + '</button>' +
     '</div>'
   );
-  tiraBotaoEncerrar();
-  if (eraMestre) {
-    prog.mestres = (prog.mestres || 0) + 1;
-    const ret = document.querySelector('.retrato-mestre');
-    if (ret) ret.classList.add('derrotado');
-    faixaTexto('Mestre derrotado!');
-    fogos(); await espera(700);
-  }
-  await estouroFinal();          /* o resto dos especiais estoura antes do cartão */
   if (Conta.ligada) Conta.garante().then(() => {
     if (!Ranking.ligado) return;
     Ranking.pontuaFase(J.fase, J.pontos);

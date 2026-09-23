@@ -660,24 +660,30 @@ function salvaPartida() {
 /* fim de fase: o que sobrou de especial no tabuleiro estoura tudo,
    um atrás do outro, antes de aparecer o cartão de vitória.      */
 async function estouroFinal() {
-  const sobrou = [];
-  for (let r = 0; r < H; r++) for (let c = 0; c < W; c++)
-    if (grid[r][c] && grid[r][c].sp) sobrou.push([r, c]);
-  if (!sobrou.length) return false;
-  faixaTexto('Sobrou fogo!');
-  await espera(340);
-  for (const [r, c] of sobrou) {
-    const p = grid[r][c];
-    if (!p) continue;                    /* casa fora do formato: ignora */
-    if (!p || !p.sp) continue;
-    const conj = new Set([chave(r, c)]);
-    expandir(conj, null);
-    await limpar(conj, null);
-    await resolver(null, null);
-    await espera(120);
+  let explodiu = false;
+  /* varre mais de uma vez: estourar um especial pode criar outro,
+     e o cartão não pode entrar por cima da luz ainda acesa.      */
+  for (let volta = 0; volta < 3; volta++) {
+    const sobrou = [];
+    for (let r = 0; r < H; r++) for (let c = 0; c < W; c++)
+      if (grid[r][c] && grid[r][c].sp) sobrou.push([r, c]);
+    if (!sobrou.length) break;
+    if (!explodiu) { faixaTexto('Sobrou fogo!', 2000); await espera(420); }
+    explodiu = true;
+    for (const [r, c] of sobrou) {
+      const p = grid[r][c];
+      if (!p || !p.sp) continue;
+      const conj = new Set([chave(r, c)]);
+      expandir(conj, null);
+      await limpar(conj, null);
+      await resolver(null, null);
+      await espera(180);
+    }
   }
-  return true;
+  if (explodiu) await espera(900);   /* deixa o brilho terminar antes do cartão */
+  return explodiu;
 }
+
 
 /* o baú é pesado: a cada 4 jogadas ele afunda uma casa sozinho.
    Sem isso ele encalha na penúltima fileira, que quase nunca limpa. */
