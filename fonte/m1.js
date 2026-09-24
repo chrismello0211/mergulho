@@ -2,7 +2,7 @@
    MERGULHO · combinar 3 da beira da praia até 4.000 metros
    ═══════════════════════════════════════════════════════════════ */
 
-const VERSAO_JOGO = '2026.11.11';
+const VERSAO_JOGO = '2026.11.12';
 const W = 7, H = 8, TIPOS = 6;
 const NADA = 0, LH = 1, LV = 2, BOMBA = 3, ARCO = 4, ONDA = 5, ONDAV = 6, CARDUME = 7;
 
@@ -289,18 +289,23 @@ function fase(i) {
      entre alguns desenhos, e a categoria mexe na fase de verdade:
      Fácil ganha jogada, Difícil perde, Lendário perde mais e soma um
      segundo objetivo. Não é enfeite: o rótulo diz o que a fase é.  */
-  const DESENHOS = ['FNNDNFDNLN', 'FNDNNDFNNL', 'NFNDNLNFDN', 'FNNDFNDNLN'];
-  const desenho = DESENHOS[(Math.floor(i / 10) * 7 + 3) % DESENHOS.length];
-  let classe = desenho[i % 10];
-  /* mecânica que se mexe sozinha puxa pra cima */
-  const pesada = obj.tipo === 'lixo' && obj.dura > 1 || obj.mancha || obj.tipo === 'ninho' || obj.corrente || obj.tipo === 'presos' || obj.tipo === 'bolhas';
-  /* mecânica pesada numa vaga de Fácil continua Fácil, mas com mais
-     folga de jogada, pra todo bloco ter sempre as quatro categorias */
-  const multi = { F: pesada ? 1.3 : 1.18, N: 1, D: .88, L: .8 }[classe];
-  if ((classe === 'L' || (classe === 'D' && r() < .45)) && obj.tipo !== 'coletar' && obj.tipo !== 'pontos') {
-    const cor = Math.floor(r() * 6);
-    obj.extra = { tipo: 'coletar1', t: cor, n: Math.round(12 + dif * 8 + (classe === 'L' ? 6 : 0)) };
+  /* A categoria é medida, não sorteada: soma o peso de cada coisa que
+     a fase pede administrar. Mecânica que age sozinha pesa mais, cada
+     ninho a mais pesa, e a profundidade soma um pouco.               */
+  const tpc = obj.corrente ? 'corrente' : obj.mancha ? 'mancha' : obj.tipo;
+  const PESO = { pontos: 0, coletar: 0, papel: 1, bau: 1, especiais: 1, perolas: 1, coral: 1, lixo: 1.5,
+                 presos: 2, bolhas: 2, corrente: 2, mancha: 3, ninho: 3 };
+  let peso = (PESO[tpc] || 0) + dif * 1.6;
+  if (tpc === 'ninho') peso += (obj.ninhos.length - 1) * 1.8;
+  if (obj.tipo === 'lixo' && obj.dura > 1) peso += 1.2;
+  if (obj.cresce && !obj.mancha) peso += 1;
+  let classe = peso < 1.4 ? 'F' : peso < 3 ? 'N' : peso < 4.6 ? 'D' : 'L';
+  /* o lendário ganha o segundo objetivo, e isso já faz parte do peso */
+  if (classe === 'L' && obj.tipo !== 'coletar' && obj.tipo !== 'pontos' && obj.tipo !== 'ninho' && r() < .6) {
+    obj.extra = { tipo: 'coletar1', t: Math.floor(r() * 6), n: Math.round(12 + dif * 8) };
   }
+  /* ajuste leve de jogadas: o rótulo descreve a fase, não a castiga */
+  const multi = { F: 1.08, N: 1, D: .96, L: .94 }[classe];
 
   /* formato do tabuleiro: quanto menos casa, menos jogada precisa */
   /* o quadrado é o padrão; formato diferente aparece em cerca de

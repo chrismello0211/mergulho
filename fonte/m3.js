@@ -586,12 +586,20 @@ function aoSoltar(e) {
   marca(cel);
 }
 
+/* se algo quebrar no meio, nenhuma casa pode ficar vazia */
+function reparaTabuleiro() {
+  try {
+    for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) if (temCasa(r, c) && !grid[r][c]) grid[r][c] = novaPeca(tipoSeguro(r, c));
+    montaPecas(); pintaPapel();
+  } catch (e2) { console.error('reparo falhou:', e2); }
+}
 async function tentaTroca(a, b) {
   try { return await tentaTrocaInterna(a, b); }
   catch (e) {
     /* se algo der errado no meio da jogada, o tabuleiro volta a
        responder em vez de congelar. O erro aparece no console.   */
     console.error('erro na jogada:', e);
+    reparaTabuleiro();
     J.ocupado = false;
     faixaTexto('Deu um tranco, mas pode continuar', 2600);
     try { sincroniza('nasce'); atualizaHud(); } catch (e2) {}
@@ -887,12 +895,11 @@ function pintaCasasEspeciais() {
   for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) {
     const pe = J.perolas ? J.perolas[r][c] : 0, co = J.coral ? J.coral[r][c] : 0;
     const pa = (typeof papel !== 'undefined' && papel && papel[r]) ? papel[r][c] : 0;
-    if (!pe && !co && !pa) continue;
+    if (!pe && !co) continue;
     const d = document.createElement('div');
     d.className = 'marca-casa' + (pe === 2 ? ' ostra-fechada' : pe === 1 ? ' ostra-aberta' : '') +
                   (co === 1 ? ' coral-morto' : co === 2 ? ' coral-vivo' : '');
     /* cobertura (areia, alga, cinza, rede...): selinho no canto, por cima da peça */
-    if (pa > 0) d.innerHTML = '<i class="selo-cobre' + (pa >= 2 ? ' duplo' : '') + '">' + (pa >= 2 ? pa : '') + '</i>';
     caixa.appendChild(d);
     posiciona(d, r, c, true);
   }
@@ -958,8 +965,11 @@ function passoNinho() {
   if (!J.ninhos || !ninhosVivos() || J.fim) { if (J.ninhos) pintaNinhos(); return; }
   if (J.limpouAlga) { J.limpouAlga = false; pintaNinhos(); return; }
   let nasceu = 0;
-  for (const n of J.ninhos) {
-    if (n.vida <= 0) continue;
+  const vivos = J.ninhos.filter(n => n.vida > 0);
+  J.vezNinho = ((J.vezNinho || 0) + 1) % Math.max(1, vivos.length);
+  for (const n of [vivos[J.vezNinho]].concat(vivos.filter((_, k) => k !== J.vezNinho))) {
+    if (nasceu) break;                    /* uma alga por jogada, não uma por ninho */
+    if (!n || n.vida <= 0) continue;
     /* primeiro a casa de baixo, depois os lados */
     const opcoes = [[n.r + 1, n.c], [n.r, n.c - 1], [n.r, n.c + 1], [n.r + 1, n.c - 1], [n.r + 1, n.c + 1]]
       .filter(([y, x]) => temCasa(y, x) && papel[y][x] === 0);

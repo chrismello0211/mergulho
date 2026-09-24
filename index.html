@@ -636,17 +636,18 @@ body.leve #descida.roda{animation-duration:.45s}
 
 /* ── pérolas, coral e lixo ───────────────────────────────────── */
 #marcas{position:absolute;inset:0;pointer-events:none;z-index:4}
+.marca-casa.ostra-fechada,.marca-casa.ostra-aberta{border-radius:26%;box-shadow:inset 0 0 0 3px rgba(233,220,255,.75),0 0 12px rgba(200,180,255,.55)}
+.marca-casa.coral-morto{border-radius:26%;box-shadow:inset 0 0 0 3px rgba(190,196,205,.7)}
 .marca-casa{position:absolute;left:0;top:0;width:var(--cel);height:var(--cel)}
 .marca-casa::after,.marca-casa::before{content:"";position:absolute;background-repeat:no-repeat;background-size:contain;background-position:center;pointer-events:none}
-.marca-casa.ostra-fechada::after,.marca-casa.ostra-aberta::after{right:-6%;bottom:-8%;width:64%;height:64%;filter:drop-shadow(0 2px 3px rgba(0,0,0,.45))}
-.marca-casa.coral-morto::before,.marca-casa.coral-vivo::before{left:-6%;bottom:-8%;width:60%;height:60%;filter:drop-shadow(0 0 2px rgba(255,255,255,.55)) drop-shadow(0 2px 3px rgba(0,0,0,.5))}
+.marca-casa.ostra-fechada::after,.marca-casa.ostra-aberta::after{right:-8%;bottom:-10%;width:78%;height:78%;filter:drop-shadow(0 2px 3px rgba(0,0,0,.45))}
+.marca-casa.coral-morto::before,.marca-casa.coral-vivo::before{left:0;top:0;width:100%;height:100%;opacity:.62;mix-blend-mode:screen;filter:drop-shadow(0 0 2px rgba(255,255,255,.55)) drop-shadow(0 2px 3px rgba(0,0,0,.5))}
 .marca-casa.ostra-fechada::after{background-image:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Cellipse cx=%2250%22 cy=%2280%22 rx=%2230%22 ry=%229%22 fill=%22%232A1F3D%22 opacity=%22.45%22/%3E%3Cpath d=%22M18 70Q50 30 82 70Q50 86 18 70Z%22 fill=%22%239C8AB8%22/%3E%3Cpath d=%22M18 70Q50 38 82 70%22 fill=%22none%22 stroke=%22%236E5C8C%22 stroke-width=%223%22/%3E%3Cpath d=%22M30 64L34 52M42 60L44 46M58 60L56 46M70 64L66 52%22 stroke=%22%23C9BCE0%22 stroke-width=%223%22 stroke-linecap=%22round%22/%3E%3C/svg%3E");opacity:.95}
 .marca-casa.ostra-aberta::after{background-image:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Cpath d=%22M16 70Q50 90 84 70Q50 80 16 70Z%22 fill=%22%238C7AAC%22/%3E%3Cpath d=%22M20 62Q50 20 80 62%22 fill=%22%23B3A2CF%22/%3E%3Ccircle cx=%2250%22 cy=%2266%22 r=%2211%22 fill=%22%23FFFFFF%22/%3E%3Ccircle cx=%2246%22 cy=%2262%22 r=%224%22 fill=%22%23fff%22 opacity=%22.9%22/%3E%3Ccircle cx=%2250%22 cy=%2266%22 r=%2211%22 fill=%22none%22 stroke=%22%23C7B6F0%22 stroke-width=%222%22/%3E%3C/svg%3E");animation:ostra-brilha 1.6s ease-in-out infinite}
 @keyframes ostra-brilha{0%,100%{filter:drop-shadow(0 0 0 transparent)}50%{filter:drop-shadow(0 0 8px #F3E9FF)}}
 .marca-casa.coral-morto::before{background-image:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Cpath d=%22M50 92V62M50 74L32 54M50 68L68 46M32 54L24 38M68 46L80 32M50 62V42%22 fill=%22none%22 stroke=%22%238B8F96%22 stroke-width=%228%22 stroke-linecap=%22round%22 opacity=%22.85%22/%3E%3Cpath d=%22M50 62V42M68 46L80 32%22 fill=%22none%22 stroke=%22%23B6BAC0%22 stroke-width=%223%22 stroke-linecap=%22round%22 opacity=%22.7%22/%3E%3C/svg%3E")}
 .marca-casa.coral-vivo::before{opacity:.8;background-image:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Cpath d=%22M50 92V62M50 74L32 54M50 68L68 46M32 54L24 38M68 46L80 32M50 62V42%22 fill=%22none%22 stroke=%22%23FF6F9E%22 stroke-width=%228%22 stroke-linecap=%22round%22 opacity=%22.55%22/%3E%3C/svg%3E");animation:coral-volta .7s ease-out}
 @keyframes coral-volta{0%{transform:scale(.4);opacity:0;filter:brightness(2)}60%{transform:scale(1.15);opacity:1}100%{transform:scale(1)}}
-.casa{position:relative}
 .peca.lixo .corpo{filter:saturate(.85) drop-shadow(0 3px 5px rgba(0,20,30,.45));animation:lixo-boia 3.2s ease-in-out infinite}
 .peca.lixo2 .corpo::after{content:"";position:absolute;inset:14%;border-radius:40%;pointer-events:none;
   background:radial-gradient(circle,rgba(90,70,40,.0) 40%,rgba(90,70,40,.45) 70%);box-shadow:inset 0 0 0 2px rgba(120,95,55,.55)}
@@ -707,12 +708,6 @@ body.leve #descida.roda{animation-duration:.45s}
 .casa.papel i,.casa.papel2 i,.casa.papel3 i{box-shadow:inset 0 0 0 3px rgba(255,255,255,.55),0 0 0 1px rgba(0,0,0,.25)}
 [data-mundo="3"] .casa.papel i,[data-mundo="4"] .casa.papel i,[data-mundo="3"] .casa.papel2 i,[data-mundo="4"] .casa.papel2 i{
   filter:brightness(1.55) saturate(1.1);box-shadow:inset 0 0 0 3px rgba(255,255,255,.7),0 0 12px rgba(255,255,255,.25)}
-.selo-cobre{position:absolute;left:4%;top:4%;width:30%;height:30%;border-radius:28%;z-index:2;
-  background:linear-gradient(180deg,var(--bl-a),var(--bl-b));box-shadow:0 0 0 2px #fff,0 2px 4px rgba(0,0,0,.5);
-  font-style:normal;font-family:var(--display);font-weight:800;font-size:calc(var(--cel) * .2);line-height:1;color:#fff;
-  display:grid;place-items:center;text-shadow:0 1px 2px rgba(0,0,0,.6)}
-.selo-cobre.duplo{background:linear-gradient(180deg,var(--bl-a2),var(--bl-b2))}
-[data-tex="breu"] .selo-cobre{background:#000;box-shadow:0 0 0 2px #B9A6E8,0 0 8px rgba(154,92,255,.8)}
 
 /* ── acabamento: cartão de novidade ─────────────────────────── */
 .cartao .aviso-arte{width:104px;height:104px;margin:-6px auto 4px;border-radius:30px;display:grid;place-items:center;
@@ -1363,7 +1358,7 @@ body.leve .cartao{animation-duration:.18s}
    MERGULHO · combinar 3 da beira da praia até 4.000 metros
    ═══════════════════════════════════════════════════════════════ */
 
-const VERSAO_JOGO = '2026.11.11';
+const VERSAO_JOGO = '2026.11.12';
 const W = 7, H = 8, TIPOS = 6;
 const NADA = 0, LH = 1, LV = 2, BOMBA = 3, ARCO = 4, ONDA = 5, ONDAV = 6, CARDUME = 7;
 
@@ -1650,18 +1645,23 @@ function fase(i) {
      entre alguns desenhos, e a categoria mexe na fase de verdade:
      Fácil ganha jogada, Difícil perde, Lendário perde mais e soma um
      segundo objetivo. Não é enfeite: o rótulo diz o que a fase é.  */
-  const DESENHOS = ['FNNDNFDNLN', 'FNDNNDFNNL', 'NFNDNLNFDN', 'FNNDFNDNLN'];
-  const desenho = DESENHOS[(Math.floor(i / 10) * 7 + 3) % DESENHOS.length];
-  let classe = desenho[i % 10];
-  /* mecânica que se mexe sozinha puxa pra cima */
-  const pesada = obj.tipo === 'lixo' && obj.dura > 1 || obj.mancha || obj.tipo === 'ninho' || obj.corrente || obj.tipo === 'presos' || obj.tipo === 'bolhas';
-  /* mecânica pesada numa vaga de Fácil continua Fácil, mas com mais
-     folga de jogada, pra todo bloco ter sempre as quatro categorias */
-  const multi = { F: pesada ? 1.3 : 1.18, N: 1, D: .88, L: .8 }[classe];
-  if ((classe === 'L' || (classe === 'D' && r() < .45)) && obj.tipo !== 'coletar' && obj.tipo !== 'pontos') {
-    const cor = Math.floor(r() * 6);
-    obj.extra = { tipo: 'coletar1', t: cor, n: Math.round(12 + dif * 8 + (classe === 'L' ? 6 : 0)) };
+  /* A categoria é medida, não sorteada: soma o peso de cada coisa que
+     a fase pede administrar. Mecânica que age sozinha pesa mais, cada
+     ninho a mais pesa, e a profundidade soma um pouco.               */
+  const tpc = obj.corrente ? 'corrente' : obj.mancha ? 'mancha' : obj.tipo;
+  const PESO = { pontos: 0, coletar: 0, papel: 1, bau: 1, especiais: 1, perolas: 1, coral: 1, lixo: 1.5,
+                 presos: 2, bolhas: 2, corrente: 2, mancha: 3, ninho: 3 };
+  let peso = (PESO[tpc] || 0) + dif * 1.6;
+  if (tpc === 'ninho') peso += (obj.ninhos.length - 1) * 1.8;
+  if (obj.tipo === 'lixo' && obj.dura > 1) peso += 1.2;
+  if (obj.cresce && !obj.mancha) peso += 1;
+  let classe = peso < 1.4 ? 'F' : peso < 3 ? 'N' : peso < 4.6 ? 'D' : 'L';
+  /* o lendário ganha o segundo objetivo, e isso já faz parte do peso */
+  if (classe === 'L' && obj.tipo !== 'coletar' && obj.tipo !== 'pontos' && obj.tipo !== 'ninho' && r() < .6) {
+    obj.extra = { tipo: 'coletar1', t: Math.floor(r() * 6), n: Math.round(12 + dif * 8) };
   }
+  /* ajuste leve de jogadas: o rótulo descreve a fase, não a castiga */
+  const multi = { F: 1.08, N: 1, D: .96, L: .94 }[classe];
 
   /* formato do tabuleiro: quanto menos casa, menos jogada precisa */
   /* o quadrado é o padrão; formato diferente aparece em cerca de
@@ -3725,12 +3725,20 @@ function aoSoltar(e) {
   marca(cel);
 }
 
+/* se algo quebrar no meio, nenhuma casa pode ficar vazia */
+function reparaTabuleiro() {
+  try {
+    for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) if (temCasa(r, c) && !grid[r][c]) grid[r][c] = novaPeca(tipoSeguro(r, c));
+    montaPecas(); pintaPapel();
+  } catch (e2) { console.error('reparo falhou:', e2); }
+}
 async function tentaTroca(a, b) {
   try { return await tentaTrocaInterna(a, b); }
   catch (e) {
     /* se algo der errado no meio da jogada, o tabuleiro volta a
        responder em vez de congelar. O erro aparece no console.   */
     console.error('erro na jogada:', e);
+    reparaTabuleiro();
     J.ocupado = false;
     faixaTexto('Deu um tranco, mas pode continuar', 2600);
     try { sincroniza('nasce'); atualizaHud(); } catch (e2) {}
@@ -4026,12 +4034,11 @@ function pintaCasasEspeciais() {
   for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) {
     const pe = J.perolas ? J.perolas[r][c] : 0, co = J.coral ? J.coral[r][c] : 0;
     const pa = (typeof papel !== 'undefined' && papel && papel[r]) ? papel[r][c] : 0;
-    if (!pe && !co && !pa) continue;
+    if (!pe && !co) continue;
     const d = document.createElement('div');
     d.className = 'marca-casa' + (pe === 2 ? ' ostra-fechada' : pe === 1 ? ' ostra-aberta' : '') +
                   (co === 1 ? ' coral-morto' : co === 2 ? ' coral-vivo' : '');
     /* cobertura (areia, alga, cinza, rede...): selinho no canto, por cima da peça */
-    if (pa > 0) d.innerHTML = '<i class="selo-cobre' + (pa >= 2 ? ' duplo' : '') + '">' + (pa >= 2 ? pa : '') + '</i>';
     caixa.appendChild(d);
     posiciona(d, r, c, true);
   }
@@ -4097,8 +4104,11 @@ function passoNinho() {
   if (!J.ninhos || !ninhosVivos() || J.fim) { if (J.ninhos) pintaNinhos(); return; }
   if (J.limpouAlga) { J.limpouAlga = false; pintaNinhos(); return; }
   let nasceu = 0;
-  for (const n of J.ninhos) {
-    if (n.vida <= 0) continue;
+  const vivos = J.ninhos.filter(n => n.vida > 0);
+  J.vezNinho = ((J.vezNinho || 0) + 1) % Math.max(1, vivos.length);
+  for (const n of [vivos[J.vezNinho]].concat(vivos.filter((_, k) => k !== J.vezNinho))) {
+    if (nasceu) break;                    /* uma alga por jogada, não uma por ninho */
+    if (!n || n.vida <= 0) continue;
     /* primeiro a casa de baixo, depois os lados */
     const opcoes = [[n.r + 1, n.c], [n.r, n.c - 1], [n.r, n.c + 1], [n.r + 1, n.c - 1], [n.r + 1, n.c + 1]]
       .filter(([y, x]) => temCasa(y, x) && papel[y][x] === 0);
@@ -4987,7 +4997,7 @@ function clicaPoder(id) {
   document.body.classList.add('mirando');
   const d = document.getElementById('dica-poder');
   d.hidden = false;
-  d.textContent = id === 'arpao' ? 'Toque na peça que vai sair' : 'Toque nas duas peças que vão trocar de lugar';
+  d.textContent = id === 'arpao' ? 'Toque na peça que vai sair' : id === 'isca' ? 'Toque na peça que vai virar bolha' : 'Toque nas duas peças que vão trocar de lugar';
   pintaPoderes();
 }
 /* ═══ VIDAS ══════════════════════════════════════════════════════
@@ -6309,13 +6319,13 @@ function comecaFase() {
       '<p>Cada peça que você estoura machuca ele. De duas em duas jogadas ele revida: rouba uma jogada e cospe tinta, e casa com tinta não machuca. Limpe a tinta e continue batendo.</p>' +
       '<div class="bts"><button class="bt" data-ac="comeca">Encarar</button></div>');
   }
-  if (!prog.vistos.perolas && f.obj.tipo === 'perolas') { prog.vistos.perolas = true; salvaProg(); return mostraAviso('Ostras com pérola', '#i-perola',
+  if (!prog.vistos.perolas2 && f.obj.tipo === 'perolas') { prog.vistos.perolas2 = true; salvaProg(); return mostraAviso('Ostras com pérola', '#i-perola',
     'Algumas casas têm uma ostra fechada no fundo. Estoure a peça em cima uma vez e a ostra abre; estoure de novo e a pérola sobe pra você.'); }
-  if (!prog.vistos.coral && f.obj.tipo === 'coral') { prog.vistos.coral = true; salvaProg(); return mostraAviso('Coral morto', '#i-coral',
+  if (!prog.vistos.coral2 && f.obj.tipo === 'coral') { prog.vistos.coral2 = true; salvaProg(); return mostraAviso('Coral morto', '#i-coral',
     'O coral cinza está morto. Toda peça estourada em cima dele ou bem do lado devolve a cor daquele pedaço. Recupere o recife inteiro.'); }
-  if (!prog.vistos.lixo && f.obj.tipo === 'lixo') { prog.vistos.lixo = true; salvaProg(); return mostraAviso('Lixo no fundo', '#i-lixo0',
+  if (!prog.vistos.lixo2 && f.obj.tipo === 'lixo') { prog.vistos.lixo2 = true; salvaProg(); return mostraAviso('Lixo no fundo', '#i-lixo0',
     'Garrafas, latas e sacolas não combinam com nada. Estoure peças coladas nelas para tirar do mar; especial que acerta em cheio também leva. Os mais sujos aguentam dois estouros.'); }
-  if (!prog.vistos.ninho && f.obj.tipo === 'ninho') { prog.vistos.ninho = true; salvaProg(); return mostraAviso('Ninho de algas', '#i-ninho',
+  if (!prog.vistos.ninho2 && f.obj.tipo === 'ninho') { prog.vistos.ninho2 = true; salvaProg(); return mostraAviso('Ninho de algas', '#i-ninho',
     'O ninho é a fonte das algas. Toda jogada em que você não destruir nenhuma alga, ele solta uma nova encostada nele. ' +
     'Destruiu pelo menos uma, ele fica quieto. Para parar de vez, estoure três vezes bem colado nele até ele cair. ' +
     'As algas que ele já soltou continuam lá e também contam.'); }

@@ -654,7 +654,7 @@ function clicaPoder(id) {
   document.body.classList.add('mirando');
   const d = document.getElementById('dica-poder');
   d.hidden = false;
-  d.textContent = id === 'arpao' ? 'Toque na peça que vai sair' : 'Toque nas duas peças que vão trocar de lugar';
+  d.textContent = id === 'arpao' ? 'Toque na peça que vai sair' : id === 'isca' ? 'Toque na peça que vai virar bolha' : 'Toque nas duas peças que vão trocar de lugar';
   pintaPoderes();
 }
 /* ═══ VIDAS ══════════════════════════════════════════════════════
@@ -1976,13 +1976,13 @@ function comecaFase() {
       '<p>Cada peça que você estoura machuca ele. De duas em duas jogadas ele revida: rouba uma jogada e cospe tinta, e casa com tinta não machuca. Limpe a tinta e continue batendo.</p>' +
       '<div class="bts"><button class="bt" data-ac="comeca">Encarar</button></div>');
   }
-  if (!prog.vistos.perolas && f.obj.tipo === 'perolas') { prog.vistos.perolas = true; salvaProg(); return mostraAviso('Ostras com pérola', '#i-perola',
+  if (!prog.vistos.perolas2 && f.obj.tipo === 'perolas') { prog.vistos.perolas2 = true; salvaProg(); return mostraAviso('Ostras com pérola', '#i-perola',
     'Algumas casas têm uma ostra fechada no fundo. Estoure a peça em cima uma vez e a ostra abre; estoure de novo e a pérola sobe pra você.'); }
-  if (!prog.vistos.coral && f.obj.tipo === 'coral') { prog.vistos.coral = true; salvaProg(); return mostraAviso('Coral morto', '#i-coral',
+  if (!prog.vistos.coral2 && f.obj.tipo === 'coral') { prog.vistos.coral2 = true; salvaProg(); return mostraAviso('Coral morto', '#i-coral',
     'O coral cinza está morto. Toda peça estourada em cima dele ou bem do lado devolve a cor daquele pedaço. Recupere o recife inteiro.'); }
-  if (!prog.vistos.lixo && f.obj.tipo === 'lixo') { prog.vistos.lixo = true; salvaProg(); return mostraAviso('Lixo no fundo', '#i-lixo0',
+  if (!prog.vistos.lixo2 && f.obj.tipo === 'lixo') { prog.vistos.lixo2 = true; salvaProg(); return mostraAviso('Lixo no fundo', '#i-lixo0',
     'Garrafas, latas e sacolas não combinam com nada. Estoure peças coladas nelas para tirar do mar; especial que acerta em cheio também leva. Os mais sujos aguentam dois estouros.'); }
-  if (!prog.vistos.ninho && f.obj.tipo === 'ninho') { prog.vistos.ninho = true; salvaProg(); return mostraAviso('Ninho de algas', '#i-ninho',
+  if (!prog.vistos.ninho2 && f.obj.tipo === 'ninho') { prog.vistos.ninho2 = true; salvaProg(); return mostraAviso('Ninho de algas', '#i-ninho',
     'O ninho é a fonte das algas. Toda jogada em que você não destruir nenhuma alga, ele solta uma nova encostada nele. ' +
     'Destruiu pelo menos uma, ele fica quieto. Para parar de vez, estoure três vezes bem colado nele até ele cair. ' +
     'As algas que ele já soltou continuam lá e também contam.'); }
