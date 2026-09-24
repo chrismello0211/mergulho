@@ -50,7 +50,7 @@ function pintaPapel() {
     else if (papel[r][c] === 2) d.classList.add('papel2');
     else if (papel[r][c] === 1) d.classList.add('papel');
   }
-  if (typeof pintaCasasEspeciais === 'function' && J && (J.perolas || J.coral)) pintaCasasEspeciais();   /* ostra e coral sobrevivem a qualquer repintura */
+  if (typeof pintaCasasEspeciais === 'function' && J) pintaCasasEspeciais();   /* ostra, coral e selos de cobertura sobrevivem a qualquer repintura */
 }
 function quebraPapel(r, c) {
   const d = celulasBox.children[r * W + c];
@@ -60,6 +60,7 @@ function quebraPapel(r, c) {
     if (papel[r][c] >= 3) d.classList.add('papel3');
     else if (papel[r][c] === 2) d.classList.add('papel2');
     else if (papel[r][c] === 1) d.classList.add('papel');
+    marcaCasas();
   }, 340);
 }
 
@@ -883,13 +884,15 @@ function pintaCasasEspeciais() {
   if (!caixa) { caixa = document.createElement('div'); caixa.id = 'marcas'; mesa.appendChild(caixa); }
   caixa.innerHTML = '';
   J.mudouCasas = false;
-  if (!J.perolas && !J.coral) return;
   for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) {
     const pe = J.perolas ? J.perolas[r][c] : 0, co = J.coral ? J.coral[r][c] : 0;
-    if (!pe && !co) continue;
+    const pa = (typeof papel !== 'undefined' && papel && papel[r]) ? papel[r][c] : 0;
+    if (!pe && !co && !pa) continue;
     const d = document.createElement('div');
     d.className = 'marca-casa' + (pe === 2 ? ' ostra-fechada' : pe === 1 ? ' ostra-aberta' : '') +
                   (co === 1 ? ' coral-morto' : co === 2 ? ' coral-vivo' : '');
+    /* cobertura (areia, alga, cinza, rede...): selinho no canto, por cima da peça */
+    if (pa > 0) d.innerHTML = '<i class="selo-cobre' + (pa >= 2 ? ' duplo' : '') + '">' + (pa >= 2 ? pa : '') + '</i>';
     caixa.appendChild(d);
     posiciona(d, r, c, true);
   }

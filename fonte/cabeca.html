@@ -693,6 +693,19 @@ body.leve #descida.roda{animation-duration:.45s}
 @media (max-width:380px){ #tela-mapa .topo{gap:4px;padding-left:8px;padding-right:8px}
   #tela-mapa .topo .ico-bt{width:38px;height:38px;flex:0 0 38px}
   #tela-mapa .topo > .moedas span,#tela-mapa .topo > .placar-estrelas span{font-size:14px} }
+/* ── cobertura sempre visível ────────────────────────────────
+   A peça cobre quase a casa inteira, então a cobertura ganha um
+   contorno forte e um selinho por cima da peça, no canto.        */
+.casa.papel i,.casa.papel2 i,.casa.papel3 i{box-shadow:inset 0 0 0 3px rgba(255,255,255,.55),0 0 0 1px rgba(0,0,0,.25)}
+[data-mundo="3"] .casa.papel i,[data-mundo="4"] .casa.papel i,[data-mundo="3"] .casa.papel2 i,[data-mundo="4"] .casa.papel2 i{
+  filter:brightness(1.55) saturate(1.1);box-shadow:inset 0 0 0 3px rgba(255,255,255,.7),0 0 12px rgba(255,255,255,.25)}
+.selo-cobre{position:absolute;left:4%;top:4%;width:30%;height:30%;border-radius:28%;z-index:2;
+  background:linear-gradient(180deg,var(--bl-a),var(--bl-b));box-shadow:0 0 0 2px #fff,0 2px 4px rgba(0,0,0,.5);
+  font-style:normal;font-family:var(--display);font-weight:800;font-size:calc(var(--cel) * .2);line-height:1;color:#fff;
+  display:grid;place-items:center;text-shadow:0 1px 2px rgba(0,0,0,.6)}
+.selo-cobre.duplo{background:linear-gradient(180deg,var(--bl-a2),var(--bl-b2))}
+[data-tex="breu"] .selo-cobre{background:#000;box-shadow:0 0 0 2px #B9A6E8,0 0 8px rgba(154,92,255,.8)}
+
 /* ── acabamento: cartão de novidade ─────────────────────────── */
 .cartao .aviso-arte{width:104px;height:104px;margin:-6px auto 4px;border-radius:30px;display:grid;place-items:center;
   background:radial-gradient(circle at 50% 40%,rgba(255,255,255,.95),rgba(191,245,238,.55) 60%,rgba(10,108,122,.14));

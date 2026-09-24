@@ -701,6 +701,19 @@ body.leve #descida.roda{animation-duration:.45s}
 @media (max-width:380px){ #tela-mapa .topo{gap:4px;padding-left:8px;padding-right:8px}
   #tela-mapa .topo .ico-bt{width:38px;height:38px;flex:0 0 38px}
   #tela-mapa .topo > .moedas span,#tela-mapa .topo > .placar-estrelas span{font-size:14px} }
+/* ── cobertura sempre visível ────────────────────────────────
+   A peça cobre quase a casa inteira, então a cobertura ganha um
+   contorno forte e um selinho por cima da peça, no canto.        */
+.casa.papel i,.casa.papel2 i,.casa.papel3 i{box-shadow:inset 0 0 0 3px rgba(255,255,255,.55),0 0 0 1px rgba(0,0,0,.25)}
+[data-mundo="3"] .casa.papel i,[data-mundo="4"] .casa.papel i,[data-mundo="3"] .casa.papel2 i,[data-mundo="4"] .casa.papel2 i{
+  filter:brightness(1.55) saturate(1.1);box-shadow:inset 0 0 0 3px rgba(255,255,255,.7),0 0 12px rgba(255,255,255,.25)}
+.selo-cobre{position:absolute;left:4%;top:4%;width:30%;height:30%;border-radius:28%;z-index:2;
+  background:linear-gradient(180deg,var(--bl-a),var(--bl-b));box-shadow:0 0 0 2px #fff,0 2px 4px rgba(0,0,0,.5);
+  font-style:normal;font-family:var(--display);font-weight:800;font-size:calc(var(--cel) * .2);line-height:1;color:#fff;
+  display:grid;place-items:center;text-shadow:0 1px 2px rgba(0,0,0,.6)}
+.selo-cobre.duplo{background:linear-gradient(180deg,var(--bl-a2),var(--bl-b2))}
+[data-tex="breu"] .selo-cobre{background:#000;box-shadow:0 0 0 2px #B9A6E8,0 0 8px rgba(154,92,255,.8)}
+
 /* ── acabamento: cartão de novidade ─────────────────────────── */
 .cartao .aviso-arte{width:104px;height:104px;margin:-6px auto 4px;border-radius:30px;display:grid;place-items:center;
   background:radial-gradient(circle at 50% 40%,rgba(255,255,255,.95),rgba(191,245,238,.55) 60%,rgba(10,108,122,.14));
@@ -1350,7 +1363,7 @@ body.leve .cartao{animation-duration:.18s}
    MERGULHO · combinar 3 da beira da praia até 4.000 metros
    ═══════════════════════════════════════════════════════════════ */
 
-const VERSAO_JOGO = '2026.11.10';
+const VERSAO_JOGO = '2026.11.11';
 const W = 7, H = 8, TIPOS = 6;
 const NADA = 0, LH = 1, LV = 2, BOMBA = 3, ARCO = 4, ONDA = 5, ONDAV = 6, CARDUME = 7;
 
@@ -3176,7 +3189,7 @@ function pintaPapel() {
     else if (papel[r][c] === 2) d.classList.add('papel2');
     else if (papel[r][c] === 1) d.classList.add('papel');
   }
-  if (typeof pintaCasasEspeciais === 'function' && J && (J.perolas || J.coral)) pintaCasasEspeciais();   /* ostra e coral sobrevivem a qualquer repintura */
+  if (typeof pintaCasasEspeciais === 'function' && J) pintaCasasEspeciais();   /* ostra, coral e selos de cobertura sobrevivem a qualquer repintura */
 }
 function quebraPapel(r, c) {
   const d = celulasBox.children[r * W + c];
@@ -3186,6 +3199,7 @@ function quebraPapel(r, c) {
     if (papel[r][c] >= 3) d.classList.add('papel3');
     else if (papel[r][c] === 2) d.classList.add('papel2');
     else if (papel[r][c] === 1) d.classList.add('papel');
+    marcaCasas();
   }, 340);
 }
 
@@ -4009,13 +4023,15 @@ function pintaCasasEspeciais() {
   if (!caixa) { caixa = document.createElement('div'); caixa.id = 'marcas'; mesa.appendChild(caixa); }
   caixa.innerHTML = '';
   J.mudouCasas = false;
-  if (!J.perolas && !J.coral) return;
   for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) {
     const pe = J.perolas ? J.perolas[r][c] : 0, co = J.coral ? J.coral[r][c] : 0;
-    if (!pe && !co) continue;
+    const pa = (typeof papel !== 'undefined' && papel && papel[r]) ? papel[r][c] : 0;
+    if (!pe && !co && !pa) continue;
     const d = document.createElement('div');
     d.className = 'marca-casa' + (pe === 2 ? ' ostra-fechada' : pe === 1 ? ' ostra-aberta' : '') +
                   (co === 1 ? ' coral-morto' : co === 2 ? ' coral-vivo' : '');
+    /* cobertura (areia, alga, cinza, rede...): selinho no canto, por cima da peça */
+    if (pa > 0) d.innerHTML = '<i class="selo-cobre' + (pa >= 2 ? ' duplo' : '') + '">' + (pa >= 2 ? pa : '') + '</i>';
     caixa.appendChild(d);
     posiciona(d, r, c, true);
   }
