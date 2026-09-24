@@ -233,35 +233,35 @@ async function esperaAcalmar(minimo) {
 /* Quem resolve rápido tinha nota menor que quem enrolava até a
    última jogada. Agora o que sobrou de fôlego vira especial no
    tabuleiro e estoura junto: eficiência passa a valer ponto.    */
+/* Bônus de eficiência. Serve pra uma coisa só: quem bateu o
+   objetivo gastando bem menos jogadas do que a fase dava não pode
+   sair com nota pior do que quem enrolou até o fim. Por isso:
+   · não vale se comprou fôlego (a jogada não foi economizada);
+   · só conta quem economizou pelo menos 20% das jogadas da fase;
+   · só completa até a nota da terceira estrela, nunca além:
+     é compensação, não prêmio extra pra quem já pontuou alto.  */
 async function bonusDoFolego() {
   const f = faseAtual();
+  J.folegoBonus = null;
+  if (f.obj.tipo === 'pontos' || f.obj.tipo === 'chefe') return 0;
+  if (J.movExtra > 0) return 0;
   const sobra = Math.max(0, J.mov | 0);
-  if (!sobra || f.obj.tipo === 'pontos') return 0;
-  const porJogada = Math.max(250, Math.round(f.marcas[2] / Math.max(1, f.mov)));
-  faixaTexto(sobra === 1 ? 'Sobrou uma jogada!' : 'Sobraram ' + sobra + ' jogadas!', 2000);
-  await espera(520);
-  const livres = [];
-  for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) {
-    const p = grid[r][c];
-    if (p && !p.bau && !p.sp && !p.gaiola && !p.bolha) livres.push(p);
-  }
-  for (let k = livres.length - 1; k > 0; k--) { const j = sorteia(k + 1); const t = livres[k]; livres[k] = livres[j]; livres[j] = t; }
-  const vira = Math.min(sobra, 5, livres.length);
-  for (let k = 0; k < vira; k++) {
-    livres[k].sp = [LH, LV, BOMBA][sorteia(3)];
-    atualizaEl(livres[k]);
-    const el = els.get(livres[k].id);
-    if (el) { el.classList.remove('nasce'); void el.offsetWidth; el.classList.add('nasce'); }
-    Som.liga(); Som.especial();
-    await espera(190);
-  }
-  const extra = Math.max(0, sobra - vira) * porJogada;
-  if (extra) J.pontos += extra;
-  J.folegoBonus = { sobra: sobra, virou: vira, extra: extra };
+  const minimo = Math.max(2, Math.ceil(f.mov * .2));
+  if (sobra < minimo) return 0;
+  const teto = f.marcas[2];
+  const falta = Math.max(0, teto - J.pontos);
+  if (!falta) return 0;
+  const porJogada = Math.max(250, Math.round(teto / Math.max(1, f.mov)));
+  const bonus = Math.min(falta, sobra * porJogada);
+  faixaTexto('Resolveu com ' + sobra + ' jogadas de sobra!', 2200);
+  Som.liga(); Som.especial();
+  await espera(700);
+  J.pontos += bonus;
+  J.folegoBonus = { sobra: sobra, extra: bonus, chegouNoTeto: bonus === falta };
   J.mov = 0;
   atualizaHud();
-  await espera(320);
-  return sobra;
+  await espera(500);
+  return bonus;
 }
 
 async function venceu() {
@@ -322,10 +322,9 @@ async function venceu() {
     '<p class="ganho-moedas"><svg viewBox="0 0 100 100"><use href="#i-moeda"/></svg>+' + ganho + '</p>' +
     '<p class="pos-fase" id="pos-fase"></p>' +
     (eraMestre ? '<div class="tesouro"><b>Tesouro do mestre</b><span>150 moedas e um de cada poder</span></div>' : '') +
-    (J.folegoBonus && J.folegoBonus.sobra ? '<div class="folego-bonus"><b>Fôlego que sobrou</b><span>' +
-      J.folegoBonus.sobra + (J.folegoBonus.sobra === 1 ? ' jogada' : ' jogadas') +
-      (J.folegoBonus.virou ? ' · ' + J.folegoBonus.virou + ' viraram especial' : '') +
-      (J.folegoBonus.extra ? ' · +' + nf(J.folegoBonus.extra) + ' pontos' : '') + '</span></div>' : '') +
+    (J.folegoBonus ? '<div class="folego-bonus"><b>Bônus de eficiência</b><span>resolveu com ' +
+      J.folegoBonus.sobra + ' jogadas de sobra · +' + nf(J.folegoBonus.extra) + ' pontos' +
+      (J.folegoBonus.chegouNoTeto ? ' (até a 3ª estrela)' : '') + '</span></div>' : '') +
     '<p>' + (fimExp ? 'Foram 4.000 metros. A Expedição ' + expedicao(J.fase + 1) + ' começa de novo no raso, mais apertada.'
              : muda ? frases[e - 1] + ' Daqui pra baixo começa ' + ambiente(J.fase + 1).nome + '.' : frases[e - 1]) + '</p>' +
     '<div class="bts">' +
@@ -372,10 +371,23 @@ async function perdeu() {
     '<div class="bts">' +
       '<button class="bt vidro" data-ac="mapa">Mapa</button>' +
       (prog.poderes.folego > 0
-        ? '<button class="bt" data-ac="folego">Fôlego: +5 jogadas</button><button class="bt vidro" data-ac="denovo">Tentar de novo</button>'
-        : '<button class="bt" data-ac="denovo">Tentar de novo</button>') +
+        ? '<button class="bt" data-ac="folego">Usar fôlego: +5 jogadas</button><button class="bt vidro" data-ac="denovo">Tentar de novo</button>'
+        : prog.moedas >= precoFolego()
+          ? '<button class="bt" data-ac="comprafolego">+5 jogadas por ' + precoFolego() + ' moedas</button><button class="bt vidro" data-ac="denovo">Tentar de novo</button>'
+          : '<button class="bt" data-ac="denovo">Tentar de novo</button>') +
     '</div>'
   );
+}
+
+function precoFolego() { const p = PODERES.find(x => x.id === 'folego'); return p ? p.preco : 260; }
+/* sem fôlego no estoque, dá pra comprar na hora, direto no cartão */
+function compraFolegoNaHora() {
+  const preco = precoFolego();
+  if (prog.moedas < preco) return;
+  prog.moedas -= preco;
+  prog.poderes.folego = (prog.poderes.folego || 0) + 1;
+  salvaProg(); pintaMoedas();
+  usaFolegoNoCartao();
 }
 
 /* depois da vitória, a colocação daquela fase aparece no cartão */
@@ -495,7 +507,9 @@ function pintaMoedas() {
 function pintaPoderes() {
   const bar = document.getElementById('poderes');
   if (!bar) return;
-  bar.innerHTML = PODERES.map(p => {
+  /* fôlego não fica na barra: ele só é oferecido quando as jogadas
+     acabam, como no Candy Crush */
+  bar.innerHTML = PODERES.filter(p => p.id !== 'folego').map(p => {
     const n = prog.poderes[p.id] || 0;
     return '<button class="poder' + (n ? '' : ' vazio') + (poderAtivo === p.id ? ' armado' : '') + '" data-p="' + p.id + '" ' +
       'aria-label="' + p.nome + ', ' + n + ' em estoque">' +
@@ -524,7 +538,7 @@ function clicaPoder(id) {
   if (poderAtivo === id) { desligaPoder(); return; }
   desligaPoder();
   if (id === 'giro') { gastaPoder('giro'); giroAgora(); return; }
-  if (id === 'folego') { gastaPoder('folego'); J.mov += 5; atualizaHud(); Som.pop(5); faixaTexto('+5 jogadas'); return; }
+  if (id === 'folego') { gastaPoder('folego'); J.mov += 5; J.movExtra = (J.movExtra || 0) + 5; atualizaHud(); Som.pop(5); faixaTexto('+5 jogadas'); return; }
   poderAtivo = id;
   document.body.classList.add('mirando');
   const d = document.getElementById('dica-poder');
@@ -536,7 +550,7 @@ function usaFolegoNoCartao() {
   if ((prog.poderes.folego || 0) <= 0) return;
   gastaPoder('folego');
   fechaCartao();
-  J.fim = false; J.ocupado = false; J.mov += 5;
+  J.fim = false; J.ocupado = false; J.mov += 5; J.movExtra = (J.movExtra || 0) + 5;
   atualizaHud(); reiniciaDica();
   Som.liga(); Som.pop(5);
   faixaTexto('+5 jogadas');
@@ -1782,6 +1796,7 @@ function iniciar() {
     else if (ac === 'mudar') mudaAjuste(b.dataset.k);
     else if (ac === 'procura') procuraVersao(b);
     else if (ac === 'encerra') encerraAgora();
+    else if (ac === 'comprafolego') compraFolegoNaHora();
     else if (ac === 'rank') mostraRanking();
     else if (ac === 'apelido') pedeApelido();
     else if (ac === 'codigo') mostraCodigo();
