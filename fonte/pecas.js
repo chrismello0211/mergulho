@@ -49,12 +49,12 @@ function lin(id, stops, x1, y1, x2, y2) {
 /* cores de cada família em cada mundo
    b base · c claro · e escuro (ou cor do brilho, nos mundos sem sol) · x detalhe */
 const PAL = [
-  [ {b:'#F63B48',c:'#FF867E',e:'#AB203E',x:'#FFD8CC'}, {b:'#EC326B',c:'#FF85A9',e:'#9F1449',x:'#FFBDB8'},
-    {b:'#DE3641',c:'#FA776F',e:'#891C2C',x:'#FFC3B0'}, {b:'#FF4D8B',c:'#FFB3CE',e:'#FF4D8B',x:'#FFE3EE'},
-    {b:'#2B0516',c:'#FF73A7',e:'#FF2E7A',x:'#FFC2D8'} ],
-  [ {b:'#FFB73E',c:'#FFE095',e:'#D07A15',x:'#FFFBF1'}, {b:'#FFA12A',c:'#FFCE79',e:'#BF660C',x:'#FFFDF9'},
-    {b:'#EF9C35',c:'#FFCB81',e:'#AA6413',x:'#7F460C'}, {b:'#FFAE3A',c:'#FFDEA9',e:'#FFAE3A',x:'#FFF5E4'},
-    {b:'#251506',c:'#FFBF6A',e:'#FFA125',x:'#FFE5BF'} ],
+  [ {b:'#FB365E',c:'#FF7E87',e:'#AE1D4F',x:'#FFD1CC'}, {b:'#F12D83',c:'#FF85B9',e:'#A2115C',x:'#FFB8BC'},
+    {b:'#E23255',c:'#FD6C77',e:'#8C1939',x:'#FFB8B0'}, {b:'#FF4DA3',c:'#FFB3D8',e:'#FF4DA3',x:'#FFE3F2'},
+    {b:'#2C041B',c:'#FF73BA',e:'#FF2E96',x:'#FFC2E0'} ],
+  [ {b:'#FF8134',c:'#FFBF89',e:'#D1460D',x:'#FFF0E2'}, {b:'#FF6621',c:'#FFA66E',e:'#C03405',x:'#FFF3EA'},
+    {b:'#F66525',c:'#FFA475',e:'#AB3A0D',x:'#802607'}, {b:'#FF7731',c:'#FFC09C',e:'#FF7731',x:'#FFE5D6'},
+    {b:'#250C05',c:'#FF925F',e:'#FF651C',x:'#FFCCB2'} ],
   [ {b:'#FFD23F',c:'#FFF3B0',e:'#CF9312',x:'#B8780C'}, {b:'#FFC928',c:'#FFEE9A',e:'#D08C06',x:'#E8651A'},
     {b:'#FFE1A0',c:'#FFF6DC',e:'#D9A441',x:'#C8691C'}, {b:'#FFD23F',c:'#FFF4BD',e:'#FFD23F',x:'#FFF7D6'},
     {b:'#221A04',c:'#FFE066',e:'#FFC61A',x:'#FFF0A8'} ],

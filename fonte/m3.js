@@ -50,6 +50,7 @@ function pintaPapel() {
     else if (papel[r][c] === 2) d.classList.add('papel2');
     else if (papel[r][c] === 1) d.classList.add('papel');
   }
+  if (typeof pintaCasasEspeciais === 'function' && J && (J.perolas || J.coral)) pintaCasasEspeciais();   /* ostra e coral sobrevivem a qualquer repintura */
 }
 function quebraPapel(r, c) {
   const d = celulasBox.children[r * W + c];
@@ -65,6 +66,7 @@ function quebraPapel(r, c) {
 function corpoDaPeca(p) {
   let s = '';
   if (p.bau) return '<svg viewBox="0 0 100 100"><use href="#i-bau"/></svg>';
+  if (p.lixo) return '<svg viewBox="0 0 100 100"><use href="#i-lixo' + (p.id % 3) + '"/></svg>';
   if (p.sp === ARCO) s = '<svg viewBox="0 0 100 100"><use href="#s-arco"/></svg>';
   else {
     s = '<svg viewBox="0 0 100 100"><use href="#s' + p.t + ['', 'b', 'c'][p.id % 3] + '"/></svg>';
@@ -79,6 +81,7 @@ function corpoDaPeca(p) {
 }
 function classeEsp(p) {
   if (p.bau) return 'e-bau';
+  if (p.lixo) return 'lixo' + (p.lixo >= 2 ? ' lixo2' : '');
   if (p.gaiola) return 'preso' + (p.gaiola >= 2 ? ' preso2' : '');
   if (p.bolha) return 'com-bolha';
   return p.sp === LH ? 'esp-lh' : p.sp === LV ? 'esp-lv' : p.sp === BOMBA ? 'esp-bomba' : p.sp === ARCO ? 'esp-arco'
@@ -140,6 +143,7 @@ function montaPecas() {
       el.firstChild.animate([{ transform: 'scale(0) rotate(-40deg)', opacity: 0 }, { transform: 'scale(1) rotate(0)', opacity: 1 }],
         { duration: 340, delay: (r + c) * 22, easing: 'cubic-bezier(.2,1.6,.4,1)', fill: 'backwards' });
   }
+  if (typeof pintaNinhos === 'function') pintaNinhos();   /* ninho sempre por cima, em qualquer redesenho */
 }
 
 
@@ -335,7 +339,37 @@ async function limpar(conj, novos) {
     sr += r; sc += c;
     const el = els.get(p.id);
     if (el) el.classList.add('some');
-    if (papel[r][c] > 0) { papel[r][c]--; J.papelFeito++; quebraPapel(r, c); }
+    if (papel[r][c] > 0) { papel[r][c]--; J.papelFeito++; quebraPapel(r, c); if (faseAtual().obj.mancha) J.limpouMancha = true; J.limpouAlga = true; }
+    /* pérola: primeiro estouro abre a ostra, o segundo colhe */
+    if (J.perolas && J.perolas[r][c] > 0) {
+      J.perolas[r][c]--;
+      if (J.perolas[r][c] === 0) { J.perolasFeitas = (J.perolasFeitas || 0) + 1; J.pontos += 250; voaPerola(r, c); }
+      else { estilhacos(r, c, '#F3E9FF', 6); }
+      marcaCasas();
+    }
+    /* coral: estourar em cima ou do lado devolve a cor */
+    if (J.coral) for (const [dr, dc] of [[0,0],[-1,0],[1,0],[0,-1],[0,1]]) {
+      const y = r + dr, x = c + dc;
+      if (!temCasa(y, x) || J.coral[y][x] !== 1) continue;
+      J.coral[y][x] = 2; J.coralFeito = (J.coralFeito || 0) + 1; J.pontos += 90;
+      estilhacos(y, x, ['#FF7AA8', '#FFB36B', '#B98CFF'][(y + x) % 3], 7);
+      marcaCasas();
+    }
+    /* lixo: estouro colado desgasta; no último, some do tabuleiro */
+    for (const [dr, dc] of [[-1,0],[1,0],[0,-1],[0,1]]) {
+      const y = r + dr, x = c + dc;
+      const q = dentro(y, x) ? grid[y][x] : null;
+      if (!q || !q.lixo) continue;
+      q.lixo--;
+      if (q.lixo <= 0) tiraLixo(y, x, q); else atualizaEl(q);
+    }
+    if (p && p.lixo) { p.lixo = 0; J.lixoFeito = (J.lixoFeito || 0) + 1; J.pontos += 200; }   /* especial acertou o lixo em cheio */
+    /* estourar colado no ninho machuca ele */
+    if (J.ninhos) for (const n of J.ninhos) {
+      if (n.vida <= 0 || Math.abs(n.r - r) + Math.abs(n.c - c) !== 1) continue;
+      n.vida--; n.bateu = true;
+      if (n.vida <= 0) derrubaNinho(n);
+    }
     /* estourar do lado abre a gaiola do bicho preso */
     for (const [dr, dc] of [[-1,0],[1,0],[0,-1],[0,1]]) {
       const q = dentro(r + dr, c + dc) ? grid[r + dr][c + dc] : null;
@@ -565,6 +599,8 @@ async function tentaTroca(a, b) {
 }
 async function tentaTrocaInterna(a, b) {
   J.soltoSozinho = false;
+  J.limpouMancha = false;
+  J.limpouAlga = false;
   if (J.ocupado || J.fim) return;
   limpaMarca();
   const pa = grid[a.r][a.c], pb = grid[b.r][b.c];
@@ -617,6 +653,8 @@ async function tentaTrocaInterna(a, b) {
   await passoBolha();
   garanteBolhas();
   garantePresos();
+  passoNinho();
+  if (J.mudouCasas) pintaCasasEspeciais();
   await passoMestre();
   salvaPartida();
   J.ocupado = false;
@@ -656,8 +694,10 @@ function salvaPartida() {
       cc: J.contaCresce, ac: J.alvoCresce, cr: J.criados, papel: papel, base: J.papelBase,
       topo: TOPO.slice(),
       pr: J.presosFeitos || 0, bo: J.bolhasFeitas || 0, bfg: J.bolhasFugiram || 0,
+      nin: J.ninhos || null, ninf: J.ninhosFeitos || 0,
+      per: J.perolas || null, pef: J.perolasFeitas || 0, cor: J.coral || null, cof: J.coralFeito || 0, lxf: J.lixoFeito || 0,
       dn: J.dano || 0, cm: J.contaMestre || 0, cb: J.contaBolha || 0, bpa: J.bauParado || 0,
-      g: grid.map(l => l.map(p => p ? (p.bau ? 'b' : p.t + '.' + p.sp + '.' + (p.gaiola || 0) + '.' + (p.bolha ? 1 : 0)) : ''))
+      g: grid.map(l => l.map(p => p ? (p.bau ? 'b' : p.t + '.' + p.sp + '.' + (p.gaiola || 0) + '.' + (p.bolha ? 1 : 0) + '.' + (p.lixo || 0)) : ''))
     }));
   } catch (e) { /* sem espaço: só não guarda */ }
 }
@@ -673,7 +713,7 @@ async function estouroFinal() {
     for (let r = 0; r < H; r++) for (let c = 0; c < W; c++)
       if (grid[r][c] && grid[r][c].sp) sobrou.push([r, c]);
     if (!sobrou.length) break;
-    if (!explodiu) { faixaTexto('Sobrou fogo!', 2000); await espera(420); }
+    if (!explodiu) { faixaTexto('Arrastão final!', 2000); await espera(420); }
     explodiu = true;
     for (const [r, c] of sobrou) {
       const p = grid[r][c];
@@ -827,9 +867,150 @@ function pintaAvisoCresce() {
   celulasBox.querySelectorAll('.vai-crescer').forEach(e => e.classList.remove('vai-crescer'));
   if (J.alvoCresce) celulasBox.children[J.alvoCresce[0] * W + J.alvoCresce[1]].classList.add('vai-crescer');
 }
+/* ═══ PÉROLAS, LIXO E CORAL ══════════════════════════════════════ */
+/* ostra abre e coral acende no mesmo instante do estouro */
+let casasAgendadas = false;
+function marcaCasas() {
+  J.mudouCasas = true;
+  if (casasAgendadas) return;
+  casasAgendadas = true;
+  requestAnimationFrame(() => { casasAgendadas = false; pintaCasasEspeciais(); });
+}
+function pintaCasasEspeciais() {
+  /* ostra e coral ficam numa camada acima das peças, no canto da casa,
+     pra aparecer sem esconder o bicho que está em cima */
+  let caixa = document.getElementById('marcas');
+  if (!caixa) { caixa = document.createElement('div'); caixa.id = 'marcas'; mesa.appendChild(caixa); }
+  caixa.innerHTML = '';
+  J.mudouCasas = false;
+  if (!J.perolas && !J.coral) return;
+  for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) {
+    const pe = J.perolas ? J.perolas[r][c] : 0, co = J.coral ? J.coral[r][c] : 0;
+    if (!pe && !co) continue;
+    const d = document.createElement('div');
+    d.className = 'marca-casa' + (pe === 2 ? ' ostra-fechada' : pe === 1 ? ' ostra-aberta' : '') +
+                  (co === 1 ? ' coral-morto' : co === 2 ? ' coral-vivo' : '');
+    caixa.appendChild(d);
+    posiciona(d, r, c, true);
+  }
+}
+/* a pérola colhida voa até o painel do objetivo */
+function voaPerola(r, c) {
+  const casa = celulasBox.children[r * W + c], alvo = document.querySelector('#objetivo .alvo') || document.getElementById('objetivo');
+  if (!casa || !alvo) return;
+  const a = casa.getBoundingClientRect(), b = alvo.getBoundingClientRect();
+  const o = document.createElement('i');
+  o.className = 'perola-voa';
+  o.style.left = (a.left + a.width / 2) + 'px'; o.style.top = (a.top + a.height / 2) + 'px';
+  o.style.setProperty('--dx', (b.left + b.width / 2 - a.left - a.width / 2) + 'px');
+  o.style.setProperty('--dy', (b.top + b.height / 2 - a.top - a.height / 2) + 'px');
+  document.body.appendChild(o);
+  setTimeout(() => o.remove(), 900);
+  Som.liga(); Som.pop(7);
+}
+function tiraLixo(y, x, q) {
+  J.lixoFeito = (J.lixoFeito || 0) + 1; J.pontos += 200;
+  const el = els.get(q.id);
+  if (el) { el.classList.add('some'); setTimeout(() => { el.remove(); els.delete(q.id); }, 380); }
+  grid[y][x] = null;
+  respingos(y, x, '#BFF5EE', 8);
+  Som.liga(); Som.pop(4);
+}
+
+/* ═══ NINHO DE ALGAS ════════════════════════════════════════════
+   O ninho é a fonte: fica preso na borda de cima, não cai, não
+   combina. Jogada sem alga destruída, cada ninho vivo solta uma
+   alga numa casa encostada nele. Destruiu alguma, ele fica quieto.
+   Três estouros colados derrubam o ninho, e a casa dele vira
+   tabuleiro. As algas que ele já soltou continuam lá.            */
+function pintaNinhos() {
+  document.querySelectorAll('.ninho').forEach(e => e.remove());
+  if (!J.ninhos) return;
+  for (const n of J.ninhos) {
+    if (n.vida <= 0) continue;
+    const el = document.createElement('div');
+    el.className = 'ninho' + (n.bateu ? ' apanhou' : '');
+    el.innerHTML = '<svg viewBox="0 0 100 100"><use href="#i-ninho"/></svg><span class="vida-ninho">' +
+      '●'.repeat(n.vida) + '<i>' + '●'.repeat(Math.max(0, (faseAtual().obj.vida || 3) - n.vida)) + '</i></span>';
+    pecasBox.appendChild(el);
+    posiciona(el, n.r, n.c, true);
+    n.bateu = false;
+  }
+}
+function derrubaNinho(n) {
+  n.vida = 0;
+  J.ninhosFeitos = (J.ninhosFeitos || 0) + 1;
+  J.pontos += 600;
+  TOPO[n.c] = Math.min(TOPO[n.c], n.r);          /* a casa do ninho vira tabuleiro */
+  const casa = celulasBox.children[n.r * W + n.c];
+  if (casa) casa.classList.remove('fora');
+  estilhacos(n.r, n.c, '#7FE08A', 14);
+  ondaChoque(n.r, n.c, 2.6, '#7FE08A');
+  Som.liga(); Som.especial();
+  faixaTexto(ninhosVivos() ? 'Ninho destruído!' : 'Último ninho destruído!', 2000);
+  pintaNinhos();
+}
+const ninhosVivos = () => (J.ninhos || []).filter(n => n.vida > 0).length;
+function passoNinho() {
+  if (!J.ninhos || !ninhosVivos() || J.fim) { if (J.ninhos) pintaNinhos(); return; }
+  if (J.limpouAlga) { J.limpouAlga = false; pintaNinhos(); return; }
+  let nasceu = 0;
+  for (const n of J.ninhos) {
+    if (n.vida <= 0) continue;
+    /* primeiro a casa de baixo, depois os lados */
+    const opcoes = [[n.r + 1, n.c], [n.r, n.c - 1], [n.r, n.c + 1], [n.r + 1, n.c - 1], [n.r + 1, n.c + 1]]
+      .filter(([y, x]) => temCasa(y, x) && papel[y][x] === 0);
+    if (!opcoes.length) continue;
+    const [y, x] = opcoes[0];
+    papel[y][x] = 1; J.papelTotal++; nasceu++;
+    const casa = celulasBox.children[y * W + x];
+    casa.classList.add('cresceu');
+    setTimeout(() => casa.classList.remove('cresceu'), 520);
+  }
+  pintaNinhos();
+  if (nasceu) {
+    pintaPapel(); Som.liga(); Som.cresce();
+    faixaTexto('Nenhuma alga destruída: o ninho soltou mais', 2000);
+    atualizaHud();
+  }
+}
+
+/* Mancha, regra nova: se você destruiu pelo menos uma mancha na
+   jogada, ela não se espalha. Se não destruiu, nasce uma mancha nova
+   numa casa encostada, de preferência avançando para área limpa.
+   Uma por jogada, e sem mancha nenhuma não há de onde crescer.   */
+function passoMancha() {
+  if (J.limpouMancha) { J.limpouMancha = false; return; }
+  if (casasCobertas(papel) <= 0) return;
+  let melhor = [], nota = -1;
+  for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) {
+    if (papel[r][c] !== 0 || !temCasa(r, c)) continue;
+    let encosta = false, limpas = 0;
+    for (const [dr, dc] of [[-1,0],[1,0],[0,-1],[0,1]]) {
+      const y = r + dr, x = c + dc;
+      if (!temCasa(y, x)) continue;
+      if (papel[y][x] > 0) encosta = true; else limpas++;
+    }
+    if (!encosta) continue;
+    if (limpas > nota) { nota = limpas; melhor = [[r, c]]; }
+    else if (limpas === nota) melhor.push([r, c]);
+  }
+  if (!melhor.length) return;
+  const [r, c] = melhor[sorteia(melhor.length)];
+  papel[r][c] = 1; J.papelTotal++;
+  pintaPapel();
+  const casa = celulasBox.children[r * W + c];
+  casa.classList.add('cresceu');
+  setTimeout(() => casa.classList.remove('cresceu'), 520);
+  Som.liga(); Som.cresce();
+  faixaTexto('Nenhuma mancha destruída: ela se espalhou', 2000);
+  atualizaHud();
+}
+
 function passoCrescer() {
   const f = faseAtual();
   if (!f.obj.cresce || J.fim) return;
+  if (f.obj.mancha) return passoMancha();
   if (J.alvoCresce) {
     const [r, c] = J.alvoCresce;
     J.alvoCresce = null;

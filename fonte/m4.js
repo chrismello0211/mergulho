@@ -34,6 +34,51 @@ function preparaEspeciaisDaFase() {
     }
   }
   if (f.obj.tipo === 'bolhas') nasceBolha(f.obj.juntas || 2);
+  J.perolas = null; J.coral = null; J.perolasFeitas = 0; J.coralFeito = 0; J.lixoFeito = 0;
+  const vazio = () => Array.from({ length: H }, () => Array(W).fill(0));
+  const sorteiaCasas = (quantas, filtro) => {
+    const lista = [];
+    for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) if (temCasa(r, c) && (!filtro || filtro(r, c))) lista.push([r, c]);
+    for (let k = lista.length - 1; k > 0; k--) { const j = sorteia(k + 1); const x = lista[k]; lista[k] = lista[j]; lista[j] = x; }
+    return lista.slice(0, quantas);
+  };
+  if (f.obj.tipo === 'perolas') {
+    J.perolas = vazio();
+    /* espalhadas: nunca duas ostras encostadas */
+    let postas = 0;
+    for (const [r, c] of sorteiaCasas(40, (r) => r >= 1)) {
+      if (postas >= f.obj.n) break;
+      let perto = false;
+      for (const [dr, dc] of [[-1,0],[1,0],[0,-1],[0,1]]) if (dentro(r + dr, c + dc) && J.perolas[r + dr][c + dc]) perto = true;
+      if (perto) continue;
+      J.perolas[r][c] = 2; postas++;
+    }
+  }
+  if (f.obj.tipo === 'coral') {
+    J.coral = vazio();
+    /* um recife morto contínuo, crescendo a partir do fundo */
+    let [r, c] = [H - 1, sorteia(W)], feitos = 0, voltas = 0;
+    while (feitos < f.obj.n && voltas++ < 400) {
+      if (temCasa(r, c) && !J.coral[r][c]) { J.coral[r][c] = 1; feitos++; }
+      const [dr, dc] = [[-1,0],[0,-1],[0,1],[-1,0],[1,0]][sorteia(5)];
+      if (temCasa(r + dr, c + dc)) { r += dr; c += dc; }
+    }
+  }
+  if (f.obj.tipo === 'lixo') {
+    let postos = 0;
+    for (const [r, c] of sorteiaCasas(60, (r) => r >= 1)) {
+      const q = grid[r][c];
+      if (postos >= f.obj.n || !q || q.bau || q.sp) continue;
+      q.lixo = f.obj.dura || 1; postos++;
+    }
+  }
+  if (f.obj.tipo === 'ninho') {
+    J.ninhos = f.obj.ninhos.map(c => ({ r: TOPO[c] - 1, c: c, vida: f.obj.vida || 3 }));
+    J.ninhosFeitos = 0;
+    /* cada ninho já começa com uma alga embaixo, pra ninguém ficar sem entender */
+    for (const n of J.ninhos) if (temCasa(n.r + 1, n.c)) papel[n.r + 1][n.c] = 1;
+    J.papelTotal = contaPapel(papel);
+  } else J.ninhos = null;
 }
 function nasceBolha(quantas) {
   for (let k = 0; k < quantas; k++) {
@@ -47,9 +92,20 @@ function nasceBolha(quantas) {
   }
 }
 
-function faltaObjetivo() {
+/* segundo objetivo: juntar peças de uma cor, além do principal */
+function faltaExtra() {
+  const f = faseAtual(), ex = f.obj.extra;
+  if (!ex) return 0;
+  return Math.max(0, ex.n - ((J.coletado || [])[ex.t] || 0));
+}
+function faltaObjetivo() { return faltaPrincipal() + faltaExtra(); }
+function faltaPrincipal() {
   const f = faseAtual();
   if (f.obj.tipo === 'chefe') return Math.max(0, f.obj.vida - (J.dano || 0));
+  if (f.obj.tipo === 'ninho') return ninhosVivos() + casasCobertas(papel);
+  if (f.obj.tipo === 'perolas') { let n = 0; if (J.perolas) for (const l of J.perolas) for (const v of l) if (v > 0) n++; return n; }
+  if (f.obj.tipo === 'coral') { let n = 0; if (J.coral) for (const l of J.coral) for (const v of l) if (v === 1) n++; return n; }
+  if (f.obj.tipo === 'lixo') return Math.max(0, f.obj.n - (J.lixoFeito || 0));
   if (f.obj.tipo === 'presos') return Math.max(0, f.obj.n - (J.presosFeitos || 0));
   if (f.obj.tipo === 'bolhas') return Math.max(0, f.obj.n - (J.bolhasFeitas || 0));
   if (f.obj.tipo === 'pontos') return Math.max(0, f.marcas[0] - J.pontos);
@@ -60,15 +116,25 @@ function faltaObjetivo() {
 }
 function objetivoFeito() { return faltaObjetivo() === 0; }
 function nomeBloq(f, n) {
-  const b = f.obj.corrente ? BLOQUEIOS.corrente : f.obj.mancha ? BLOQUEIOS.mancha : ambiente(J.desafio ? 0 : J.fase).bloq;
+  const b = f.obj.corrente ? BLOQUEIOS.corrente : f.obj.mancha ? BLOQUEIOS.mancha : f.obj.tipo === 'ninho' ? BLOQUEIOS.alga : ambiente(J.desafio ? 0 : J.fase).bloq;
   return n + ' ' + (n === 1 ? b.um : b.varios);
 }
 function verboBloq(f) {
-  const b = f.obj.corrente ? BLOQUEIOS.corrente : f.obj.mancha ? BLOQUEIOS.mancha : ambiente(J.desafio ? 0 : J.fase).bloq;
+  const b = f.obj.corrente ? BLOQUEIOS.corrente : f.obj.mancha ? BLOQUEIOS.mancha : f.obj.tipo === 'ninho' ? BLOQUEIOS.alga : ambiente(J.desafio ? 0 : J.fase).bloq;
   return b.verbo;
 }
 
+function pintaExtra() {
+  const f = faseAtual(), o = document.getElementById('objetivo');
+  if (!o) return;
+  const velho = o.querySelector('.extra-obj'); if (velho) velho.remove();
+  if (!f.obj.extra) return;
+  const n = faltaExtra();
+  o.insertAdjacentHTML('beforeend', '<div class="extra-obj' + (n ? '' : ' feito') + '"><span>e juntar</span>' +
+    '<svg class="ic" viewBox="0 0 100 100"><use href="#s' + f.obj.extra.t + '"/></svg><b>' + (n || '✓') + '</b></div>');
+}
 function atualizaHud() {
+  setTimeout(pintaExtra, 0);
   const f = faseAtual();
   document.getElementById('mov-n').textContent = J.mov;
   document.getElementById('mov-lb').textContent = J.mov === 1 ? 'jogada' : 'jogadas';
@@ -111,6 +177,17 @@ function atualizaHud() {
     const falta = Math.max(0, f.obj.n - (J.criados || 0));
     o.innerHTML = '<div><div class="rotulo">Criar especiais</div></div><div class="alvos">' +
       '<div class="alvo' + (falta ? '' : ' feito') + '"><svg class="ic" viewBox="0 0 100 100"><use href="#i-faisca"/></svg><b>' + (falta || '✓') + '</b></div></div>';
+  } else if (f.obj.tipo === 'perolas' || f.obj.tipo === 'coral' || f.obj.tipo === 'lixo') {
+    const n = faltaPrincipal();
+    const rot = { perolas: 'Colher as pérolas', coral: 'Recuperar o coral', lixo: 'Limpar o lixo do fundo' }[f.obj.tipo];
+    const ic = { perolas: '#i-perola', coral: '#i-coral', lixo: '#i-lixo0' }[f.obj.tipo];
+    o.innerHTML = '<div><div class="rotulo">' + rot + '</div></div><div class="alvos"><div class="alvo' + (n ? '' : ' feito') + '">' +
+      '<svg class="ic" viewBox="0 0 100 100"><use href="' + ic + '"/></svg><b>' + (n || '✓') + '</b></div></div>';
+  } else if (f.obj.tipo === 'ninho') {
+    const nv = ninhosVivos(), al = casasCobertas(papel);
+    o.innerHTML = '<div><div class="rotulo">Destruir os ninhos e as algas</div></div><div class="alvos">' +
+      '<div class="alvo' + (nv ? '' : ' feito') + '"><svg class="ic" viewBox="0 0 100 100"><use href="#i-ninho"/></svg><b>' + (nv || '✓') + '</b></div>' +
+      '<div class="alvo' + (al ? '' : ' feito') + '"><span class="ic-alga"></span><b>' + (al || '✓') + '</b></div></div>';
   } else if (f.obj.tipo === 'chefe') {
     const M = MESTRES[f.obj.mestre], vida = Math.max(0, f.obj.vida - (J.dano || 0));
     const pc = Math.round(vida / f.obj.vida * 100);
@@ -360,21 +437,37 @@ async function perdeu() {
   else if (f.obj.tipo === 'bau') { const n = faltaObjetivo(); falta = n === 1 ? 'Faltou um baú chegar no fundo.' : 'Faltaram ' + n + ' baús chegarem no fundo.'; }
   else if (f.obj.tipo === 'especiais') { const n = faltaObjetivo(); falta = n === 1 ? 'Faltou criar um especial.' : 'Faltou criar ' + n + ' especiais.'; }
   else if (f.obj.tipo === 'chefe') { const n = faltaObjetivo(); falta = 'O mestre ainda tinha ' + n + ' de vida.'; }
+  else if (f.obj.tipo === 'perolas') { const n = faltaPrincipal(); falta = n === 1 ? 'Faltou colher uma pérola.' : 'Faltaram ' + n + ' pérolas.'; }
+  else if (f.obj.tipo === 'coral') { const n = faltaPrincipal(); falta = n === 1 ? 'Faltou um pedaço de coral.' : 'Faltaram ' + n + ' pedaços de coral.'; }
+  else if (f.obj.tipo === 'lixo') { const n = faltaPrincipal(); falta = n === 1 ? 'Sobrou um lixo no fundo.' : 'Sobraram ' + n + ' lixos no fundo.'; }
+  else if (f.obj.tipo === 'ninho') { const nv = ninhosVivos(), al = casasCobertas(papel);
+    falta = 'Faltaram ' + (nv ? nv + (nv === 1 ? ' ninho' : ' ninhos') + (al ? ' e ' : '') : '') + (al ? al + (al === 1 ? ' alga' : ' algas') : '') + '.'; }
   else if (f.obj.tipo === 'presos') { const n = faltaObjetivo(); falta = n === 1 ? 'Faltou libertar um bicho.' : 'Faltaram ' + n + ' bichos presos.'; }
   else if (f.obj.tipo === 'bolhas') { const n = faltaObjetivo(); falta = n === 1 ? 'Faltou estourar uma bolha.' : 'Faltaram ' + n + ' bolhas.'; }
   else { const n = casasCobertas(papel); falta = (n === 1 ? 'Sobrou ' : 'Sobraram ') + nomeBloq(f, n) + '.'; }
+  /* quão perto chegou: decide se oferece a segunda chance */
+  const faltaAgora = faltaObjetivo(), faltaIni = Math.max(1, J.faltaInicial || faltaAgora || 1);
+  const razao = faltaAgora / faltaIni;
+  const perto = f.obj.tipo !== 'chefe' && (razao <= .35 || (f.obj.tipo !== 'pontos' && faltaAgora <= 3));
+  const muitoPerto = razao <= .15 || (f.obj.tipo !== 'pontos' && faltaAgora <= 2);
+  J.derrota = true; J.vidaCobrada = false;
+  if (faltaExtra()) falta += ' E faltou juntar ' + faltaExtra() + (faltaExtra() === 1 ? ' peça' : ' peças') + ' da cor pedida.';
   await espera(400);
   cartao(
-    '<h3>Acabaram as jogadas</h3>' +
+    '<h3>' + (perto && !J.segundaChance ? (muitoPerto ? 'Você quase conseguiu! 🌊' : 'Foi por pouco! 🌊') : 'Acabaram as jogadas') + '</h3>' +
     '<p>' + falta + '</p>' +
+    (perto && !J.segundaChance ? '<div class="continuar-info"><span>Continuar com <b>+5 jogadas</b> do ponto em que parou</span>' +
+      '<span class="preco"><svg viewBox="0 0 100 100"><use href="#i-moeda"/></svg>' + CUSTO_CONTINUAR + '</span></div>' : '') +
+    (perto && !J.segundaChance && prog.moedas < CUSTO_CONTINUAR ? '<p class="aviso">Você precisa de mais ' + (CUSTO_CONTINUAR - prog.moedas) + ' moedas para continuar.</p>' : '') +
+    '<p class="vidas-derrota">Desistir gasta uma vida · ❤&nbsp;' + prog.vidas + '</p>' +
     '<p class="placar-final">' + nf(J.pontos) + '<small>pontos</small></p>' +
     '<div class="bts">' +
       '<button class="bt vidro" data-ac="mapa">Mapa</button>' +
-      (prog.poderes.folego > 0
-        ? '<button class="bt" data-ac="folego">Usar fôlego: +5 jogadas</button><button class="bt vidro" data-ac="denovo">Tentar de novo</button>'
-        : prog.moedas >= precoFolego()
-          ? '<button class="bt" data-ac="comprafolego">+5 jogadas por ' + precoFolego() + ' moedas</button><button class="bt vidro" data-ac="denovo">Tentar de novo</button>'
-          : '<button class="bt" data-ac="denovo">Tentar de novo</button>') +
+      (perto && !J.segundaChance
+        ? (prog.poderes.folego > 0 ? '<button class="bt" data-ac="folego">Usar fôlego do estoque</button>' : '') +
+          '<button class="bt"' + (prog.moedas >= CUSTO_CONTINUAR ? '' : ' disabled') + ' data-ac="continuar">Continuar por ' + CUSTO_CONTINUAR + '</button>' +
+          '<button class="bt vidro" data-ac="denovo">Tentar de novo</button>'
+        : '<button class="bt" data-ac="denovo">Tentar de novo</button>') +
     '</div>'
   );
 }
@@ -546,9 +639,131 @@ function clicaPoder(id) {
   d.textContent = id === 'arpao' ? 'Toque na peça que vai sair' : 'Toque nas duas peças que vão trocar de lugar';
   pintaPoderes();
 }
+/* ═══ VIDAS ══════════════════════════════════════════════════════
+   Cinco vidas. Perder a fase custa uma; vencer não custa nada.
+   Uma volta a cada 15 minutos, contando mesmo com o jogo fechado. */
+const VIDAS_MAX = 5, VIDA_MS = 15 * 60 * 1000, CUSTO_ENCHER = 200, CUSTO_CONTINUAR = 120;
+function atualizaVidas() {
+  if (prog.vidas == null) { prog.vidas = VIDAS_MAX; prog.vidaMarca = Date.now(); }
+  if (prog.vidas >= VIDAS_MAX) { prog.vidaMarca = Date.now(); return; }
+  const ganha = Math.floor((Date.now() - (prog.vidaMarca || Date.now())) / VIDA_MS);
+  if (ganha > 0) {
+    prog.vidas = Math.min(VIDAS_MAX, prog.vidas + ganha);
+    prog.vidaMarca = prog.vidas >= VIDAS_MAX ? Date.now() : prog.vidaMarca + ganha * VIDA_MS;
+    salvaProg();
+  }
+}
+const proximaVida = () => { atualizaVidas(); return prog.vidas >= VIDAS_MAX ? 0 : Math.max(0, VIDA_MS - (Date.now() - prog.vidaMarca)); };
+const mmss = ms => { const t = Math.ceil(ms / 1000); return Math.floor(t / 60) + ':' + String(t % 60).padStart(2, '0'); };
+function gastaVida() {
+  atualizaVidas();
+  if (prog.vidas >= VIDAS_MAX) prog.vidaMarca = Date.now();
+  prog.vidas = Math.max(0, prog.vidas - 1);
+  salvaProg(); salvaNaNuvemDepois(); pintaVidas();
+}
+function pintaVidas() {
+  atualizaVidas();
+  const t = proximaVida();
+  document.querySelectorAll('.pilula-vidas').forEach(el => {
+    el.innerHTML = '<b>❤ ' + prog.vidas + ((prog.vidasAmigos || 0) > 0 ? '<i>+' + prog.vidasAmigos + '</i>' : '') + '</b><small>' + (prog.vidas < VIDAS_MAX ? mmss(t) : 'cheio') + '</small>';
+    el.classList.toggle('vazia', prog.vidas <= 0);
+  });
+  const conta = document.getElementById('vida-conta');
+  if (conta) conta.textContent = prog.vidas > 0 ? 'Voltou uma vida!' : mmss(t);
+}
+setInterval(pintaVidas, 1000);
+/* ═══ VIDAS ENTRE AMIGOS ═══════════════════════════════════════════
+   Amigo do cardume manda vida sem perder as dele. As recebidas ficam
+   numa reserva separada das 5 normais e só entram quando as normais
+   acabam. Recebe no máximo 5 por dia; o que passar espera amanhã.   */
+const RECEBE_POR_DIA = 5;
+function recebidasHoje() { const r = prog.recebidas || {}; return r.dia === hoje() ? r.n : 0; }
+async function recebeVidas() {
+  if (!Ranking.ligado) return 0;
+  const caixa = await Ranking.pega('/mergulho/presentes/' + Conta.sessao.uid, '');
+  if (!caixa || !caixa.length) return 0;
+  const nomes = [];
+  for (const g of caixa) {
+    if (recebidasHoje() >= RECEBE_POR_DIA) break;
+    prog.vidasAmigos = (prog.vidasAmigos || 0) + 1;
+    prog.recebidas = { dia: hoje(), n: recebidasHoje() + 1 };
+    nomes.push(g.nome || 'um amigo');
+    await Ranking.manda('/mergulho/presentes/' + Conta.sessao.uid + '/' + g.id, null);
+  }
+  Ranking.cache = {};
+  if (nomes.length) {
+    salvaProg(); pintaVidas();
+    faixaOuCartao('❤ ' + (nomes.length === 1 ? nomes[0] + ' te mandou uma vida' : nomes.length + ' vidas de ' + nomes.slice(0, 3).join(', ')));
+  }
+  return nomes.length;
+}
+function faixaOuCartao(txt) {
+  if (document.body.classList.contains('em-jogo')) return faixaTexto(txt, 2600);
+  cartao('<h3>Chegou presente</h3><p class="presente-txt">' + txt + '</p><p>Elas ficam guardadas e entram quando as suas 5 acabarem.</p>' +
+    '<div class="bts"><button class="bt" data-ac="fecha">Beleza</button></div>', true);
+}
+const jaMandeiHoje = uid => (prog.enviadas || {})[uid] === hoje();
+async function mandaVida(uid, nome, botao) {
+  if (!Ranking.ligado || jaMandeiHoje(uid) || uid === Conta.sessao.uid) return;
+  if (botao) { botao.disabled = true; botao.textContent = 'Enviando...'; }
+  const foi = await Ranking.manda('/mergulho/presentes/' + uid + '/' + Conta.sessao.uid, { nome: Ranking.nome(), quando: Date.now() });
+  if (foi) {
+    prog.enviadas = Object.assign({}, prog.enviadas || {}, { [uid]: hoje() });
+    salvaProg(); Som.liga(); Som.pop(6);
+    if (botao) botao.textContent = '❤ Enviada';
+  } else if (botao) { botao.disabled = false; botao.textContent = 'Tentar de novo'; }
+}
+async function pedeVidas(botao) {
+  if (!prog.cardume) { mostraRanking('cardume'); return; }
+  await Conta.garante();
+  if (botao) { botao.disabled = true; botao.textContent = 'Pedindo...'; }
+  const foi = await Ranking.manda('/mergulho/pedidos/' + prog.cardume + '/' + Conta.sessao.uid, { nome: Ranking.nome(), quando: Date.now() });
+  if (botao) botao.textContent = foi ? 'Pedido enviado ao cardume' : 'Sem internet agora';
+}
+function usaVidaDeAmigo() {
+  if ((prog.vidasAmigos || 0) <= 0) return;
+  prog.vidasAmigos--; prog.vidas = Math.max(prog.vidas, 1);
+  salvaProg(); pintaVidas(); Som.liga(); Som.pop(5); fechaCartao();
+}
+
+function semVidas() {
+  const pode = prog.moedas >= CUSTO_ENCHER;
+  cartao('<h3>Sem vidas</h3><p>As vidas voltam sozinhas, uma a cada 15 minutos, mesmo com o jogo fechado.</p>' +
+    '<p class="vida-proxima">❤️ Próxima vida em <b id="vida-conta">' + mmss(proximaVida()) + '</b></p>' +
+    ((prog.vidasAmigos || 0) > 0 ? '<div class="bts"><button class="bt" data-ac="usavidaamigo">Usar vida de amigo · ' + prog.vidasAmigos + ' guardada' + (prog.vidasAmigos === 1 ? '' : 's') + '</button></div>' : '') +
+    '<div class="bts"><button class="bt vidro" data-ac="fecha">Esperar</button>' +
+    '<button class="bt"' + (pode ? '' : ' disabled') + ' data-ac="enchevidas">Encher as 5 por ' + CUSTO_ENCHER + ' moedas</button></div>' +
+    '<div class="bts"><button class="bt vidro" data-ac="pedevidas">' + (prog.cardume ? 'Pedir vidas ao cardume' : 'Entrar num cardume pra pedir vidas') + '</button></div>' +
+    (pode ? '' : '<p class="aviso">Faltam ' + (CUSTO_ENCHER - prog.moedas) + ' moedas para encher agora.</p>'), true);
+}
+function encheVidas() {
+  if (prog.moedas < CUSTO_ENCHER) return;
+  prog.moedas -= CUSTO_ENCHER; prog.vidas = VIDAS_MAX; prog.vidaMarca = Date.now();
+  salvaProg(); pintaMoedas(); pintaVidas(); salvaNaNuvemDepois();
+  Som.liga(); Som.vitoria(); fechaCartao();
+}
+
+function semVidasOuConta() {
+  if (prog.vidas <= 0) return semVidas();
+  cartao('<h3>❤ ' + prog.vidas + ' de 5</h3><p>A próxima volta em <b id="vida-conta">' + mmss(proximaVida()) + '</b>. Cada fase perdida gasta uma vida; vencer não gasta nada.</p>' +
+    '<div class="bts"><button class="bt" data-ac="fecha">Beleza</button></div>', true);
+}
+function cobraDerrota() {
+  if (J && J.derrota && !J.vidaCobrada && !J.desafio) { J.vidaCobrada = true; gastaVida(); }
+}
+function continuaPorMoedas() {
+  if (prog.moedas < CUSTO_CONTINUAR || J.segundaChance) return;
+  prog.moedas -= CUSTO_CONTINUAR; salvaProg(); pintaMoedas();
+  J.segundaChance = true; J.derrota = false;
+  fechaCartao();
+  J.fim = false; J.ocupado = false; J.mov += 5; J.movExtra = (J.movExtra || 0) + 5;
+  atualizaHud(); reiniciaDica(); Som.liga(); Som.pop(5); faixaTexto('+5 jogadas');
+}
+
 function usaFolegoNoCartao() {
-  if ((prog.poderes.folego || 0) <= 0) return;
+  if ((prog.poderes.folego || 0) <= 0 || J.segundaChance) return;
   gastaPoder('folego');
+  J.segundaChance = true; J.derrota = false;
   fechaCartao();
   J.fim = false; J.ocupado = false; J.mov += 5; J.movExtra = (J.movExtra || 0) + 5;
   atualizaHud(); reiniciaDica();
@@ -721,7 +936,7 @@ function abreDesafio() {
   fechaCartao();
   tela('tela-jogo');
   requestAnimationFrame(() => {
-    montaCasas(); dimensiona(); montaPecas(); atualizaHud(); desligaPoder();
+    montaCasas(); dimensiona(); montaPecas(); pintaNinhos(); pintaCasasEspeciais(); atualizaHud(); desligaPoder();
     mesa.classList.remove('com-bau');
     comecaFase();
   });
@@ -990,6 +1205,11 @@ function juntaProg(a, b) {
   r.seq = (a.dia || '') >= (b.dia || '') ? (a.seq || 0) : (b.seq || 0);
   r.melhorSeq = Math.max(a.melhorSeq || 0, b.melhorSeq || 0);
   r.semanas = Math.max(a.semanas || 0, b.semanas || 0);
+  r.vidas = a.vidas != null ? a.vidas : b.vidas;
+  r.vidasAmigos = Math.max(a.vidasAmigos || 0, b.vidasAmigos || 0);
+  r.enviadas = Object.assign({}, b.enviadas || {}, a.enviadas || {});
+  r.recebidas = a.recebidas || b.recebidas;
+  r.vidaMarca = a.vidaMarca || b.vidaMarca;
   r.codigos = Array.from(new Set([].concat(a.codigos || [], b.codigos || [])));
   r.cardume = a.cardume || b.cardume || '';
   r.melhores = Object.assign({}, b.melhores || {});
@@ -1150,7 +1370,7 @@ const medalha = k => k === 0 ? '🥇' : k === 1 ? '🥈' : k === 2 ? '🥉' : (k
 /* ranking de gente: manda a estrela, depois a fase, depois o ponto.
    Assim não basta atravessar as fases correndo: tem que jogar bem. */
 let ordemRank = 'fase';
-function linhasGente(lista) {
+function linhasGente(lista, comVida, pediram) {
   if (!lista) return '<p class="vazio">Sem internet pra buscar agora.</p>';
   if (!lista.length) return '<p class="vazio">Ninguém aqui ainda. Seja o primeiro.</p>';
   const meu = Conta.dentro ? Conta.sessao.uid : '';
@@ -1161,6 +1381,9 @@ function linhasGente(lista) {
   const minha = ord.findIndex(x => x.id === meu);
   const linha = (x, k) => '<div class="linha-rank' + (x.id === meu ? ' eu' : '') + '"><span class="pos">' + medalha(k) + '</span>' +
     '<span class="nome">' + (x.nome || 'mergulhador') + (x.mestres ? ' <i class="tag-mestre" title="mestres derrotados">' + x.mestres + '⚔</i>' : '') + '</span>' +
+    (comVida && x.id !== meu ? '<button class="bt-vida' + (jaMandeiHoje(x.id) ? ' foi' : '') + '"' + (jaMandeiHoje(x.id) ? ' disabled' : '') +
+      ' data-ac="mandavida" data-id="' + x.id + '" data-nome="' + (x.nome || '') + '">' + (jaMandeiHoje(x.id) ? '❤ Enviada' : '❤ Mandar') + '</button>' : '') +
+    (pediram && pediram[x.id] ? '<i class="tag-pediu">pediu vida</i>' : '') +
     '<span class="val"><b>' + (ordemRank === 'estrelas' ? (x.estrelas || 0) + '★' : 'fase ' + ((x.max || 0) + 1)) + '</b>' +
     '<small>' + (ordemRank === 'estrelas' ? 'fase ' + ((x.max || 0) + 1) : (x.estrelas || 0) + '★') +
     (x.pontos ? ' · ' + nf(x.pontos) + ' pts' : '') + '</small></span></div>';
@@ -1220,7 +1443,10 @@ async function mostraRanking(aba) {
     } else {
       const lista = await Ranking.cardume(prog.cardume);
       html = '<p class="cod-cardume">Código <b>' + prog.cardume + '</b> · manda pro grupo</p>' +
-             linhasGente(lista) +
+             (await (async () => { const ped = await Ranking.pega('/mergulho/pedidos/' + prog.cardume, '');
+               const mapa = {}; (ped || []).forEach(q => { if (Date.now() - (q.quando || 0) < 864e5) mapa[q.id] = true; });
+               return linhasGente(lista, true, mapa); })()) +
+             '<div class="bts"><button class="bt vidro" data-ac="pedevidas">Pedir vidas ao cardume</button></div>' +
              '<div class="bts"><button class="bt-texto" data-ac="copiacardume">Copiar código</button>' +
              '<button class="bt-texto" data-ac="saicardume">Sair do cardume</button></div>';
     }
@@ -1391,7 +1617,7 @@ function tela(id) {
   document.body.classList.toggle('em-jogo', id === 'tela-jogo');
   if (id === 'tela-jogo') Musica.liga('jogo', mundoAtual);
   else { document.body.classList.remove('aperto'); Musica.liga('menu', mundoAtual); setTimeout(talvezAtualizar, 400); }
-  if (id === 'tela-inicio') { requestAnimationFrame(() => { pintaSemanaHome(); encaixaInicio(); }); setTimeout(pintaPodio, 300); }
+  if (id === 'tela-inicio') { requestAnimationFrame(() => { pintaSemanaHome(); encaixaInicio(); }); setTimeout(pintaPodio, 300); setTimeout(recebeVidas, 1500); }
   /* a faixa de baixo do celular acompanha a cor da tela */
   document.body.style.backgroundColor = id === 'tela-jogo'
     ? (getComputedStyle(document.documentElement).getPropertyValue('--ag4').trim() || '#0B4F7A')
@@ -1448,7 +1674,9 @@ function noDoMapa(i) {
   return '<div class="no-linha">' +
     '<button class="no' + (travada ? ' travada' : '') + (i === prog.max && !travada ? ' atual' : '') + '" data-i="' + i + '" style="transform:translateX(' + desloc.toFixed(1) + 'px);--dx:' + desloc.toFixed(1) + 'px;animation-delay:' + (((i - mapaIni) % 24) * 26) + 'ms" aria-label="Fase ' + (i + 1) + ': ' + f.nome + (travada ? ', ainda fechada' : '') + '">' +
       '<span class="disco"></span><span class="num">' + (travada ? CADEADO : (i + 1)) + '</span>' + trio +
-      (parada ? '<span class="marca-parada" aria-label="partida pela metade">⏸</span>' : '') + '</button>' +
+      (parada ? '<span class="marca-parada" aria-label="partida pela metade">⏸</span>' : '') +
+      (!travada && classeDaFase(i) !== 'N' && classeDaFase(i) !== 'F' ? '<span class="selo-no" style="background:' + CLASSES[classeDaFase(i)].cor + '">' + (classeDaFase(i) === 'L' ? '★' : '!') + '</span>' : '') +
+      '</button>' +
     '<span class="no-rotulo' + (travada ? ' apagado' : '') + '" style="' + lado + '"><b>' + f.nome + '</b><small>' + metros(f.prof) + '</small></span>' +
   '</div>';
 }
@@ -1570,6 +1798,8 @@ function retomaPartida(d) {
         bauFeito: d.bf, bauNaTela: d.bn, bauPendentes: d.bp, criados: d.cr || 0, objBatido: false, contaCresce: d.cc, alvoCresce: d.ac,
         papelBase: d.base,
         presosFeitos: d.pr || 0, bolhasFeitas: d.bo || 0, bolhasFugiram: d.bfg || 0,
+        ninhos: d.nin || null, ninhosFeitos: d.ninf || 0,
+        perolas: d.per || null, perolasFeitas: d.pef || 0, coral: d.cor || null, coralFeito: d.cof || 0, lixoFeito: d.lxf || 0,
         dano: d.dn || 0, contaMestre: d.cm || 0, contaBolha: d.cb || 0, bauParado: d.bpa || 0 };
   TOPO = (d.topo || f.forma || Array(W).fill(0)).slice();
   pintaFundoMestre(f.obj.tipo === 'chefe' ? f.obj.mestre : null);
@@ -1584,6 +1814,7 @@ function retomaPartida(d) {
     p.sp = +pd[1] || 0;
     if (+pd[2]) p.gaiola = +pd[2];          /* bicho preso volta preso */
     if (+pd[3]) p.bolha = true;             /* e a bolha volta subindo */
+    if (+pd[4]) p.lixo = +pd[4];            /* e o lixo volta sujo */
     return p;
   }));
   pontosNaTela = 0;
@@ -1593,7 +1824,7 @@ function retomaPartida(d) {
     montaCasas(); dimensiona(); montaPecas(); atualizaHud(); desligaPoder();
     mesa.classList.toggle('com-bau', f.obj.tipo === 'bau');
     garantePresos(); garanteBolhas(); montaPecas(); atualizaHud();
-    pintaPapel();
+    pintaPapel(); pintaCasasEspeciais();
     if (J.alvoCresce) pintaAvisoCresce();
     J.ocupado = false;
     reiniciaDica();
@@ -1605,6 +1836,8 @@ function retomaPartida(d) {
 
 function abreFase(i, ignoraParada) {
   const parada = lePartida();
+  atualizaVidas();
+  if (!(parada && parada.f === i) && prog.vidas <= 0) { recebeVidas().then(() => semVidas()); return; }
   if (!ignoraParada && parada && parada.f === i) {
     cartao('<h3>Você parou aqui</h3>' +
       '<p>Esta fase ficou pela metade, com ' + parada.mov + (parada.mov === 1 ? ' jogada' : ' jogadas') + ' e ' + nf(parada.pontos) + ' pontos.</p>' +
@@ -1675,8 +1908,43 @@ function garanteBolhas() {
   for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) if (grid[r][c] && grid[r][c].bolha) n++;
   if (n < quer) nasceBolha(quer - n);
 }
+/* tela antes da fase: onde, o quê, quantas jogadas e a classificação */
+function resumoObjetivo(f) {
+  const o = f.obj, ex = o.extra ? ' e juntar a cor abaixo' : '';
+  const base = o.tipo === 'pontos' ? 'Fazer ' + nf(f.marcas[0]) + ' pontos'
+    : o.tipo === 'coletar' ? 'Juntar estas peças' : o.tipo === 'bau' ? 'Descer ' + o.n + (o.n === 1 ? ' baú' : ' baús') + ' até o fundo'
+    : o.tipo === 'especiais' ? 'Criar ' + o.n + ' especiais' : o.tipo === 'presos' ? 'Libertar ' + o.n + ' bichos presos'
+    : o.tipo === 'bolhas' ? 'Estourar ' + o.n + ' bolhas de ar' : o.tipo === 'chefe' ? 'Derrotar o mestre'
+    : o.tipo === 'perolas' ? 'Colher ' + o.n + ' pérolas' : o.tipo === 'coral' ? 'Recuperar ' + o.n + ' pedaços de coral'
+    : o.tipo === 'lixo' ? 'Tirar ' + o.n + ' lixos do fundo' : o.tipo === 'ninho' ? 'Destruir ' + o.ninhos.length + (o.ninhos.length === 1 ? ' ninho' : ' ninhos') + ' e as algas'
+    : o.mancha ? 'Conter a maré vermelha' : o.corrente ? 'Quebrar a corrente' : 'Limpar o fundo';
+  return base + ex;
+}
+function iconesObjetivo(f) {
+  const o = f.obj, peca = (tp, n) => '<span class="pre-peca"><svg viewBox="0 0 100 100"><use href="#s' + tp + '"/></svg>' + n + '</span>';
+  let h = '';
+  if (o.tipo === 'coletar' && o.itens) h = o.itens.map(([tp, n]) => peca(tp, n)).join('');
+  if (o.extra) h += peca(o.extra.t, o.extra.n);
+  return h ? '<div class="pre-pecas">' + h + '</div>' : '';
+}
+function mostraPreFase() {
+  const f = faseAtual(), k = classeDaFase(J.fase), C = CLASSES[k];
+  cartao('<div class="pre-fase">' +
+    '<p class="pre-num">Fase ' + (J.fase + 1) + ' · ' + metros(f.prof) + '</p>' +
+    '<h3>' + f.nome + '</h3>' +
+    '<span class="selo-classe" style="--cor-classe:' + C.cor + '">' + C.emoji + ' ' + C.nome.toUpperCase() + '</span>' +
+    '<p class="pre-texto">' + C.texto + '</p>' +
+    '<div class="pre-linhas"><div class="pre-obj"><small>objetivo</small><b>' + resumoObjetivo(f) + '</b>' + iconesObjetivo(f) + '</div>' +
+    '<div><small>jogadas</small><b class="pre-grande">' + f.mov + '</b></div></div>' +
+    '<div class="pre-estrelas"><span>★ ' + nf(f.marcas[0]) + '</span><span>★★ ' + nf(f.marcas[1]) + '</span><span>★★★ ' + nf(f.marcas[2]) + '</span></div>' +
+    (prog.estrelas[J.fase] ? '<p class="pre-recorde">Seu melhor aqui: ' + '★'.repeat(prog.estrelas[J.fase]) + (prog.melhores && prog.melhores[J.fase] ? ' · ' + nf(prog.melhores[J.fase]) + ' pontos' : '') + '</p>' : '') +
+    '</div><div class="bts"><button class="bt vidro" data-ac="mapa">Voltar</button>' +
+    '<button class="bt" data-ac="comeca">Mergulhar</button></div>');
+}
 function comecaFase() {
   const f = faseAtual();
+  if (!J.viuPre && !J.desafio) { J.viuPre = true; return mostraPreFase(); }
+  J.faltaInicial = Math.max(1, faltaObjetivo() || 1);
   garanteBolhas();
   garantePresos();
   if (!prog.vistos.bau && f.obj.tipo === 'bau') { prog.vistos.bau = true; salvaProg(); return mostraAviso('O baú', '#i-bau',
@@ -1690,14 +1958,26 @@ function comecaFase() {
       '<p>Cada peça que você estoura machuca ele. De duas em duas jogadas ele revida: rouba uma jogada e cospe tinta, e casa com tinta não machuca. Limpe a tinta e continue batendo.</p>' +
       '<div class="bts"><button class="bt" data-ac="comeca">Encarar</button></div>');
   }
+  if (!prog.vistos.perolas && f.obj.tipo === 'perolas') { prog.vistos.perolas = true; salvaProg(); return mostraAviso('Ostras com pérola', '#i-perola',
+    'Algumas casas têm uma ostra fechada no fundo. Estoure a peça em cima uma vez e a ostra abre; estoure de novo e a pérola sobe pra você.'); }
+  if (!prog.vistos.coral && f.obj.tipo === 'coral') { prog.vistos.coral = true; salvaProg(); return mostraAviso('Coral morto', '#i-coral',
+    'O coral cinza está morto. Toda peça estourada em cima dele ou bem do lado devolve a cor daquele pedaço. Recupere o recife inteiro.'); }
+  if (!prog.vistos.lixo && f.obj.tipo === 'lixo') { prog.vistos.lixo = true; salvaProg(); return mostraAviso('Lixo no fundo', '#i-lixo0',
+    'Garrafas, latas e sacolas não combinam com nada. Estoure peças coladas nelas para tirar do mar; especial que acerta em cheio também leva. Os mais sujos aguentam dois estouros.'); }
+  if (!prog.vistos.ninho && f.obj.tipo === 'ninho') { prog.vistos.ninho = true; salvaProg(); return mostraAviso('Ninho de algas', '#i-ninho',
+    'O ninho é a fonte das algas. Toda jogada em que você não destruir nenhuma alga, ele solta uma nova encostada nele. ' +
+    'Destruiu pelo menos uma, ele fica quieto. Para parar de vez, estoure três vezes bem colado nele até ele cair. ' +
+    'As algas que ele já soltou continuam lá e também contam.'); }
   if (!prog.vistos.presos && f.obj.tipo === 'presos') { prog.vistos.presos = true; salvaProg(); return mostraAviso('Bicho preso', '#i-gaiola',
     'Os bichos presos na rede não combinam com ninguém. Estoure qualquer peça bem do lado deles e a rede se abre.'); }
   if (!prog.vistos.bolhas && f.obj.tipo === 'bolhas') { prog.vistos.bolhas = true; salvaProg(); return mostraAviso('Bolhas de ar', '#i-bolha-ar',
     'As bolhas sobem sozinhas de duas em duas jogadas. Combine a peça que carrega a bolha para estourar antes que ela chegue na superfície e escape.'); }
   if (!prog.vistos.corrente && f.obj.corrente) { prog.vistos.corrente = true; salvaProg(); return mostraAviso('A corrente', null,
     'Cada elo aguenta três estouros. Não adianta espalhar: bata sempre no mesmo lugar até o elo arrebentar.'); }
-  if (!prog.vistos.mancha && f.obj.mancha) { prog.vistos.mancha = true; salvaProg(); return mostraAviso('Maré vermelha', null,
-    'A mancha se espalha para as casas vizinhas se você demorar. A próxima a nascer pisca antes, então dá pra chegar na frente.'); }
+  if (!prog.vistos.mancha2 && f.obj.mancha) { prog.vistos.mancha2 = true; salvaProg(); return mostraAviso('Maré vermelha', null,
+    'A regra é simples: se na jogada você destruir pelo menos uma mancha, ela fica quieta. Se não destruir nenhuma, ela cresce uma casa, ' +
+    'sempre encostada nela e de preferência avançando para o lado limpo. Ela pode tomar qualquer parte do tabuleiro, então ataque a borda. ' +
+    'Zerou as manchas, acabou: não sobra de onde crescer.'); }
   if (!prog.vistos.cresce2 && f.obj.cresce && !f.obj.mancha) { prog.vistos.cresce2 = true; salvaProg(); return mostraAviso('A alga volta a crescer', null,
     'Aqui a alga não fica quieta: a cada poucas jogadas ela nasce de novo numa casa que você já limpou. É o castigo da fase, então limpar rápido conta mais que limpar bonito. ' +
     'A casa que vai brotar pisca antes, dá pra chegar na frente. E nas três últimas jogadas ela para de crescer, para a fase sempre ter fim.'); }
@@ -1769,6 +2049,17 @@ function iniciar() {
   if (window.Atualizacao && window.Atualizacao.pronta) avisaVersao();
   document.getElementById('bt-ajustes').onclick = () => { Som.liga(); mostraAjustes(); };
   document.getElementById('podio').onclick = () => { Som.liga(); mostraRanking('geral'); };
+  [['#tela-inicio', 'vidas-home'], ['#tela-mapa', 'vidas-mapa']].forEach(([alvo, cls]) => {
+    const onde = document.querySelector(alvo);
+    if (!onde || onde.querySelector('.pilula-vidas')) return;
+    const b = document.createElement('button');
+    b.className = 'pilula-vidas ' + cls;
+    b.onclick = () => { Som.liga(); atualizaVidas(); prog.vidas >= VIDAS_MAX
+      ? cartao('<h3>Vidas cheias</h3><p>Você tem as 5. Cada fase perdida gasta uma, e elas voltam sozinhas, uma a cada 15 minutos.</p><div class="bts"><button class="bt" data-ac="fecha">Beleza</button></div>', true)
+      : semVidasOuConta(); };
+    onde.appendChild(b);
+  });
+  pintaVidas();
   document.getElementById('semana-home').onclick = () => { Som.liga(); mostraBau(); };
   document.getElementById('bt-desafio').onclick = () => { Som.liga(); mostraDesafio(); };
   document.getElementById('bt-loja').onclick = () => { Som.liga(); mostraLoja(); };
@@ -1820,8 +2111,13 @@ function iniciar() {
     else if (ac === 'descarta') { const d = lePartida(); limpaPartida(); if (d) abreFase(d.f, true); else fechaCartao(); }
     else if (ac === 'folego') usaFolegoNoCartao();
     else if (ac === 'comeca') { fechaCartao(); comecaFase(); }
-    else if (ac === 'mapa') { fechaCartao(); montaMapa(); tela('tela-mapa'); }
-    else if (ac === 'denovo') abreFase(J.fase);
+    else if (ac === 'mapa') { cobraDerrota(); fechaCartao(); montaMapa(); tela('tela-mapa'); }
+    else if (ac === 'denovo') { cobraDerrota(); if (prog.vidas <= 0) semVidas(); else abreFase(J.fase); }
+    else if (ac === 'enchevidas') encheVidas();
+    else if (ac === 'usavidaamigo') usaVidaDeAmigo();
+    else if (ac === 'pedevidas') pedeVidas(b);
+    else if (ac === 'mandavida') mandaVida(b.dataset.id, b.dataset.nome, b);
+    else if (ac === 'continuar') continuaPorMoedas();
     else if (ac === 'proxima') abreFase(J.fase + 1);
   });
 

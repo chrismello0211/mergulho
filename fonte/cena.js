@@ -331,7 +331,9 @@ function instalaMundo(m, i) {
   raiz.setProperty('--mesa-a', rgba('#' + mistura(c[3], '#000000', escuro), .68));
   raiz.setProperty('--mesa-b', rgba('#' + mistura(c[3], '#000000', escuro + .16), .78));
   const fa = (typeof J !== 'undefined' && J && J.fase >= 0) ? fase(J.fase) : null;
-  const bl = fa && fa.obj.corrente ? BLOQUEIOS.corrente : fa && fa.obj.mancha ? BLOQUEIOS.mancha : amb.bloq;
+  const faseAgora = faseDesta || fa;     /* a fase que está abrindo agora, não a anterior */
+  const bl = faseAgora && faseAgora.obj.corrente ? BLOQUEIOS.corrente : faseAgora && faseAgora.obj.mancha ? BLOQUEIOS.mancha
+           : faseAgora && faseAgora.obj.tipo === 'ninho' ? BLOQUEIOS.alga : amb.bloq;
   raiz.setProperty('--bl-a', bl.a); raiz.setProperty('--bl-b', bl.b);
   raiz.setProperty('--bl-a2', bl.a2); raiz.setProperty('--bl-b2', bl.b2);
   document.body.dataset.tex = bl.tex;

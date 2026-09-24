@@ -47,9 +47,9 @@ function acharCorridas() {
     let c = 0;
     while (c < W) {
       const p = grid[r][c];
-      if (!p || p.bau || p.gaiola) { c++; continue; }
+      if (!p || p.bau || p.gaiola || p.lixo) { c++; continue; }
       let k = c + 1;
-      while (k < W && grid[r][k] && !grid[r][k].bau && !grid[r][k].gaiola && grid[r][k].t === p.t) k++;
+      while (k < W && grid[r][k] && !grid[r][k].bau && !grid[r][k].gaiola && !grid[r][k].lixo && grid[r][k].t === p.t) k++;
       if (k - c >= 3) out.push({ dir: 'h', r: r, c: c, len: k - c, t: p.t });
       c = k;
     }
@@ -58,9 +58,9 @@ function acharCorridas() {
     let r = 0;
     while (r < H) {
       const p = grid[r][c];
-      if (!p || p.bau || p.gaiola) { r++; continue; }
+      if (!p || p.bau || p.gaiola || p.lixo) { r++; continue; }
       let k = r + 1;
-      while (k < H && grid[k][c] && !grid[k][c].bau && !grid[k][c].gaiola && grid[k][c].t === p.t) k++;
+      while (k < H && grid[k][c] && !grid[k][c].bau && !grid[k][c].gaiola && !grid[k][c].lixo && grid[k][c].t === p.t) k++;
       if (k - r >= 3) out.push({ dir: 'v', r: r, c: c, len: k - r, t: p.t });
       r = k;
     }
@@ -114,8 +114,10 @@ function especialDoGrupo(g) {
   if (g.cells.length >= 7) return CARDUME;  /* aglomerado grande: cardume */
   if (g.maxH >= 5 || g.maxV >= 5) return ARCO;
   if (g.maxH >= 3 && g.maxV >= 3) return BOMBA;
-  if (g.maxH >= 4) return LH;
-  if (g.maxV >= 4) return LV;
+  /* como no Candy Crush: quatro deitadas criam correnteza em pé, que
+     leva a coluna; quatro em pé criam correnteza deitada, que leva a fileira */
+  if (g.maxH >= 4) return LV;
+  if (g.maxV >= 4) return LH;
   return NADA;
 }
 function posEspecial(g, preferidos) {
