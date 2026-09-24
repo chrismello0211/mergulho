@@ -104,7 +104,7 @@ const luzinha = (x, y, r, cor, aur) =>
 /* ── 0 · estrela-do-mar ─────────────────────────────────────── */
 function estrela(m, id) {
   const pal = PAL[0][m];
-  const cfg = [{ro:46,ri:19,p:1.1,g:0}, {ro:45,ri:27,p:.8,g:0}, {ro:47,ri:10.5,p:2.8,g:.34},
+  const cfg = [{ro:46,ri:19,p:1.1,g:0}, {ro:45,ri:27,p:.8,g:0}, {ro:46,ri:17,p:1.55,g:.12},
                {ro:46,ri:19,p:1.2,g:0}, {ro:46,ri:16,p:1.45,g:0}][m];
   const cx = 50, cy = 53, rot = -Math.PI / 2;
   const fr = th => cfg.ri + (cfg.ro - cfg.ri) * Math.pow((1 + Math.cos(5 * (th - rot))) / 2, cfg.p);
@@ -152,12 +152,12 @@ function caranguejo(m, id) {
   let s = halo(id, m);
 
   if (m === 2) { /* caranguejo-aranha: corpo em pera, pernas compridas */
-    const pernas = ['M37 54Q18 42 5 49', 'M36 62Q15 59 4 69', 'M38 70Q20 77 8 88', 'M42 76Q31 89 23 96'];
-    pernas.forEach(p => { s += traco(p, 3.4, perna) + traco(espelha(p), 3.4, perna); });
-    const braco = 'M41 45Q33 38 29 30';
-    s += traco(braco, 4, pal.b) + traco(espelha(braco), 4, pal.b);
-    s += pinta(garra(27, 26, 7.5, .36, -1.9), id, pal, m) + pinta(espelha(garra(27, 26, 7.5, .36, -1.9)), id, pal, m);
-    const casco = 'M50 35C61 35 69 47 67 60C65 73 58 81 50 81C42 81 35 73 33 60C31 47 39 35 50 35Z';
+    const pernas = ['M34 58Q22 53 14 57', 'M34 65Q21 66 13 73', 'M36 72Q25 79 19 87'];
+    pernas.forEach(p => { s += traco(p, 4.4, perna) + traco(espelha(p), 4.4, perna); });
+    const braco = 'M38 47Q31 39 29 31';
+    s += traco(braco, 5.2, pal.b) + traco(espelha(braco), 5.2, pal.b);
+    s += pinta(garra(27, 24, 10.5, .42, -1.9), id, pal, m) + pinta(espelha(garra(27, 24, 10.5, .42, -1.9)), id, pal, m);
+    const casco = 'M50 39C64 39 73 49 72 61C71 72 62 80 50 80C38 80 29 72 28 61C27 49 36 39 50 39Z';
     s += pinta(casco, id, pal, m);
     [[44, 50, 2.2], [56, 52, 2.4], [50, 60, 2.6], [43, 64, 2], [57, 67, 2.2], [50, 72, 1.8]].forEach(q => s += circ(q[0], q[1], q[2], 'fill="' + pal.x + '" opacity=".45"'));
     s += traco('M47 37L45 29', 2.6, linha) + traco('M53 37L55 29', 2.6, linha);
