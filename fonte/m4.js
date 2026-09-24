@@ -230,8 +230,44 @@ async function esperaAcalmar(minimo) {
   await espera(320);
 }
 
+/* Quem resolve rápido tinha nota menor que quem enrolava até a
+   última jogada. Agora o que sobrou de fôlego vira especial no
+   tabuleiro e estoura junto: eficiência passa a valer ponto.    */
+async function bonusDoFolego() {
+  const f = faseAtual();
+  const sobra = Math.max(0, J.mov | 0);
+  if (!sobra || f.obj.tipo === 'pontos') return 0;
+  const porJogada = Math.max(250, Math.round(f.marcas[2] / Math.max(1, f.mov)));
+  faixaTexto(sobra === 1 ? 'Sobrou uma jogada!' : 'Sobraram ' + sobra + ' jogadas!', 2000);
+  await espera(520);
+  const livres = [];
+  for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) {
+    const p = grid[r][c];
+    if (p && !p.bau && !p.sp && !p.gaiola && !p.bolha) livres.push(p);
+  }
+  for (let k = livres.length - 1; k > 0; k--) { const j = sorteia(k + 1); const t = livres[k]; livres[k] = livres[j]; livres[j] = t; }
+  const vira = Math.min(sobra, 5, livres.length);
+  for (let k = 0; k < vira; k++) {
+    livres[k].sp = [LH, LV, BOMBA][sorteia(3)];
+    atualizaEl(livres[k]);
+    const el = els.get(livres[k].id);
+    if (el) { el.classList.remove('nasce'); void el.offsetWidth; el.classList.add('nasce'); }
+    Som.liga(); Som.especial();
+    await espera(190);
+  }
+  const extra = Math.max(0, sobra - vira) * porJogada;
+  if (extra) J.pontos += extra;
+  J.folegoBonus = { sobra: sobra, virou: vira, extra: extra };
+  J.mov = 0;
+  atualizaHud();
+  await espera(320);
+  return sobra;
+}
+
 async function venceu() {
   const eraMestre = faseAtual().obj.tipo === 'chefe';
+  J.folegoBonus = null;
+  await bonusDoFolego();
   tiraBotaoEncerrar();
   if (eraMestre) {
     prog.mestres = (prog.mestres || 0) + 1;
@@ -286,6 +322,10 @@ async function venceu() {
     '<p class="ganho-moedas"><svg viewBox="0 0 100 100"><use href="#i-moeda"/></svg>+' + ganho + '</p>' +
     '<p class="pos-fase" id="pos-fase"></p>' +
     (eraMestre ? '<div class="tesouro"><b>Tesouro do mestre</b><span>150 moedas e um de cada poder</span></div>' : '') +
+    (J.folegoBonus && J.folegoBonus.sobra ? '<div class="folego-bonus"><b>Fôlego que sobrou</b><span>' +
+      J.folegoBonus.sobra + (J.folegoBonus.sobra === 1 ? ' jogada' : ' jogadas') +
+      (J.folegoBonus.virou ? ' · ' + J.folegoBonus.virou + ' viraram especial' : '') +
+      (J.folegoBonus.extra ? ' · +' + nf(J.folegoBonus.extra) + ' pontos' : '') + '</span></div>' : '') +
     '<p>' + (fimExp ? 'Foram 4.000 metros. A Expedição ' + expedicao(J.fase + 1) + ' começa de novo no raso, mais apertada.'
              : muda ? frases[e - 1] + ' Daqui pra baixo começa ' + ambiente(J.fase + 1).nome + '.' : frases[e - 1]) + '</p>' +
     '<div class="bts">' +

@@ -743,6 +743,12 @@ body.leve .podio{-webkit-backdrop-filter:none;backdrop-filter:none;background:rg
 .no.no-mestre .tropeu{position:absolute;top:-6px;right:-6px;font-size:22px;filter:drop-shadow(0 2px 4px rgba(0,0,0,.5))}
 .no.no-mestre.travada{filter:grayscale(.7) brightness(.7)}
 .no.no-mestre.vencido .disco{box-shadow:0 0 0 3px var(--sol),0 0 18px -4px var(--sol),inset 0 -6px 10px rgba(0,0,0,.5)}
+.cartao .folego-bonus{margin-top:9px;padding:8px 12px;border-radius:16px;background:rgba(107,255,224,.16);
+  box-shadow:inset 0 0 0 2px rgba(107,255,224,.45)}
+.cartao .folego-bonus b{display:block;font-family:var(--display);font-weight:800;font-size:14.5px;color:#0A6C7A}
+.cartao .folego-bonus span{display:block;font-size:12.5px;font-weight:800;color:#2E5E6C}
+[data-mundo="3"] .cartao .folego-bonus b,[data-mundo="4"] .cartao .folego-bonus b{color:var(--biolum)}
+[data-mundo="3"] .cartao .folego-bonus span,[data-mundo="4"] .cartao .folego-bonus span{color:rgba(243,251,255,.82)}
 .cartao .tesouro{margin-top:10px;padding:9px 12px;border-radius:16px;background:rgba(255,211,92,.16);
   box-shadow:inset 0 0 0 2px rgba(255,211,92,.5)}
 .cartao .tesouro b{display:block;font-family:var(--display);font-weight:800;font-size:15px;color:#B2760F}
@@ -1165,7 +1171,7 @@ body.leve .cartao{animation-duration:.18s}
    MERGULHO · combinar 3 da beira da praia até 4.000 metros
    ═══════════════════════════════════════════════════════════════ */
 
-const VERSAO_JOGO = '2026.10.29';
+const VERSAO_JOGO = '2026.10.30';
 const W = 7, H = 8, TIPOS = 6;
 const NADA = 0, LH = 1, LV = 2, BOMBA = 3, ARCO = 4, ONDA = 5, ONDAV = 6, CARDUME = 7;
 
@@ -4124,8 +4130,44 @@ async function esperaAcalmar(minimo) {
   await espera(320);
 }
 
+/* Quem resolve rápido tinha nota menor que quem enrolava até a
+   última jogada. Agora o que sobrou de fôlego vira especial no
+   tabuleiro e estoura junto: eficiência passa a valer ponto.    */
+async function bonusDoFolego() {
+  const f = faseAtual();
+  const sobra = Math.max(0, J.mov | 0);
+  if (!sobra || f.obj.tipo === 'pontos') return 0;
+  const porJogada = Math.max(250, Math.round(f.marcas[2] / Math.max(1, f.mov)));
+  faixaTexto(sobra === 1 ? 'Sobrou uma jogada!' : 'Sobraram ' + sobra + ' jogadas!', 2000);
+  await espera(520);
+  const livres = [];
+  for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) {
+    const p = grid[r][c];
+    if (p && !p.bau && !p.sp && !p.gaiola && !p.bolha) livres.push(p);
+  }
+  for (let k = livres.length - 1; k > 0; k--) { const j = sorteia(k + 1); const t = livres[k]; livres[k] = livres[j]; livres[j] = t; }
+  const vira = Math.min(sobra, 5, livres.length);
+  for (let k = 0; k < vira; k++) {
+    livres[k].sp = [LH, LV, BOMBA][sorteia(3)];
+    atualizaEl(livres[k]);
+    const el = els.get(livres[k].id);
+    if (el) { el.classList.remove('nasce'); void el.offsetWidth; el.classList.add('nasce'); }
+    Som.liga(); Som.especial();
+    await espera(190);
+  }
+  const extra = Math.max(0, sobra - vira) * porJogada;
+  if (extra) J.pontos += extra;
+  J.folegoBonus = { sobra: sobra, virou: vira, extra: extra };
+  J.mov = 0;
+  atualizaHud();
+  await espera(320);
+  return sobra;
+}
+
 async function venceu() {
   const eraMestre = faseAtual().obj.tipo === 'chefe';
+  J.folegoBonus = null;
+  await bonusDoFolego();
   tiraBotaoEncerrar();
   if (eraMestre) {
     prog.mestres = (prog.mestres || 0) + 1;
@@ -4180,6 +4222,10 @@ async function venceu() {
     '<p class="ganho-moedas"><svg viewBox="0 0 100 100"><use href="#i-moeda"/></svg>+' + ganho + '</p>' +
     '<p class="pos-fase" id="pos-fase"></p>' +
     (eraMestre ? '<div class="tesouro"><b>Tesouro do mestre</b><span>150 moedas e um de cada poder</span></div>' : '') +
+    (J.folegoBonus && J.folegoBonus.sobra ? '<div class="folego-bonus"><b>Fôlego que sobrou</b><span>' +
+      J.folegoBonus.sobra + (J.folegoBonus.sobra === 1 ? ' jogada' : ' jogadas') +
+      (J.folegoBonus.virou ? ' · ' + J.folegoBonus.virou + ' viraram especial' : '') +
+      (J.folegoBonus.extra ? ' · +' + nf(J.folegoBonus.extra) + ' pontos' : '') + '</span></div>' : '') +
     '<p>' + (fimExp ? 'Foram 4.000 metros. A Expedição ' + expedicao(J.fase + 1) + ' começa de novo no raso, mais apertada.'
              : muda ? frases[e - 1] + ' Daqui pra baixo começa ' + ambiente(J.fase + 1).nome + '.' : frases[e - 1]) + '</p>' +
     '<div class="bts">' +
