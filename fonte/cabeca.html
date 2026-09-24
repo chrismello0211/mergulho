@@ -685,8 +685,42 @@ body.leve #descida.roda{animation-duration:.45s}
 .cartao svg{max-width:100%}
 /* ── acabamento: topo do mapa sempre cabe ───────────────────── */
 .pilula-vidas.vidas-mapa{position:absolute;top:calc(var(--safe-t) + 70px);left:12px;z-index:6;height:42px}
-@media (max-width:380px){ #tela-mapa .topo{gap:4px;padding-left:8px;padding-right:8px} #tela-mapa .topo .ico-bt{width:40px;height:40px;flex:0 0 40px}
+/* barra do mapa encolhe junto com a tela, sem a moeda escapar */
+#tela-mapa .topo{max-width:100vw;box-sizing:border-box}
+#tela-mapa .topo > .moedas,#tela-mapa .topo > .placar-estrelas{min-width:0;flex-shrink:1}
+#tela-mapa .topo > .moedas > svg,#tela-mapa .topo > .placar-estrelas > svg{flex:0 0 auto}
+#tela-mapa .topo > .moedas > span,#tela-mapa .topo > .placar-estrelas > span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media (max-width:380px){ #tela-mapa .topo{gap:4px;padding-left:8px;padding-right:8px}
+  #tela-mapa .topo .ico-bt{width:38px;height:38px;flex:0 0 38px}
   #tela-mapa .topo > .moedas span,#tela-mapa .topo > .placar-estrelas span{font-size:14px} }
+/* ── acabamento: cartão de novidade ─────────────────────────── */
+.cartao .aviso-arte{width:104px;height:104px;margin:-6px auto 4px;border-radius:30px;display:grid;place-items:center;
+  background:radial-gradient(circle at 50% 40%,rgba(255,255,255,.95),rgba(191,245,238,.55) 60%,rgba(10,108,122,.14));
+  box-shadow:0 10px 24px -8px rgba(0,40,60,.45),inset 0 0 0 2px rgba(255,255,255,.7);animation:aviso-arte 3s ease-in-out infinite}
+.cartao .aviso-arte svg{width:74px;height:74px;filter:drop-shadow(0 4px 6px rgba(0,30,40,.35))}
+@keyframes aviso-arte{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-5px) rotate(2deg)}}
+.cartao p.aviso-novo{margin:4px 0 0;font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--boia)}
+.cartao p.aviso-lead{font-size:15px;font-weight:800;line-height:1.35;margin-top:6px}
+.cartao ol.aviso-regras{list-style:none;counter-reset:regra;margin:10px 0 2px;padding:0;text-align:left}
+.cartao ol.aviso-regras li{counter-increment:regra;position:relative;padding:8px 10px 8px 40px;margin:6px 0;border-radius:14px;
+  background:rgba(10,108,122,.08);font-size:13.5px;font-weight:600;line-height:1.38}
+.cartao ol.aviso-regras li::before{content:counter(regra);position:absolute;left:10px;top:8px;width:22px;height:22px;border-radius:50%;
+  display:grid;place-items:center;font-family:var(--display);font-weight:800;font-size:12px;color:#fff;background:#0A6C7A}
+[data-mundo="3"] .cartao ol.aviso-regras li,[data-mundo="4"] .cartao ol.aviso-regras li{background:rgba(107,255,224,.08)}
+[data-mundo="3"] .cartao ol.aviso-regras li::before,[data-mundo="4"] .cartao ol.aviso-regras li::before{background:var(--biolum);color:#06374A}
+[data-mundo="3"] .cartao .aviso-arte,[data-mundo="4"] .cartao .aviso-arte{background:radial-gradient(circle at 50% 40%,rgba(107,255,224,.35),rgba(10,20,40,.4) 70%);
+  box-shadow:0 0 30px -6px var(--biolum),inset 0 0 0 2px rgba(107,255,224,.45)}
+body.leve .cartao .aviso-arte{animation:none}
+
+/* ── acabamento: cartão de vitória ──────────────────────────── */
+.selo-classe.selo-mini{font-size:11.5px;padding:3px 11px;margin:2px 0 0}
+.cartao .colheita{display:flex;flex-wrap:wrap;justify-content:center;gap:6px 12px;margin:8px 0 2px}
+.cartao .colheita span{display:flex;align-items:center;gap:4px;font-size:12.5px;font-weight:800;padding:4px 10px 4px 6px;border-radius:999px;
+  background:rgba(10,108,122,.1);animation:entra-pos .5s ease both}
+.cartao .colheita span:nth-child(2){animation-delay:.12s}.cartao .colheita span:nth-child(3){animation-delay:.24s}
+.cartao .colheita svg{width:22px;height:22px}
+[data-mundo="3"] .cartao .colheita span,[data-mundo="4"] .cartao .colheita span{background:rgba(107,255,224,.1)}
+
 /* ── acabamento: tela antes da fase ─────────────────────────── */
 .pre-grande{font-family:var(--display);font-size:24px !important;text-align:center}
 .pre-pecas{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}

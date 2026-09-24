@@ -693,8 +693,42 @@ body.leve #descida.roda{animation-duration:.45s}
 .cartao svg{max-width:100%}
 /* ── acabamento: topo do mapa sempre cabe ───────────────────── */
 .pilula-vidas.vidas-mapa{position:absolute;top:calc(var(--safe-t) + 70px);left:12px;z-index:6;height:42px}
-@media (max-width:380px){ #tela-mapa .topo{gap:4px;padding-left:8px;padding-right:8px} #tela-mapa .topo .ico-bt{width:40px;height:40px;flex:0 0 40px}
+/* barra do mapa encolhe junto com a tela, sem a moeda escapar */
+#tela-mapa .topo{max-width:100vw;box-sizing:border-box}
+#tela-mapa .topo > .moedas,#tela-mapa .topo > .placar-estrelas{min-width:0;flex-shrink:1}
+#tela-mapa .topo > .moedas > svg,#tela-mapa .topo > .placar-estrelas > svg{flex:0 0 auto}
+#tela-mapa .topo > .moedas > span,#tela-mapa .topo > .placar-estrelas > span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media (max-width:380px){ #tela-mapa .topo{gap:4px;padding-left:8px;padding-right:8px}
+  #tela-mapa .topo .ico-bt{width:38px;height:38px;flex:0 0 38px}
   #tela-mapa .topo > .moedas span,#tela-mapa .topo > .placar-estrelas span{font-size:14px} }
+/* ── acabamento: cartão de novidade ─────────────────────────── */
+.cartao .aviso-arte{width:104px;height:104px;margin:-6px auto 4px;border-radius:30px;display:grid;place-items:center;
+  background:radial-gradient(circle at 50% 40%,rgba(255,255,255,.95),rgba(191,245,238,.55) 60%,rgba(10,108,122,.14));
+  box-shadow:0 10px 24px -8px rgba(0,40,60,.45),inset 0 0 0 2px rgba(255,255,255,.7);animation:aviso-arte 3s ease-in-out infinite}
+.cartao .aviso-arte svg{width:74px;height:74px;filter:drop-shadow(0 4px 6px rgba(0,30,40,.35))}
+@keyframes aviso-arte{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-5px) rotate(2deg)}}
+.cartao p.aviso-novo{margin:4px 0 0;font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--boia)}
+.cartao p.aviso-lead{font-size:15px;font-weight:800;line-height:1.35;margin-top:6px}
+.cartao ol.aviso-regras{list-style:none;counter-reset:regra;margin:10px 0 2px;padding:0;text-align:left}
+.cartao ol.aviso-regras li{counter-increment:regra;position:relative;padding:8px 10px 8px 40px;margin:6px 0;border-radius:14px;
+  background:rgba(10,108,122,.08);font-size:13.5px;font-weight:600;line-height:1.38}
+.cartao ol.aviso-regras li::before{content:counter(regra);position:absolute;left:10px;top:8px;width:22px;height:22px;border-radius:50%;
+  display:grid;place-items:center;font-family:var(--display);font-weight:800;font-size:12px;color:#fff;background:#0A6C7A}
+[data-mundo="3"] .cartao ol.aviso-regras li,[data-mundo="4"] .cartao ol.aviso-regras li{background:rgba(107,255,224,.08)}
+[data-mundo="3"] .cartao ol.aviso-regras li::before,[data-mundo="4"] .cartao ol.aviso-regras li::before{background:var(--biolum);color:#06374A}
+[data-mundo="3"] .cartao .aviso-arte,[data-mundo="4"] .cartao .aviso-arte{background:radial-gradient(circle at 50% 40%,rgba(107,255,224,.35),rgba(10,20,40,.4) 70%);
+  box-shadow:0 0 30px -6px var(--biolum),inset 0 0 0 2px rgba(107,255,224,.45)}
+body.leve .cartao .aviso-arte{animation:none}
+
+/* ── acabamento: cartão de vitória ──────────────────────────── */
+.selo-classe.selo-mini{font-size:11.5px;padding:3px 11px;margin:2px 0 0}
+.cartao .colheita{display:flex;flex-wrap:wrap;justify-content:center;gap:6px 12px;margin:8px 0 2px}
+.cartao .colheita span{display:flex;align-items:center;gap:4px;font-size:12.5px;font-weight:800;padding:4px 10px 4px 6px;border-radius:999px;
+  background:rgba(10,108,122,.1);animation:entra-pos .5s ease both}
+.cartao .colheita span:nth-child(2){animation-delay:.12s}.cartao .colheita span:nth-child(3){animation-delay:.24s}
+.cartao .colheita svg{width:22px;height:22px}
+[data-mundo="3"] .cartao .colheita span,[data-mundo="4"] .cartao .colheita span{background:rgba(107,255,224,.1)}
+
 /* ── acabamento: tela antes da fase ─────────────────────────── */
 .pre-grande{font-family:var(--display);font-size:24px !important;text-align:center}
 .pre-pecas{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
@@ -1104,6 +1138,16 @@ body.leve .cartao{animation-duration:.18s}
   <symbol id="p-giro" viewBox="0 0 100 100">
     <path d="M74 44a26 26 0 1 1-12-18M74 20v24H50"/>
   </symbol>
+  <symbol id="i-mancha" viewBox="0 0 100 100">
+    <path d="M50 16c14 0 20 10 30 12 10 2 12 16 6 24-6 8 4 16-4 24s-18 2-26 8-20 4-26-4-16-6-14-18 10-12 6-22 4-22 14-22 8 2 14-2Z" fill="#E0564A"/>
+    <path d="M36 34c6-4 14-4 18 0" fill="none" stroke="#FF9E90" stroke-width="5" stroke-linecap="round"/>
+    <circle cx="80" cy="84" r="6" fill="#E0564A"/><circle cx="18" cy="26" r="5" fill="#E0564A"/><circle cx="62" cy="54" r="7" fill="#B63A36" opacity=".6"/>
+  </symbol>
+  <symbol id="i-corrente" viewBox="0 0 100 100">
+    <rect x="8" y="36" width="36" height="24" rx="12" fill="none" stroke="#A8B2BE" stroke-width="8"/>
+    <rect x="32" y="38" width="36" height="24" rx="12" fill="none" stroke="#D8DEE6" stroke-width="8" transform="rotate(-8 50 50)"/>
+    <rect x="56" y="40" width="36" height="24" rx="12" fill="none" stroke="#8E99A6" stroke-width="8"/>
+  </symbol>
   <symbol id="i-perola" viewBox="0 0 100 100">
     <radialGradient id="gp-perola" cx="36%" cy="32%" r="70%"><stop offset="0" stop-color="#FFFFFF"/><stop offset=".55" stop-color="#EDE3FF"/><stop offset="1" stop-color="#B9A6E8"/></radialGradient>
     <circle cx="50" cy="52" r="30" fill="url(#gp-perola)"/><circle cx="50" cy="52" r="30" fill="none" stroke="#8C75C9" stroke-width="2.5" opacity=".6"/>
@@ -1306,7 +1350,7 @@ body.leve .cartao{animation-duration:.18s}
    MERGULHO · combinar 3 da beira da praia até 4.000 metros
    ═══════════════════════════════════════════════════════════════ */
 
-const VERSAO_JOGO = '2026.11.08';
+const VERSAO_JOGO = '2026.11.10';
 const W = 7, H = 8, TIPOS = 6;
 const NADA = 0, LH = 1, LV = 2, BOMBA = 3, ARCO = 4, ONDA = 5, ONDAV = 6, CARDUME = 7;
 
@@ -4665,10 +4709,13 @@ async function venceu() {
   const muda = !fimExp && prox.m !== f.m;
   cartao(
     '<h3>' + (fimExp ? 'Você chegou ao fundo' : 'Fase concluída!') + '</h3>' +
+    (J.desafio ? '' : '<span class="selo-classe selo-mini" style="--cor-classe:' + CLASSES[classeDaFase(J.fase)].cor + '">' +
+      CLASSES[classeDaFase(J.fase)].emoji + ' ' + CLASSES[classeDaFase(J.fase)].nome.toUpperCase() + '</span>') +
     '<div class="estrelas-grandes">' +
       [0, 1, 2].map(i => '<div class="e' + (i < e ? ' on' : '') + '" style="animation-delay:' + (i * .22) + 's"><svg viewBox="0 0 100 100"><use href="#' + (i < e ? 'i-estrela' : 'i-estrela-off') + '"/></svg></div>').join('') +
     '</div>' +
     '<p class="placar-final">' + nf(J.pontos) + '<small>pontos</small></p>' +
+    colheitaDaFase() +
     '<p class="ganho-moedas"><svg viewBox="0 0 100 100"><use href="#i-moeda"/></svg>+' + ganho + '</p>' +
     '<p class="pos-fase" id="pos-fase"></p>' +
     (eraMestre ? '<div class="tesouro"><b>Tesouro do mestre</b><span>150 moedas e um de cada poder</span></div>' : '') +
@@ -4757,6 +4804,21 @@ function compraFolegoNaHora() {
 }
 
 /* depois da vitória, a colocação daquela fase aparece no cartão */
+/* o que você fez na fase, dito em uma linha, com o desenho de cada coisa */
+function colheitaDaFase() {
+  const f = faseAtual(), o = f.obj, itens = [];
+  const add = (ic, n, txt) => { if (n > 0) itens.push('<span><svg viewBox="0 0 100 100"><use href="' + ic + '"/></svg>' + n + ' ' + txt + '</span>'); };
+  if (o.tipo === 'perolas') add('#i-perola', J.perolasFeitas || 0, (J.perolasFeitas === 1 ? 'pérola' : 'pérolas'));
+  if (o.tipo === 'lixo') add('#i-lixo0', J.lixoFeito || 0, 'lixo' + (J.lixoFeito === 1 ? '' : 's') + ' fora do mar');
+  if (o.tipo === 'coral') add('#i-coral', J.coralFeito || 0, 'de coral de volta');
+  if (o.tipo === 'ninho') add('#i-ninho', J.ninhosFeitos || 0, (J.ninhosFeitos === 1 ? 'ninho derrubado' : 'ninhos derrubados'));
+  if (o.tipo === 'presos') add('#i-gaiola', J.presosFeitos || 0, 'bicho' + (J.presosFeitos === 1 ? '' : 's') + ' solto' + (J.presosFeitos === 1 ? '' : 's'));
+  if (o.tipo === 'bolhas') add('#i-bolha-ar', J.bolhasFeitas || 0, 'bolha' + (J.bolhasFeitas === 1 ? '' : 's'));
+  if (o.tipo === 'bau') add('#i-bau', J.bauFeito || 0, 'baú' + (J.bauFeito === 1 ? '' : 's') + ' no fundo');
+  if ((J.criados || 0) > 0) add('#s-arco', J.criados, 'especia' + (J.criados === 1 ? 'l' : 'is') + ' criado' + (J.criados === 1 ? '' : 's'));
+  return itens.length ? '<div class="colheita">' + itens.join('') + '</div>' : '';
+}
+
 async function mostraPosicaoFase(i, pontos) {
   Ranking.cache = {};
   const lista = await Ranking.daFase(i);
@@ -5048,7 +5110,7 @@ function mostraLoja() {
   cartao(
     '<h3>Loja</h3>' +
     '<p class="saldo">' + moedaSvg + '<span class="n-moedas">' + nf(prog.moedas) + '</span></p>' +
-    '<p>Moeda vem de fase concluída e do baú do dia.</p>' +
+    '<p>Moeda vem das fases, da Semana do mergulhador e dos mestres derrotados.</p>' +
     PODERES.map(p => {
       const tem = prog.poderes[p.id] || 0, pode = prog.moedas >= p.preco;
       return '<div class="item-loja"><svg viewBox="0 0 100 100"><use href="#p-' + p.id + '"/></svg>' +
@@ -6261,11 +6323,18 @@ function comecaFase() {
   vigiaFps();
   if (f.desafio) faixaTexto('25 jogadas'); else faixaTexto(metros(f.prof));
 }
+/* cartão que apresenta cada mecânica: arte grande no topo, a frase
+   principal em destaque e o resto em passos curtos e numerados    */
+const AVISO_ICONE = { 'Maré vermelha': '#i-mancha', 'A corrente': '#i-corrente', 'A alga volta a crescer': '#i-ninho' };
 function mostraAviso(titulo, icone, texto) {
-  cartao('<h3>' + titulo + '</h3>' +
-    (icone ? '<div class="vitrine-mini"><svg class="ic" viewBox="0 0 100 100"><use href="' + icone + '"/></svg></div>' : '') +
-    '<p>' + texto + '</p>' +
-    '<div class="bts"><button class="bt" data-ac="comeca">Entendi</button></div>');
+  const ic = icone || AVISO_ICONE[titulo] || '#i-estrela';
+  const frases = String(texto).replace(/([.!?])\s+/g, '$1|').split('|').map(s => s.trim()).filter(Boolean);
+  const lead = frases.shift() || '';
+  cartao('<div class="aviso-arte"><svg viewBox="0 0 100 100"><use href="' + ic + '"/></svg></div>' +
+    '<p class="aviso-novo">novidade</p><h3>' + titulo + '</h3>' +
+    '<p class="aviso-lead">' + lead + '</p>' +
+    (frases.length ? '<ol class="aviso-regras">' + frases.map(f => '<li>' + f + '</li>').join('') + '</ol>' : '') +
+    '<div class="bts"><button class="bt" data-ac="comeca">Entendi, bora</button></div>');
 }
 
 /* ═══ SOM: BOTÃO ════════════════════════════════════════════════ */

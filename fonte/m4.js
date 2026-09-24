@@ -392,10 +392,13 @@ async function venceu() {
   const muda = !fimExp && prox.m !== f.m;
   cartao(
     '<h3>' + (fimExp ? 'Você chegou ao fundo' : 'Fase concluída!') + '</h3>' +
+    (J.desafio ? '' : '<span class="selo-classe selo-mini" style="--cor-classe:' + CLASSES[classeDaFase(J.fase)].cor + '">' +
+      CLASSES[classeDaFase(J.fase)].emoji + ' ' + CLASSES[classeDaFase(J.fase)].nome.toUpperCase() + '</span>') +
     '<div class="estrelas-grandes">' +
       [0, 1, 2].map(i => '<div class="e' + (i < e ? ' on' : '') + '" style="animation-delay:' + (i * .22) + 's"><svg viewBox="0 0 100 100"><use href="#' + (i < e ? 'i-estrela' : 'i-estrela-off') + '"/></svg></div>').join('') +
     '</div>' +
     '<p class="placar-final">' + nf(J.pontos) + '<small>pontos</small></p>' +
+    colheitaDaFase() +
     '<p class="ganho-moedas"><svg viewBox="0 0 100 100"><use href="#i-moeda"/></svg>+' + ganho + '</p>' +
     '<p class="pos-fase" id="pos-fase"></p>' +
     (eraMestre ? '<div class="tesouro"><b>Tesouro do mestre</b><span>150 moedas e um de cada poder</span></div>' : '') +
@@ -484,6 +487,21 @@ function compraFolegoNaHora() {
 }
 
 /* depois da vitória, a colocação daquela fase aparece no cartão */
+/* o que você fez na fase, dito em uma linha, com o desenho de cada coisa */
+function colheitaDaFase() {
+  const f = faseAtual(), o = f.obj, itens = [];
+  const add = (ic, n, txt) => { if (n > 0) itens.push('<span><svg viewBox="0 0 100 100"><use href="' + ic + '"/></svg>' + n + ' ' + txt + '</span>'); };
+  if (o.tipo === 'perolas') add('#i-perola', J.perolasFeitas || 0, (J.perolasFeitas === 1 ? 'pérola' : 'pérolas'));
+  if (o.tipo === 'lixo') add('#i-lixo0', J.lixoFeito || 0, 'lixo' + (J.lixoFeito === 1 ? '' : 's') + ' fora do mar');
+  if (o.tipo === 'coral') add('#i-coral', J.coralFeito || 0, 'de coral de volta');
+  if (o.tipo === 'ninho') add('#i-ninho', J.ninhosFeitos || 0, (J.ninhosFeitos === 1 ? 'ninho derrubado' : 'ninhos derrubados'));
+  if (o.tipo === 'presos') add('#i-gaiola', J.presosFeitos || 0, 'bicho' + (J.presosFeitos === 1 ? '' : 's') + ' solto' + (J.presosFeitos === 1 ? '' : 's'));
+  if (o.tipo === 'bolhas') add('#i-bolha-ar', J.bolhasFeitas || 0, 'bolha' + (J.bolhasFeitas === 1 ? '' : 's'));
+  if (o.tipo === 'bau') add('#i-bau', J.bauFeito || 0, 'baú' + (J.bauFeito === 1 ? '' : 's') + ' no fundo');
+  if ((J.criados || 0) > 0) add('#s-arco', J.criados, 'especia' + (J.criados === 1 ? 'l' : 'is') + ' criado' + (J.criados === 1 ? '' : 's'));
+  return itens.length ? '<div class="colheita">' + itens.join('') + '</div>' : '';
+}
+
 async function mostraPosicaoFase(i, pontos) {
   Ranking.cache = {};
   const lista = await Ranking.daFase(i);
@@ -775,7 +793,7 @@ function mostraLoja() {
   cartao(
     '<h3>Loja</h3>' +
     '<p class="saldo">' + moedaSvg + '<span class="n-moedas">' + nf(prog.moedas) + '</span></p>' +
-    '<p>Moeda vem de fase concluída e do baú do dia.</p>' +
+    '<p>Moeda vem das fases, da Semana do mergulhador e dos mestres derrotados.</p>' +
     PODERES.map(p => {
       const tem = prog.poderes[p.id] || 0, pode = prog.moedas >= p.preco;
       return '<div class="item-loja"><svg viewBox="0 0 100 100"><use href="#p-' + p.id + '"/></svg>' +
@@ -1988,11 +2006,18 @@ function comecaFase() {
   vigiaFps();
   if (f.desafio) faixaTexto('25 jogadas'); else faixaTexto(metros(f.prof));
 }
+/* cartão que apresenta cada mecânica: arte grande no topo, a frase
+   principal em destaque e o resto em passos curtos e numerados    */
+const AVISO_ICONE = { 'Maré vermelha': '#i-mancha', 'A corrente': '#i-corrente', 'A alga volta a crescer': '#i-ninho' };
 function mostraAviso(titulo, icone, texto) {
-  cartao('<h3>' + titulo + '</h3>' +
-    (icone ? '<div class="vitrine-mini"><svg class="ic" viewBox="0 0 100 100"><use href="' + icone + '"/></svg></div>' : '') +
-    '<p>' + texto + '</p>' +
-    '<div class="bts"><button class="bt" data-ac="comeca">Entendi</button></div>');
+  const ic = icone || AVISO_ICONE[titulo] || '#i-estrela';
+  const frases = String(texto).replace(/([.!?])\s+/g, '$1|').split('|').map(s => s.trim()).filter(Boolean);
+  const lead = frases.shift() || '';
+  cartao('<div class="aviso-arte"><svg viewBox="0 0 100 100"><use href="' + ic + '"/></svg></div>' +
+    '<p class="aviso-novo">novidade</p><h3>' + titulo + '</h3>' +
+    '<p class="aviso-lead">' + lead + '</p>' +
+    (frases.length ? '<ol class="aviso-regras">' + frases.map(f => '<li>' + f + '</li>').join('') + '</ol>' : '') +
+    '<div class="bts"><button class="bt" data-ac="comeca">Entendi, bora</button></div>');
 }
 
 /* ═══ SOM: BOTÃO ════════════════════════════════════════════════ */
