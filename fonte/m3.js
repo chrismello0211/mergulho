@@ -893,6 +893,10 @@ function pintaCasasEspeciais() {
   caixa.innerHTML = '';
   J.mudouCasas = false;
   for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) {
+    const cel = celulasBox.children[r * W + c], co = J.coral ? J.coral[r][c] : 0;
+    if (cel) { cel.classList.toggle('coral-morto', co === 1); cel.classList.toggle('coral-vivo', co === 2); }
+  }
+  for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) {
     const pe = J.perolas ? J.perolas[r][c] : 0, co = J.coral ? J.coral[r][c] : 0;
     const pa = (typeof papel !== 'undefined' && papel && papel[r]) ? papel[r][c] : 0;
     if (!pe && !co) continue;
@@ -901,7 +905,13 @@ function pintaCasasEspeciais() {
                   (co === 1 ? ' coral-morto' : co === 2 ? ' coral-vivo' : '');
     /* cobertura (areia, alga, cinza, rede...): selinho no canto, por cima da peça */
     caixa.appendChild(d);
-    posiciona(d, r, c, true);
+    /* alinha pela casa, não pela peça: a peça tem margem própria */
+    const cel = celulasBox.children[r * W + c];
+    if (cel) {
+      const cr = cel.getBoundingClientRect(), mr = caixa.getBoundingClientRect();
+      d.style.transform = 'translate(' + (cr.left - mr.left) + 'px,' + (cr.top - mr.top) + 'px)';
+      d.style.width = cr.width + 'px'; d.style.height = cr.height + 'px';
+    }
   }
 }
 /* a pérola colhida voa até o painel do objetivo */
@@ -983,7 +993,8 @@ function passoNinho() {
   pintaNinhos();
   if (nasceu) {
     pintaPapel(); Som.liga(); Som.cresce();
-    faixaTexto('Nenhuma alga destruída: o ninho soltou mais', 2000);
+    J.avisosNinho = (J.avisosNinho || 0) + 1;
+    if (J.avisosNinho <= 2) faixaTexto('Nenhuma alga destruída: o ninho soltou mais', 2000);
     atualizaHud();
   }
 }
@@ -1016,7 +1027,8 @@ function passoMancha() {
   casa.classList.add('cresceu');
   setTimeout(() => casa.classList.remove('cresceu'), 520);
   Som.liga(); Som.cresce();
-  faixaTexto('Nenhuma mancha destruída: ela se espalhou', 2000);
+  J.avisosMancha = (J.avisosMancha || 0) + 1;
+  if (J.avisosMancha <= 2) faixaTexto('Nenhuma mancha destruída: ela se espalhou', 2000);
   atualizaHud();
 }
 

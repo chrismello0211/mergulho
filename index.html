@@ -641,12 +641,12 @@ body.leve #descida.roda{animation-duration:.45s}
 .marca-casa{position:absolute;left:0;top:0;width:var(--cel);height:var(--cel)}
 .marca-casa::after,.marca-casa::before{content:"";position:absolute;background-repeat:no-repeat;background-size:contain;background-position:center;pointer-events:none}
 .marca-casa.ostra-fechada::after,.marca-casa.ostra-aberta::after{right:-8%;bottom:-10%;width:78%;height:78%;filter:drop-shadow(0 2px 3px rgba(0,0,0,.45))}
-.marca-casa.coral-morto::before,.marca-casa.coral-vivo::before{left:0;top:0;width:100%;height:100%;opacity:.62;mix-blend-mode:screen;filter:drop-shadow(0 0 2px rgba(255,255,255,.55)) drop-shadow(0 2px 3px rgba(0,0,0,.5))}
+.casa.coral-morto::after,.casa.coral-vivo::after{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;background-repeat:no-repeat;background-position:center;background-size:112%}
 .marca-casa.ostra-fechada::after{background-image:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Cellipse cx=%2250%22 cy=%2280%22 rx=%2230%22 ry=%229%22 fill=%22%232A1F3D%22 opacity=%22.45%22/%3E%3Cpath d=%22M18 70Q50 30 82 70Q50 86 18 70Z%22 fill=%22%239C8AB8%22/%3E%3Cpath d=%22M18 70Q50 38 82 70%22 fill=%22none%22 stroke=%22%236E5C8C%22 stroke-width=%223%22/%3E%3Cpath d=%22M30 64L34 52M42 60L44 46M58 60L56 46M70 64L66 52%22 stroke=%22%23C9BCE0%22 stroke-width=%223%22 stroke-linecap=%22round%22/%3E%3C/svg%3E");opacity:.95}
-.marca-casa.ostra-aberta::after{background-image:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Cpath d=%22M16 70Q50 90 84 70Q50 80 16 70Z%22 fill=%22%238C7AAC%22/%3E%3Cpath d=%22M20 62Q50 20 80 62%22 fill=%22%23B3A2CF%22/%3E%3Ccircle cx=%2250%22 cy=%2266%22 r=%2211%22 fill=%22%23FFFFFF%22/%3E%3Ccircle cx=%2246%22 cy=%2262%22 r=%224%22 fill=%22%23fff%22 opacity=%22.9%22/%3E%3Ccircle cx=%2250%22 cy=%2266%22 r=%2211%22 fill=%22none%22 stroke=%22%23C7B6F0%22 stroke-width=%222%22/%3E%3C/svg%3E");animation:ostra-brilha 1.6s ease-in-out infinite}
+.marca-casa.ostra-aberta::after{background-image:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Cpath d=%22M14 72Q50 92 86 72Q50 82 14 72Z%22 fill=%22%238C7AAC%22/%3E%3Cpath d=%22M18 62Q50 16 82 62%22 fill=%22%23B3A2CF%22/%3E%3Ccircle cx=%2250%22 cy=%2262%22 r=%2224%22 fill=%22%23FFFFFF%22 opacity=%22.35%22/%3E%3Ccircle cx=%2250%22 cy=%2264%22 r=%2216%22 fill=%22%23FFFFFF%22/%3E%3Ccircle cx=%2244%22 cy=%2258%22 r=%225.5%22 fill=%22%23fff%22/%3E%3Ccircle cx=%2250%22 cy=%2264%22 r=%2216%22 fill=%22none%22 stroke=%22%23C7B6F0%22 stroke-width=%222.5%22/%3E%3C/svg%3E");animation:ostra-brilha 1.6s ease-in-out infinite}
 @keyframes ostra-brilha{0%,100%{filter:drop-shadow(0 0 0 transparent)}50%{filter:drop-shadow(0 0 8px #F3E9FF)}}
-.marca-casa.coral-morto::before{background-image:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Cpath d=%22M50 92V62M50 74L32 54M50 68L68 46M32 54L24 38M68 46L80 32M50 62V42%22 fill=%22none%22 stroke=%22%238B8F96%22 stroke-width=%228%22 stroke-linecap=%22round%22 opacity=%22.85%22/%3E%3Cpath d=%22M50 62V42M68 46L80 32%22 fill=%22none%22 stroke=%22%23B6BAC0%22 stroke-width=%223%22 stroke-linecap=%22round%22 opacity=%22.7%22/%3E%3C/svg%3E")}
-.marca-casa.coral-vivo::before{opacity:.8;background-image:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Cpath d=%22M50 92V62M50 74L32 54M50 68L68 46M32 54L24 38M68 46L80 32M50 62V42%22 fill=%22none%22 stroke=%22%23FF6F9E%22 stroke-width=%228%22 stroke-linecap=%22round%22 opacity=%22.55%22/%3E%3C/svg%3E");animation:coral-volta .7s ease-out}
+.casa.coral-morto::after{opacity:.95;background-image:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Cpath d=%22M50 92V62M50 74L32 54M50 68L68 46M32 54L24 38M68 46L80 32M50 62V42%22 fill=%22none%22 stroke=%22%238B8F96%22 stroke-width=%228%22 stroke-linecap=%22round%22 opacity=%22.85%22/%3E%3Cpath d=%22M50 62V42M68 46L80 32%22 fill=%22none%22 stroke=%22%23B6BAC0%22 stroke-width=%223%22 stroke-linecap=%22round%22 opacity=%22.7%22/%3E%3C/svg%3E")}
+.casa.coral-vivo::after{opacity:.9;background-image:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Cpath d=%22M50 92V62M50 74L32 54M50 68L68 46M32 54L24 38M68 46L80 32M50 62V42%22 fill=%22none%22 stroke=%22%23FF6F9E%22 stroke-width=%228%22 stroke-linecap=%22round%22 opacity=%22.55%22/%3E%3C/svg%3E");animation:coral-volta .7s ease-out}
 @keyframes coral-volta{0%{transform:scale(.4);opacity:0;filter:brightness(2)}60%{transform:scale(1.15);opacity:1}100%{transform:scale(1)}}
 .peca.lixo .corpo{filter:saturate(.85) drop-shadow(0 3px 5px rgba(0,20,30,.45));animation:lixo-boia 3.2s ease-in-out infinite}
 .peca.lixo2 .corpo::after{content:"";position:absolute;inset:14%;border-radius:40%;pointer-events:none;
@@ -702,12 +702,17 @@ body.leve #descida.roda{animation-duration:.45s}
 @media (max-width:380px){ #tela-mapa .topo{gap:4px;padding-left:8px;padding-right:8px}
   #tela-mapa .topo .ico-bt{width:38px;height:38px;flex:0 0 38px}
   #tela-mapa .topo > .moedas span,#tela-mapa .topo > .placar-estrelas span{font-size:14px} }
+/* ── chão do cenário durante a partida ─────────────────────────
+   Atrás da barra de poderes as formas retas do chão (casco, dunas)
+   pareciam peças de tela quebrada. Na partida ele desce e esmaece. */
+body.em-jogo #cena svg.chao{transform:translateY(26%);opacity:.28;filter:saturate(.6) blur(.6px);transition:opacity .4s,transform .4s}
+
 /* ── cobertura sempre visível ────────────────────────────────
    A peça cobre quase a casa inteira, então a cobertura ganha um
    contorno forte e um selinho por cima da peça, no canto.        */
 .casa.papel i,.casa.papel2 i,.casa.papel3 i{box-shadow:inset 0 0 0 3px rgba(255,255,255,.55),0 0 0 1px rgba(0,0,0,.25)}
 [data-mundo="3"] .casa.papel i,[data-mundo="4"] .casa.papel i,[data-mundo="3"] .casa.papel2 i,[data-mundo="4"] .casa.papel2 i{
-  filter:brightness(1.55) saturate(1.1);box-shadow:inset 0 0 0 3px rgba(255,255,255,.7),0 0 12px rgba(255,255,255,.25)}
+  filter:brightness(1.22) saturate(1.05);box-shadow:inset 0 0 0 2.5px rgba(255,255,255,.5),0 0 8px rgba(255,255,255,.15)}
 
 /* ── acabamento: cartão de novidade ─────────────────────────── */
 .cartao .aviso-arte{width:104px;height:104px;margin:-6px auto 4px;border-radius:30px;display:grid;place-items:center;
@@ -1358,7 +1363,7 @@ body.leve .cartao{animation-duration:.18s}
    MERGULHO · combinar 3 da beira da praia até 4.000 metros
    ═══════════════════════════════════════════════════════════════ */
 
-const VERSAO_JOGO = '2026.11.12';
+const VERSAO_JOGO = '2026.11.13';
 const W = 7, H = 8, TIPOS = 6;
 const NADA = 0, LH = 1, LV = 2, BOMBA = 3, ARCO = 4, ONDA = 5, ONDAV = 6, CARDUME = 7;
 
@@ -4032,6 +4037,10 @@ function pintaCasasEspeciais() {
   caixa.innerHTML = '';
   J.mudouCasas = false;
   for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) {
+    const cel = celulasBox.children[r * W + c], co = J.coral ? J.coral[r][c] : 0;
+    if (cel) { cel.classList.toggle('coral-morto', co === 1); cel.classList.toggle('coral-vivo', co === 2); }
+  }
+  for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) {
     const pe = J.perolas ? J.perolas[r][c] : 0, co = J.coral ? J.coral[r][c] : 0;
     const pa = (typeof papel !== 'undefined' && papel && papel[r]) ? papel[r][c] : 0;
     if (!pe && !co) continue;
@@ -4040,7 +4049,13 @@ function pintaCasasEspeciais() {
                   (co === 1 ? ' coral-morto' : co === 2 ? ' coral-vivo' : '');
     /* cobertura (areia, alga, cinza, rede...): selinho no canto, por cima da peça */
     caixa.appendChild(d);
-    posiciona(d, r, c, true);
+    /* alinha pela casa, não pela peça: a peça tem margem própria */
+    const cel = celulasBox.children[r * W + c];
+    if (cel) {
+      const cr = cel.getBoundingClientRect(), mr = caixa.getBoundingClientRect();
+      d.style.transform = 'translate(' + (cr.left - mr.left) + 'px,' + (cr.top - mr.top) + 'px)';
+      d.style.width = cr.width + 'px'; d.style.height = cr.height + 'px';
+    }
   }
 }
 /* a pérola colhida voa até o painel do objetivo */
@@ -4122,7 +4137,8 @@ function passoNinho() {
   pintaNinhos();
   if (nasceu) {
     pintaPapel(); Som.liga(); Som.cresce();
-    faixaTexto('Nenhuma alga destruída: o ninho soltou mais', 2000);
+    J.avisosNinho = (J.avisosNinho || 0) + 1;
+    if (J.avisosNinho <= 2) faixaTexto('Nenhuma alga destruída: o ninho soltou mais', 2000);
     atualizaHud();
   }
 }
@@ -4155,7 +4171,8 @@ function passoMancha() {
   casa.classList.add('cresceu');
   setTimeout(() => casa.classList.remove('cresceu'), 520);
   Som.liga(); Som.cresce();
-  faixaTexto('Nenhuma mancha destruída: ela se espalhou', 2000);
+  J.avisosMancha = (J.avisosMancha || 0) + 1;
+  if (J.avisosMancha <= 2) faixaTexto('Nenhuma mancha destruída: ela se espalhou', 2000);
   atualizaHud();
 }
 
