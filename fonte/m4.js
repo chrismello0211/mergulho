@@ -715,6 +715,27 @@ async function recebeVidas() {
   }
   return nomes.length;
 }
+/* quem do cardume pediu vida: aparece assim que você abre o jogo,
+   com o botão de mandar ali mesmo, e o ícone do app ganha o número */
+async function avisaPedidos() {
+  if (!Ranking.ligado || !prog.cardume) return;
+  const ped = await Ranking.pega('/mergulho/pedidos/' + prog.cardume, '');
+  if (!ped) return;
+  const agora = Date.now(), visto = prog.pedidoVisto || {};
+  const abertos = ped.filter(q => q.id !== Conta.sessao.uid && agora - (q.quando || 0) < 864e5 && !jaMandeiHoje(q.id));
+  try { if (navigator.setAppBadge) abertos.length ? navigator.setAppBadge(abertos.length) : navigator.clearAppBadge(); } catch (e) {}
+  const novos = abertos.filter(q => visto[q.id] !== q.quando);
+  if (!novos.length || document.getElementById('veu').classList.contains('aberto')) return;
+  prog.pedidoVisto = Object.assign({}, visto); novos.forEach(q => prog.pedidoVisto[q.id] = q.quando); salvaProg();
+  const horas = q => { const h = Math.max(1, Math.round((agora - q.quando) / 36e5)); return h < 2 ? 'agora há pouco' : 'há ' + h + ' horas'; };
+  Som.liga(); Som.pop(6);
+  cartao('<div class="aviso-arte coracao"><span>❤</span></div><p class="aviso-novo">pedido do cardume</p>' +
+    '<h3>' + (novos.length === 1 ? novos[0].nome + ' está sem vidas' : novos.length + ' amigos estão sem vidas') + '</h3>' +
+    '<p class="aviso-lead">Mandar vida não gasta nenhuma das suas.</p>' +
+    '<div class="pedidos-lista">' + novos.map(q => '<div class="pedido"><b>' + (q.nome || 'mergulhador') + '</b><small>' + horas(q) + '</small>' +
+      '<button class="bt-vida" data-ac="mandavida" data-id="' + q.id + '" data-nome="' + (q.nome || '') + '">❤ Mandar</button></div>').join('') + '</div>' +
+    '<div class="bts"><button class="bt vidro" data-ac="fecha">Depois</button></div>', true);
+}
 function faixaOuCartao(txt) {
   if (document.body.classList.contains('em-jogo')) return faixaTexto(txt, 2600);
   cartao('<h3>Chegou presente</h3><p class="presente-txt">' + txt + '</p><p>Elas ficam guardadas e entram quando as suas 5 acabarem.</p>' +
@@ -1483,6 +1504,8 @@ async function mostraRanking(aba) {
 const PRESENTES = {
   /* seu, de 20 mil */
   'ABISMO20000': 20000,
+  /* estes enchem as vidas em vez de dar moedas */
+  'VIDACHEIA': 'vidas', 'FOLEGO5': 'vidas',
   /* cinco de 5 mil, pra distribuir; cada pessoa usa cada código uma vez */
   'PEROLA5000': 5000, 'CARDUME5000': 5000, 'MARESIA5000': 5000, 'NAUFRAGIO5000': 5000, 'CORRENTEZA5000': 5000,
   /* os antigos continuam valendo para quem ainda não usou */
@@ -1502,6 +1525,11 @@ function usaCodigo() {
   if (!PRESENTES[cod]) return mostraCodigo('Esse código não existe.');
   if (prog.codigos.indexOf(cod) >= 0) return mostraCodigo('Esse código você já usou.');
   prog.codigos.push(cod);
+  if (PRESENTES[cod] === 'vidas') {
+    prog.vidas = VIDAS_MAX; prog.vidaMarca = Date.now(); prog.vidasAmigos = (prog.vidasAmigos || 0) + 3;
+    salvaProg(); pintaVidas(); salvaNaNuvemDepois(); Som.liga(); Som.vitoria();
+    return cartao('<h3>Vidas cheias</h3><p>Suas 5 vidas voltaram, e mais 3 ficaram guardadas na reserva.</p><div class="bts"><button class="bt" data-ac="fecha">Bora</button></div>', true);
+  }
   prog.moedas += PRESENTES[cod];
   salvaProg();
   pintaMoedas();
@@ -1635,7 +1663,7 @@ function tela(id) {
   document.body.classList.toggle('em-jogo', id === 'tela-jogo');
   if (id === 'tela-jogo') Musica.liga('jogo', mundoAtual);
   else { document.body.classList.remove('aperto'); Musica.liga('menu', mundoAtual); setTimeout(talvezAtualizar, 400); }
-  if (id === 'tela-inicio') { requestAnimationFrame(() => { pintaSemanaHome(); encaixaInicio(); }); setTimeout(pintaPodio, 300); setTimeout(recebeVidas, 1500); }
+  if (id === 'tela-inicio') { requestAnimationFrame(() => { pintaSemanaHome(); encaixaInicio(); }); setTimeout(pintaPodio, 300); setTimeout(async () => { await recebeVidas(); avisaPedidos(); }, 1500); }
   /* a faixa de baixo do celular acompanha a cor da tela */
   document.body.style.backgroundColor = id === 'tela-jogo'
     ? (getComputedStyle(document.documentElement).getPropertyValue('--ag4').trim() || '#0B4F7A')

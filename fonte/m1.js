@@ -2,7 +2,7 @@
    MERGULHO · combinar 3 da beira da praia até 4.000 metros
    ═══════════════════════════════════════════════════════════════ */
 
-const VERSAO_JOGO = '2026.11.15';
+const VERSAO_JOGO = '2026.11.16';
 const W = 7, H = 8, TIPOS = 6;
 const NADA = 0, LH = 1, LV = 2, BOMBA = 3, ARCO = 4, ONDA = 5, ONDAV = 6, CARDUME = 7;
 
@@ -262,7 +262,12 @@ function fase(i) {
     /* ninhos presos na borda de cima: de 1 a 3, conforme a profundidade */
     const n = 1 + Math.floor(r() * 2 + dif * 1.2);
     const cols = [];
-    while (cols.length < Math.min(3, n)) { const c = Math.floor(r() * 7); if (cols.indexOf(c) < 0 && cols.every(x => Math.abs(x - c) > 1)) cols.push(c); if (cols.length === 0 && r() > .99) break; }
+    /* nunca no canto (lá ele só tem um vizinho) e sempre longe de outro ninho */
+    for (let t = 0; t < 60 && cols.length < Math.min(3, n); t++) {
+      const c = 1 + Math.floor(r() * 5);
+      if (cols.indexOf(c) < 0 && cols.every(x => Math.abs(x - c) > 2)) cols.push(c);
+    }
+    if (!cols.length) cols.push(3);
     mov = Math.max(22, Math.round(18 + cols.length * 7 - dif * 2));
     obj = { tipo:'ninho', ninhos: cols, vida: 3 };
   } else if (tipo === 'mancha') {
@@ -318,7 +323,15 @@ function fase(i) {
   if (tipo === 'pontos') { const m0 = r100(p50 * (.44 + .06 * dif)), m2 = r100(p50 * .84); marcas = [m0, r100((m0 + m2) / 2), m2]; }
   else marcas = [r100(p50 * .35), r100(p50 * .6), r100(p50 * .84)];
   geradasN++;
-  return (geradas[i] = { m, prof: base.prof, nome, mov, obj, marcas, classe: classe, forma: (obj.tipo === 'ninho' ? fm.topo.map((t, c) => obj.ninhos.indexOf(c) >= 0 ? Math.max(t, 1) : t) : fm.topo), formaNome: fm.nome, exped: Math.floor(i / CICLO) + 1 });
+  return (geradas[i] = { m, prof: base.prof, nome, mov, obj, marcas, classe: classe, forma: (obj.tipo === 'ninho' ? (() => {
+      /* o ninho fica uma casa acima do tabuleiro da coluna dele, e as colunas
+         vizinhas precisam existir nessa altura: assim ele tem três lados
+         pra apanhar (baixo, esquerda e direita), não só um */
+      const t = fm.topo.slice();
+      for (const c of obj.ninhos) t[c] = Math.max(t[c], 1);
+      for (const c of obj.ninhos) for (const v of [c - 1, c + 1]) if (v >= 0 && v < 7 && obj.ninhos.indexOf(v) < 0) t[v] = Math.min(t[v], t[c] - 1);
+      return t;
+    })() : fm.topo), formaNome: fm.nome, exped: Math.floor(i / CICLO) + 1 });
 }
 const expedicao = i => Math.floor(i / CICLO) + 1;
 
