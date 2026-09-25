@@ -893,13 +893,14 @@ function pintaCasasEspeciais() {
   caixa.innerHTML = '';
   J.mudouCasas = false;
   for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) {
+    if (!temCasa(r, c)) { if (J.coral) J.coral[r][c] = 0; if (J.perolas) J.perolas[r][c] = 0; }
     const cel = celulasBox.children[r * W + c], co = J.coral ? J.coral[r][c] : 0;
     if (cel) { cel.classList.toggle('coral-morto', co === 1); cel.classList.toggle('coral-vivo', co === 2); }
   }
   for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) {
     const pe = J.perolas ? J.perolas[r][c] : 0, co = J.coral ? J.coral[r][c] : 0;
     const pa = (typeof papel !== 'undefined' && papel && papel[r]) ? papel[r][c] : 0;
-    if (!pe && !co) continue;
+    if (!pe) continue;
     const d = document.createElement('div');
     d.className = 'marca-casa' + (pe === 2 ? ' ostra-fechada' : pe === 1 ? ' ostra-aberta' : '') +
                   (co === 1 ? ' coral-morto' : co === 2 ? ' coral-vivo' : '');
