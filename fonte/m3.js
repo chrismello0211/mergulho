@@ -334,6 +334,7 @@ async function limpar(conj, novos) {
   let sr = 0, sc = 0;
   for (const k of vivas) {
     const r = linha(k), c = coluna(k), p = grid[r][c];
+    if (!p) continue;                     /* já saiu nesta mesma explosão (lixo colado) */
     if (p.sp) temEsp = true;
     J.coletado[p.t]++;
     ganho += 60 * Math.min(J.cascata, 10) * (J.soltoSozinho && J.cascata === 1 ? .5 : 1);
@@ -360,7 +361,7 @@ async function limpar(conj, novos) {
     for (const [dr, dc] of [[-1,0],[1,0],[0,-1],[0,1]]) {
       const y = r + dr, x = c + dc;
       const q = dentro(y, x) ? grid[y][x] : null;
-      if (!q || !q.lixo) continue;
+      if (!q || !q.lixo || conj.has(chave(y, x))) continue;   /* dentro da explosão: sai por ela */
       q.lixo--;
       if (q.lixo <= 0) tiraLixo(y, x, q); else atualizaEl(q);
     }
@@ -516,6 +517,10 @@ async function resolver(conjInicial, preferidos) {
     atualizaHud();
   }
   J.cascata = 1;
+  /* rede final: se por qualquer motivo sobrou casa vazia, repõe */
+  let vazias = 0;
+  for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) if (temCasa(r, c) && !grid[r][c]) vazias++;
+  if (vazias) { reparaTabuleiro(); }
 
   if (!temJogada()) {
     faixaTexto('Sem jogada à vista: embaralhando o tabuleiro', 2600);
@@ -1075,9 +1080,12 @@ function passoCrescer() {
 let poderAtivo = null, poderAlvo = null;
 
 async function usaPoderNaCelula(cel) {
+  const qual = poderAtivo, antes = qual ? (prog.poderes[qual] || 0) : 0;
   try { return await usaPoderInterno(cel); }
   catch (e) {
     console.error('erro no poder:', e);
+    if (qual && (prog.poderes[qual] || 0) < antes) { prog.poderes[qual] = antes; salvaProg(); pintaPoderes(); }   /* devolve o poder */
+    reparaTabuleiro();
     J.ocupado = false;
     desligaPoder();
     faixaTexto('Deu um tranco, mas pode continuar', 2600);
