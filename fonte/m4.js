@@ -1504,6 +1504,9 @@ async function mostraRanking(aba) {
 const PRESENTES = {
   /* seu, de 20 mil */
   'ABISMO20000': 20000,
+  /* dez de 3 mil, pra distribuir */
+  'ONDA3000': 3000, 'RECIFE3000': 3000, 'CONCHA3000': 3000, 'ESTRELA3000': 3000, 'POLVO3000': 3000,
+  'ARRAIA3000': 3000, 'GOLFINHO3000': 3000, 'TUBARAO3000': 3000, 'BALEIA3000': 3000, 'TARTARUGA3000': 3000,
   /* estes enchem as vidas em vez de dar moedas */
   'VIDACHEIA': 'vidas', 'FOLEGO5': 'vidas',
   /* cinco de 5 mil, pra distribuir; cada pessoa usa cada código uma vez */

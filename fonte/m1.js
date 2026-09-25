@@ -2,7 +2,7 @@
    MERGULHO · combinar 3 da beira da praia até 4.000 metros
    ═══════════════════════════════════════════════════════════════ */
 
-const VERSAO_JOGO = '2026.11.16';
+const VERSAO_JOGO = '2026.11.17';
 const W = 7, H = 8, TIPOS = 6;
 const NADA = 0, LH = 1, LV = 2, BOMBA = 3, ARCO = 4, ONDA = 5, ONDAV = 6, CARDUME = 7;
 
@@ -35,7 +35,7 @@ const BLOQUEIOS = {
                 dica:'Areia vulcânica cobre o fundo. Estoure peças em cima para varrer.' },
   cinza:      { verbo:'Soprar', um:'monte de cinza', varios:'montes de cinza', tex:'grao', a:'#B9B2C6', b:'#8E88A0', a2:'#6B6580', b2:'#463F5C',
                 dica:'A cinza do vulcão assentou no fundo. Estoure peças em cima para soprar.' },
-  alga:       { verbo:'Limpar', um:'alga', varios:'algas', tex:'fibra', a:'#5DBE6E', b:'#3F9853', a2:'#2E7D44', b2:'#1C552C',
+  alga:       { verbo:'Limpar', um:'alga', varios:'algas', tex:'fibra', a:'#2E7D46', b:'#1C5A31', a2:'#1F6337', b2:'#123F22',
                 dica:'Algas tomaram o fundo. As mais escuras precisam de duas passadas.' },
   limo:       { verbo:'Limpar', um:'limo', varios:'limos', tex:'fibra', a:'#8FB36A', b:'#6B8F45', a2:'#4C6B2E', b2:'#33491C',
                 dica:'O limo gruda no fundo. Estoure peças em cima para soltar.' },
