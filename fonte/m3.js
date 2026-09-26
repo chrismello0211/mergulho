@@ -915,6 +915,23 @@ function marcaCasas() {
   casasAgendadas = true;
   requestAnimationFrame(() => { casasAgendadas = false; pintaCasasEspeciais(); });
 }
+/* Alinha cada marca à casa dela. Roda na hora e de novo depois que o
+   tabuleiro termina de se desenhar: antes disso as casas ainda estão
+   todas no canto, e as marcas se empilhavam lá em cima à esquerda.  */
+function alinhaMarcas() {
+  const caixa = document.getElementById('marcas');
+  if (!caixa) return;
+  const mr = caixa.getBoundingClientRect();
+  caixa.querySelectorAll('.marca-casa').forEach(d => {
+    const cel = celulasBox.children[(+d.dataset.r) * W + (+d.dataset.c)];
+    if (!cel) return;
+    const cr = cel.getBoundingClientRect();
+    if (!cr.width) return;
+    d.style.transform = 'translate(' + (cr.left - mr.left) + 'px,' + (cr.top - mr.top) + 'px)';
+    d.style.width = cr.width + 'px'; d.style.height = cr.height + 'px';
+  });
+}
+window.addEventListener('resize', () => setTimeout(alinhaMarcas, 120));
 function pintaCasasEspeciais() {
   /* ostra e coral ficam numa camada acima das peças, no canto da casa,
      pra aparecer sem esconder o bicho que está em cima */
@@ -935,15 +952,10 @@ function pintaCasasEspeciais() {
     d.className = 'marca-casa' + (mo ? ' moeda-fundo' : '') + (pe === 2 ? ' ostra-fechada' : pe === 1 ? ' ostra-aberta' : '') +
                   (co === 1 ? ' coral-morto' : co === 2 ? ' coral-vivo' : '');
     /* cobertura (areia, alga, cinza, rede...): selinho no canto, por cima da peça */
+    d.dataset.r = r; d.dataset.c = c;
     caixa.appendChild(d);
-    /* alinha pela casa, não pela peça: a peça tem margem própria */
-    const cel = celulasBox.children[r * W + c];
-    if (cel) {
-      const cr = cel.getBoundingClientRect(), mr = caixa.getBoundingClientRect();
-      d.style.transform = 'translate(' + (cr.left - mr.left) + 'px,' + (cr.top - mr.top) + 'px)';
-      d.style.width = cr.width + 'px'; d.style.height = cr.height + 'px';
-    }
   }
+  alinhaMarcas(); requestAnimationFrame(alinhaMarcas); setTimeout(alinhaMarcas, 350); setTimeout(alinhaMarcas, 900);
 }
 /* a pérola colhida voa até o painel do objetivo */
 function voaPerola(r, c) {

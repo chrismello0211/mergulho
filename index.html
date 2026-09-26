@@ -1407,7 +1407,7 @@ body.leve .cartao{animation-duration:.18s}
    MERGULHO · combinar 3 da beira da praia até 4.000 metros
    ═══════════════════════════════════════════════════════════════ */
 
-const VERSAO_JOGO = '2026.11.22';
+const VERSAO_JOGO = '2026.11.23';
 const W = 7, H = 8, TIPOS = 6;
 const NADA = 0, LH = 1, LV = 2, BOMBA = 3, ARCO = 4, ONDA = 5, ONDAV = 6, CARDUME = 7, PEIXE = 8;
 /* fases com o quadrado ligado: 4 peças iguais em 2x2 viram um peixe-guia */
@@ -4176,6 +4176,23 @@ function marcaCasas() {
   casasAgendadas = true;
   requestAnimationFrame(() => { casasAgendadas = false; pintaCasasEspeciais(); });
 }
+/* Alinha cada marca à casa dela. Roda na hora e de novo depois que o
+   tabuleiro termina de se desenhar: antes disso as casas ainda estão
+   todas no canto, e as marcas se empilhavam lá em cima à esquerda.  */
+function alinhaMarcas() {
+  const caixa = document.getElementById('marcas');
+  if (!caixa) return;
+  const mr = caixa.getBoundingClientRect();
+  caixa.querySelectorAll('.marca-casa').forEach(d => {
+    const cel = celulasBox.children[(+d.dataset.r) * W + (+d.dataset.c)];
+    if (!cel) return;
+    const cr = cel.getBoundingClientRect();
+    if (!cr.width) return;
+    d.style.transform = 'translate(' + (cr.left - mr.left) + 'px,' + (cr.top - mr.top) + 'px)';
+    d.style.width = cr.width + 'px'; d.style.height = cr.height + 'px';
+  });
+}
+window.addEventListener('resize', () => setTimeout(alinhaMarcas, 120));
 function pintaCasasEspeciais() {
   /* ostra e coral ficam numa camada acima das peças, no canto da casa,
      pra aparecer sem esconder o bicho que está em cima */
@@ -4196,15 +4213,10 @@ function pintaCasasEspeciais() {
     d.className = 'marca-casa' + (mo ? ' moeda-fundo' : '') + (pe === 2 ? ' ostra-fechada' : pe === 1 ? ' ostra-aberta' : '') +
                   (co === 1 ? ' coral-morto' : co === 2 ? ' coral-vivo' : '');
     /* cobertura (areia, alga, cinza, rede...): selinho no canto, por cima da peça */
+    d.dataset.r = r; d.dataset.c = c;
     caixa.appendChild(d);
-    /* alinha pela casa, não pela peça: a peça tem margem própria */
-    const cel = celulasBox.children[r * W + c];
-    if (cel) {
-      const cr = cel.getBoundingClientRect(), mr = caixa.getBoundingClientRect();
-      d.style.transform = 'translate(' + (cr.left - mr.left) + 'px,' + (cr.top - mr.top) + 'px)';
-      d.style.width = cr.width + 'px'; d.style.height = cr.height + 'px';
-    }
   }
+  alinhaMarcas(); requestAnimationFrame(alinhaMarcas); setTimeout(alinhaMarcas, 350); setTimeout(alinhaMarcas, 900);
 }
 /* a pérola colhida voa até o painel do objetivo */
 function voaPerola(r, c) {
@@ -6249,7 +6261,9 @@ function tela(id) {
   document.body.classList.toggle('em-jogo', id === 'tela-jogo');
   if (id === 'tela-jogo') Musica.liga('jogo', mundoAtual);
   else { document.body.classList.remove('aperto'); Musica.liga('menu', mundoAtual); setTimeout(talvezAtualizar, 400); }
-  if (id === 'tela-inicio') { requestAnimationFrame(() => { pintaSemanaHome(); encaixaInicio(); }); setTimeout(pintaPodio, 300); setTimeout(async () => { if (mostraNovidades()) return; await recebeVidas(); avisaPedidos(); }, 1500); }
+  if (id === 'tela-inicio') { requestAnimationFrame(() => { pintaSemanaHome(); encaixaInicio(); }); setTimeout(pintaPodio, 300); setTimeout(async () => {
+    if (!window.__fichaSubiu && Ranking.ligado) { window.__fichaSubiu = true; Ranking.subeFicha(); }   /* corrige o ranking já ao abrir */
+    if (mostraNovidades()) return; await recebeVidas(); avisaPedidos(); }, 1500); }
   /* a faixa de baixo do celular acompanha a cor da tela */
   document.body.style.backgroundColor = id === 'tela-jogo'
     ? (getComputedStyle(document.documentElement).getPropertyValue('--ag4').trim() || '#0B4F7A')
