@@ -385,7 +385,7 @@ async function venceu() {
   await bonusDoFolego();
   tiraBotaoEncerrar();
   if (eraMestre) {
-    prog.mestres = (prog.mestres || 0) + 1;
+    prog.mestres = mestresDerrotados();
     ['arpao', 'troca', 'giro', 'isca', 'folego'].forEach(k => prog.poderes[k] = (prog.poderes[k] || 0) + 1);
     const ret = document.querySelector('.retrato-mestre');
     if (ret) ret.classList.add('derrotado');
@@ -526,6 +526,12 @@ function compraFolegoNaHora() {
 
 /* depois da vitória, a colocação daquela fase aparece no cartão */
 /* o que você fez na fase, dito em uma linha, com o desenho de cada coisa */
+/* mestres diferentes já vencidos: jogar o mesmo mestre de novo não soma */
+function mestresDerrotados() {
+  let n = 0;
+  for (const k in (prog.estrelas || {})) if (ehMestre(+k) && prog.estrelas[k] > 0) n++;
+  return n;
+}
 function colheitaDaFase() {
   const f = faseAtual(), o = f.obj, itens = [];
   const add = (ic, n, txt) => { if (n > 0) itens.push('<span><svg viewBox="0 0 100 100"><use href="' + ic + '"/></svg>' + n + ' ' + txt + '</span>'); };
@@ -1306,7 +1312,7 @@ function juntaProg(a, b) {
   r.desafio = { semana: (da.melhor || 0) >= (db.melhor || 0) ? da.semana : db.semana,
                 melhor: Math.max(da.melhor || 0, db.melhor || 0), nome: da.nome || db.nome || '' };
   r.apelido = a.apelido || b.apelido || '';
-  r.mestres = Math.max(a.mestres || 0, b.mestres || 0);
+  r.mestres = 0;   /* recalculado a partir das estrelas das fases de mestre */
   r.seq = (a.dia || '') >= (b.dia || '') ? (a.seq || 0) : (b.seq || 0);
   r.melhorSeq = Math.max(a.melhorSeq || 0, b.melhorSeq || 0);
   r.semanas = Math.max(a.semanas || 0, b.semanas || 0);
@@ -1441,7 +1447,7 @@ const Ranking = {
     for (const k in (prog.melhores || {})) soma += prog.melhores[k] || 0;
     return this.manda('/mergulho/placar/' + Conta.sessao.uid,
       { nome: this.nome(), max: prog.max, estrelas: totalEstrelas(), pontos: soma,
-        mestres: prog.mestres || 0, cardume: prog.cardume || '', quando: Date.now() });
+        mestres: mestresDerrotados(), cardume: prog.cardume || '', quando: Date.now() });
   },
   async pontuaFase(i, pontos) {
     if (!this.ligado) return;
@@ -1495,7 +1501,7 @@ function linhasGente(lista, comVida, pediram) {
   const chave = '<div class="chave-ordem">' +
     '<button class="' + (ordemRank === 'fase' ? 'on' : '') + '" data-ac="ordem" data-id="fase">Por fase</button>' +
     '<button class="' + (ordemRank === 'estrelas' ? 'on' : '') + '" data-ac="ordem" data-id="estrelas">Por estrelas</button></div>';
-  let h = chave + ord.slice(0, 20).map(linha).join('');
+  let h = chave + ord.slice(0, 20).map(linha).join('') + '<p class="legenda-rank">⚔ = quantos mestres a pessoa já derrotou</p>';
   if (minha >= 20) h += '<div class="longe">' + linha(ord[minha], minha) + '</div>';
   return h;
 }
