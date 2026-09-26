@@ -2,9 +2,19 @@
    MERGULHO · combinar 3 da beira da praia até 4.000 metros
    ═══════════════════════════════════════════════════════════════ */
 
-const VERSAO_JOGO = '2026.11.17';
+const VERSAO_JOGO = '2026.11.20';
 const W = 7, H = 8, TIPOS = 6;
-const NADA = 0, LH = 1, LV = 2, BOMBA = 3, ARCO = 4, ONDA = 5, ONDAV = 6, CARDUME = 7;
+const NADA = 0, LH = 1, LV = 2, BOMBA = 3, ARCO = 4, ONDA = 5, ONDAV = 6, CARDUME = 7, PEIXE = 8;
+/* fases com o quadrado ligado: 4 peças iguais em 2x2 viram um peixe-guia */
+let QUADRADO_ATIVO = false;
+/* condições do mar: uma regra extra por fase, pra nenhuma fase ser igual à anterior */
+const CONDICOES = {
+  brinde: { ic: '🎁', nome: 'Presente do fundo', texto: 'A fase já começa com especiais prontos no tabuleiro.' },
+  corvez: { ic: '✨', nome: 'Cor da vez', texto: 'Uma das peças vale o dobro de pontos nesta fase.' },
+  moedas: { ic: '🪙', nome: 'Moedas no fundo', texto: 'Algumas casas escondem moedas de verdade: estoure em cima pra pegar.' }
+};
+/* sorteio próprio, que não mexe no sorteio das fases: nada que já existe muda */
+const condicaoDa = i => { if (i < 30 || (i + 1) % 100 === 0) return null; const h = ((i + 17) * 2654435761 >>> 0) % 100; return h < 22 ? 'brinde' : h < 40 ? 'corvez' : h < 55 ? 'moedas' : null; };
 
 const $ = s => document.querySelector(s);
 /* todo sorteio do jogo passa por aqui: no desafio da semana a gente
@@ -55,6 +65,8 @@ const BLOQUEIOS = {
                 dica:'Cada elo da corrente aguenta três estouros. Bata sempre no mesmo lugar.' },
   mancha:     { verbo:'Limpar', um:'mancha', varios:'manchas', tex:'mancha', a:'#FF8E7A', b:'#E0564A', a2:'#B63A36', b2:'#7E2320',
                 dica:'A maré vermelha se espalha para as casas vizinhas. A próxima a nascer pisca antes.' },
+  tinta:      { verbo:'Limpar', um:'tinta', varios:'tintas', tex:'mancha', a:'#3B1F5C', b:'#1E0F33', a2:'#2A1447', b2:'#120724',
+                dica:'A tinta do mestre protege ele: estourar em casa com tinta não machuca.' },
   breu:       { verbo:'Acender', um:'casa apagada', varios:'casas apagadas', tex:'breu', a:'#000000', b:'#000000', a2:'#000000', b2:'#000000',
                 dica:'Algumas casas estão apagadas. Estoure peças em cima para acender.' }
 };
@@ -310,7 +322,7 @@ function fase(i) {
     obj.extra = { tipo: 'coletar1', t: Math.floor(r() * 6), n: Math.round(12 + dif * 8) };
   }
   /* ajuste leve de jogadas: o rótulo descreve a fase, não a castiga */
-  const multi = { F: 1.08, N: 1, D: .96, L: .94 }[classe];
+  const multi = { F: 1.02, N: .92, D: .88, L: .86 }[classe];   /* o pessoal achou fácil: apertei */
 
   /* formato do tabuleiro: quanto menos casa, menos jogada precisa */
   /* o quadrado é o padrão; formato diferente aparece em cerca de
@@ -323,7 +335,7 @@ function fase(i) {
   if (tipo === 'pontos') { const m0 = r100(p50 * (.44 + .06 * dif)), m2 = r100(p50 * .84); marcas = [m0, r100((m0 + m2) / 2), m2]; }
   else marcas = [r100(p50 * .35), r100(p50 * .6), r100(p50 * .84)];
   geradasN++;
-  return (geradas[i] = { m, prof: base.prof, nome, mov, obj, marcas, classe: classe, forma: (obj.tipo === 'ninho' ? (() => {
+  return (geradas[i] = { m, prof: base.prof, nome, mov, obj, marcas, classe: classe, quadrado: i >= 39 && ((i * 7 + 3) % 5 < 2), forma: (obj.tipo === 'ninho' ? (() => {
       /* o ninho fica uma casa acima do tabuleiro da coluna dele, e as colunas
          vizinhas precisam existir nessa altura: assim ele tem três lados
          pra apanhar (baixo, esquerda e direita), não só um */
@@ -390,8 +402,8 @@ function faseMestre(i) {
   const volta = Math.floor((i + 1) / 100);          /* 1º mestre na fase 100 */
   const mestre = (volta - 1) % MESTRES.length;
   const m = 4, dif = Math.min(1, .45 + (i - CICLO) / 420);
-  const vida = 84 + volta * 20;
-  const mov = 28 + Math.min(6, volta * 2);
+  const vida = 110 + volta * 26;
+  const mov = 26 + Math.min(6, volta * 2);
   const p50 = Math.round(mov * (980 + 320 * dif));
   return { m: m, prof: 4000 + volta * 500, nome: MESTRES[mestre].nome, mov: mov, mestre: mestre, classe: 'L',
            obj: { tipo:'chefe', vida: vida, golpe: 2, mestre: mestre },

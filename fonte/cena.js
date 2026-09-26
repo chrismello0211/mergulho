@@ -162,15 +162,20 @@ const PROPS = {
 /* retrato do mestre, desenhado na hora com a cor dele */
 function desenhaMestre(idx) {
   const M = MESTRES[idx % MESTRES.length], c = M.cor, c2 = M.cor2;
-  const olhos = '<circle cx="38" cy="44" r="8" fill="#0A0D1A"/><circle cx="62" cy="44" r="8" fill="#0A0D1A"/>' +
-                '<circle cx="40.5" cy="41" r="2.8" fill="#fff"/><circle cx="64.5" cy="41" r="2.8" fill="#fff"/>';
+  const olhos = M.forma === 'enguia'
+    ? '<circle cx="62" cy="26" r="6.5" fill="#0A0D1A"/><circle cx="77" cy="24" r="6.5" fill="#0A0D1A"/><circle cx="64" cy="23.5" r="2.4" fill="#fff"/><circle cx="79" cy="21.5" r="2.4" fill="#fff"/>'
+    : '<circle cx="38" cy="44" r="8" fill="#0A0D1A"/><circle cx="62" cy="44" r="8" fill="#0A0D1A"/>' +
+      '<circle cx="40.5" cy="41" r="2.8" fill="#fff"/><circle cx="64.5" cy="41" r="2.8" fill="#fff"/>';
   const corpos = {
     lula: '<path d="M50 12c18 0 28 14 28 30 0 10-4 16-10 20H32c-6-4-10-10-10-20 0-16 10-30 28-30Z" fill="' + c + '"/>' +
       '<path d="M30 62q-6 18-16 26M40 64q-4 20-10 30M60 64q4 20 10 30M70 62q6 18 16 26M50 66v32" fill="none" stroke="' + c + '" stroke-width="7" stroke-linecap="round"/>' +
       '<path d="M50 12c10 0 17 8 20 18-12-6-28-6-40 0 3-10 10-18 20-18Z" fill="' + c2 + '" opacity=".55"/>',
-    enguia: '<path d="M14 84c14-6 18-22 14-36C24 32 32 14 54 12c20-2 32 12 32 28 0 14-10 24-24 24" fill="none" stroke="' + c + '" stroke-width="16" stroke-linecap="round"/>' +
-      '<path d="M62 64c-10 0-16 6-16 14" fill="none" stroke="' + c + '" stroke-width="14" stroke-linecap="round"/>' +
-      '<path d="M30 30l-10-8M78 26l10-8M22 52l-12 2" stroke="' + c + '" stroke-width="5" stroke-linecap="round" opacity=".8"/>',
+    enguia: '<path d="M8 90C20 82 16 68 28 62S44 46 38 34 44 12 60 12s28 10 28 24-8 22-20 24" fill="none" stroke="' + c2 + '" stroke-width="20" stroke-linecap="round"/>' +
+      '<path d="M8 90C20 82 16 68 28 62S44 46 38 34 44 12 60 12s28 10 28 24-8 22-20 24" fill="none" stroke="' + c + '" stroke-width="14" stroke-linecap="round"/>' +
+      '<path d="M26 58l-9-7M37 36l-11-5M48 16l-5-10M70 12l5-9" stroke="' + c + '" stroke-width="4.5" stroke-linecap="round"/>' +
+      '<path d="M60 40q10 8 22 1" fill="none" stroke="#0A0D1A" stroke-width="4" stroke-linecap="round"/><path d="M64 42l2 4M70 44l1 4M76 43l1 4" stroke="#fff" stroke-width="2"/>' +
+      '<path d="M74 62l9 6-7 2 9 7" fill="none" stroke="#FFF36B" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round"/>' +
+      '<path d="M12 28l7 5-6 2 7 5" fill="none" stroke="#FFF36B" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round"/>',
     caranguejo: '<path d="M22 56c0-16 12-26 28-26s28 10 28 26c0 12-12 20-28 20s-28-8-28-20Z" fill="' + c + '"/>' +
       '<path d="M22 44C12 40 8 30 12 20c8 2 14 10 14 20M78 44c10-4 14-14 10-24-8 2-14 10-14 20" fill="' + c + '"/>' +
       '<path d="M26 70l-12 14M38 76l-8 18M62 76l8 18M74 70l12 14" fill="none" stroke="' + c + '" stroke-width="6" stroke-linecap="round"/>' +
@@ -333,7 +338,7 @@ function instalaMundo(m, i) {
   const fa = (typeof J !== 'undefined' && J && J.fase >= 0) ? fase(J.fase) : null;
   const faseAgora = faseDesta || fa;     /* a fase que está abrindo agora, não a anterior */
   const bl = faseAgora && faseAgora.obj.corrente ? BLOQUEIOS.corrente : faseAgora && faseAgora.obj.mancha ? BLOQUEIOS.mancha
-           : faseAgora && faseAgora.obj.tipo === 'ninho' ? BLOQUEIOS.alga : amb.bloq;
+           : faseAgora && faseAgora.obj.tipo === 'ninho' ? BLOQUEIOS.alga : faseAgora && faseAgora.obj.tipo === 'chefe' ? BLOQUEIOS.tinta : amb.bloq;
   raiz.setProperty('--bl-a', bl.a); raiz.setProperty('--bl-b', bl.b);
   raiz.setProperty('--bl-a2', bl.a2); raiz.setProperty('--bl-b2', bl.b2);
   document.body.dataset.tex = bl.tex;

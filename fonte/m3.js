@@ -77,6 +77,7 @@ function corpoDaPeca(p) {
     else if (p.sp === ONDA) s += '<div class="capa"><svg viewBox="0 0 100 100"><use href="#sp-onda"/></svg></div>';
     else if (p.sp === ONDAV) s += '<div class="capa"><svg viewBox="0 0 100 100"><use href="#sp-ondav"/></svg></div>';
     else if (p.sp === CARDUME) s += '<div class="capa"><svg viewBox="0 0 100 100"><use href="#sp-cardume"/></svg></div>';
+    else if (p.sp === PEIXE) s += '<div class="capa"><svg viewBox="0 0 100 100"><use href="#sp-peixe"/></svg></div>';
   }
   return s;
 }
@@ -85,6 +86,7 @@ function classeEsp(p) {
   if (p.lixo) return 'lixo' + (p.lixo >= 2 ? ' lixo2' : '');
   if (p.gaiola) return 'preso' + (p.gaiola >= 2 ? ' preso2' : '');
   if (p.bolha) return 'com-bolha';
+  if (p.sp === PEIXE) return 'esp-peixe';
   return p.sp === LH ? 'esp-lh' : p.sp === LV ? 'esp-lv' : p.sp === BOMBA ? 'esp-bomba' : p.sp === ARCO ? 'esp-arco'
        : p.sp === ONDA || p.sp === ONDAV ? 'esp-onda' : p.sp === CARDUME ? 'esp-cardume' : '';
 }
@@ -337,7 +339,12 @@ async function limpar(conj, novos) {
     if (!p) continue;                     /* já saiu nesta mesma explosão (lixo colado) */
     if (p.sp) temEsp = true;
     J.coletado[p.t]++;
-    ganho += 60 * Math.min(J.cascata, 10) * (J.soltoSozinho && J.cascata === 1 ? .5 : 1);
+    ganho += 60 * Math.min(J.cascata, 10) * (J.soltoSozinho && J.cascata === 1 ? .5 : 1) * (J.corVez != null && p && p.t === J.corVez ? 2 : 1);
+    if (J.moedasFundo && J.moedasFundo[r][c]) {
+      J.moedasFundo[r][c] = 0; J.moedasPegas = (J.moedasPegas || 0) + 1;
+      prog.moedas += 5; salvaProg(); if (typeof pintaMoedas === 'function') pintaMoedas();
+      estilhacos(r, c, '#FFD35C', 8); marcaCasas();
+    }
     sr += r; sc += c;
     const el = els.get(p.id);
     if (el) el.classList.add('some');
@@ -430,7 +437,7 @@ async function limpar(conj, novos) {
     } else if (e.sp === ONDAV) {
       for (let d = -1; d <= 1; d++) if (e.c + d >= 0 && e.c + d < W) setTimeout(() => raioLinha(e.r, e.c + d, false), Math.abs(d) * 90);
       Som.raio(); setTimeout(() => Som.raio(), 130); clarao('rgba(191,245,238,.4)'); peso = 3;
-    } else if (e.sp === CARDUME && e.alvos) {
+    } else if ((e.sp === CARDUME || e.sp === PEIXE) && e.alvos) {
       feixePerola(e.r, e.c, e.alvos);
       estilhacos(e.r, e.c, '#BFF5EE', 10);
       Som.especial(); setTimeout(() => Som.pop(6), 160); peso = Math.max(peso, 2);
@@ -629,7 +636,8 @@ async function tentaTrocaInterna(a, b) {
   await espera(190);
 
   const especial = (pa.sp === ARCO || pb.sp === ARCO) || (pa.sp && pb.sp);
-  const virouCombo = temCorridaEm(a.r, a.c) || temCorridaEm(b.r, b.c);
+  const virouCombo = temCorridaEm(a.r, a.c) || temCorridaEm(b.r, b.c) ||
+    (QUADRADO_ATIVO && acharQuadrados([]).some(q => [chave(q.r, q.c), chave(q.r, q.c + 1)].some(k => k === chave(a.r, a.c) || k === chave(b.r, b.c))));
   const temBau = (pa.bau || pb.bau) && a.r === b.r;   /* empurrar o baú de lado vale; descer na mão, não */
   /* especial não precisa de combinação: trocar ele com qualquer vizinha já dispara */
   const soltaEsp = !especial && !virouCombo && !temBau && !!(pa.sp || pb.sp);
@@ -710,6 +718,7 @@ function salvaPartida() {
       pr: J.presosFeitos || 0, bo: J.bolhasFeitas || 0, bfg: J.bolhasFugiram || 0,
       nin: J.ninhos || null, ninf: J.ninhosFeitos || 0,
       per: J.perolas || null, pef: J.perolasFeitas || 0, cor: J.coral || null, cof: J.coralFeito || 0, lxf: J.lixoFeito || 0,
+      ot: faseAtual().obj.tipo, cnd: J.cond || null, cvz: J.corVez, mfd: J.moedasFundo || null, mpg: J.moedasPegas || 0,
       dn: J.dano || 0, cm: J.contaMestre || 0, cb: J.contaBolha || 0, bpa: J.bauParado || 0,
       g: grid.map(l => l.map(p => p ? (p.bau ? 'b' : p.t + '.' + p.sp + '.' + (p.gaiola || 0) + '.' + (p.bolha ? 1 : 0) + '.' + (p.lixo || 0)) : ''))
     }));
@@ -799,9 +808,12 @@ async function passoMestre() {
   }
   pintaPapel();
   J.mov = Math.max(0, J.mov - (fase3 ? 2 : 1));
+  /* a cada golpe ele se recupera um pouco: não dá pra só esperar */
+  const cura = fase3 ? 7 : fase2 ? 5 : 3;
+  J.dano = Math.max(0, (J.dano || 0) - cura);
   Som.liga(); Som.nao(); vibra(TREMIDA.forte);
   tremeTela();
-  faixaTexto(fase3 ? 'O mestre está furioso: duas jogadas a menos!' : 'O mestre cospe tinta', 2000);
+  faixaTexto(fase3 ? 'Furioso: duas jogadas a menos e ele se curou ' + cura : 'O mestre cospe tinta e se cura ' + cura, 2200);
   const ret = document.querySelector('.retrato-mestre');
   if (ret) { ret.classList.remove('ataca'); void ret.offsetWidth; ret.classList.add('ataca'); }
   /* o golpe agora acontece na tela toda, não só no retratinho */
@@ -903,11 +915,11 @@ function pintaCasasEspeciais() {
     if (cel) { cel.classList.toggle('coral-morto', co === 1); cel.classList.toggle('coral-vivo', co === 2); }
   }
   for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) {
-    const pe = J.perolas ? J.perolas[r][c] : 0, co = J.coral ? J.coral[r][c] : 0;
+    const pe = J.perolas ? J.perolas[r][c] : 0, co = J.coral ? J.coral[r][c] : 0, mo = J.moedasFundo ? J.moedasFundo[r][c] : 0;
     const pa = (typeof papel !== 'undefined' && papel && papel[r]) ? papel[r][c] : 0;
-    if (!pe) continue;
+    if (!pe && !mo) continue;
     const d = document.createElement('div');
-    d.className = 'marca-casa' + (pe === 2 ? ' ostra-fechada' : pe === 1 ? ' ostra-aberta' : '') +
+    d.className = 'marca-casa' + (mo ? ' moeda-fundo' : '') + (pe === 2 ? ' ostra-fechada' : pe === 1 ? ' ostra-aberta' : '') +
                   (co === 1 ? ' coral-morto' : co === 2 ? ' coral-vivo' : '');
     /* cobertura (areia, alga, cinza, rede...): selinho no canto, por cima da peça */
     caixa.appendChild(d);

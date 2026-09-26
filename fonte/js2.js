@@ -41,6 +41,22 @@ function montaTabuleiro() {
 }
 
 /* ═══ COMBOS ════════════════════════════════════════════════════ */
+function acharQuadrados(ja) {
+  const usadas = new Set();
+  for (const co of ja) for (let k = 0; k < co.len; k++) usadas.add(co.dir === 'h' ? chave(co.r, co.c + k) : chave(co.r + k, co.c));
+  const out = [];
+  const ok = p => p && !p.bau && !p.gaiola && !p.lixo;
+  for (let r = 0; r < H - 1; r++) for (let c = 0; c < W - 1; c++) {
+    const a = grid[r][c], b = grid[r][c + 1], d = grid[r + 1][c], e = grid[r + 1][c + 1];
+    if (!ok(a) || !ok(b) || !ok(d) || !ok(e)) continue;
+    if (a.t !== b.t || a.t !== d.t || a.t !== e.t) continue;
+    const ks = [chave(r, c), chave(r, c + 1), chave(r + 1, c), chave(r + 1, c + 1)];
+    if (ks.some(k => usadas.has(k))) continue;
+    ks.forEach(k => usadas.add(k));
+    out.push({ r: r, c: c, len: 2, dir: 'h', t: a.t, quad: true }, { r: r + 1, c: c, len: 2, dir: 'h', t: a.t, quad: true });
+  }
+  return out;
+}
 function acharCorridas() {
   const out = [];
   for (let r = 0; r < H; r++) {
@@ -65,7 +81,7 @@ function acharCorridas() {
       r = k;
     }
   }
-  return out;
+  return QUADRADO_ATIVO ? out.concat(acharQuadrados(out)) : out;
 }
 
 function fazGrupos(corridas) {
@@ -109,6 +125,7 @@ function fazGrupos(corridas) {
 }
 
 function especialDoGrupo(g) {
+  if (QUADRADO_ATIVO && g.cells.length === 4 && g.maxH === 2 && g.maxV === 2) return PEIXE;
   if (g.maxH >= 6) return ONDA;          /* seis deitadas: maré, leva três fileiras */
   if (g.maxV >= 6) return ONDAV;         /* seis em pé: maré de través */
   if (g.cells.length >= 7) return CARDUME;  /* aglomerado grande: cardume */
@@ -155,6 +172,23 @@ function areaEspecial(r, c, p, corAlvo) {
     for (let dr = -1; dr <= 1; dr++) for (let x = 0; x < W; x++) if (temCasa(r + dr, x)) out.push(chave(r + dr, x));
   } else if (p.sp === ONDAV) {
     for (let dc = -1; dc <= 1; dc++) for (let y = 0; y < H; y++) if (temCasa(y, c + dc)) out.push(chave(y, c + dc));
+  } else if (p.sp === PEIXE) {
+    /* o peixe-guia vai direto no que o objetivo pede: cobertura, coral, ostra,
+       lixo, bicho preso; sem nada disso, em três peças ao acaso */
+    const alvos = [];
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      if (!temCasa(y, x) || (y === r && x === c)) continue;
+      const q = grid[y][x];
+      const vale = (typeof papel !== 'undefined' && papel[y] && papel[y][x] > 0) ||
+        (typeof J !== 'undefined' && J && ((J.coral && J.coral[y][x] === 1) || (J.perolas && J.perolas[y][x] > 0))) ||
+        (q && (q.lixo || q.gaiola || q.bolha));
+      if (vale) alvos.push(chave(y, x));
+    }
+    const resto = [];
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (grid[y][x] && !grid[y][x].bau && !(y === r && x === c) && alvos.indexOf(chave(y, x)) < 0) resto.push(chave(y, x));
+    for (const l of [alvos, resto]) for (let k = l.length - 1; k > 0; k--) { const q = Math.floor(rnd() * (k + 1)); const t = l[k]; l[k] = l[q]; l[q] = t; }
+    out.push(chave(r, c));
+    for (const k of alvos.concat(resto).slice(0, 3)) out.push(k);
   } else if (p.sp === CARDUME) {
     /* o cardume sai caçando a própria cor pelo tabuleiro */
     const iguais = [];
@@ -182,7 +216,7 @@ function expandir(conj, corAlvo) {
     const area = areaEspecial(r, c, p, corAlvo);
     const vale = VALOR_ESP[p.sp] || 0;
     bonusEspeciais += vale * (typeof J !== 'undefined' && J.soltoSozinho && J.cascata === 1 ? .5 : 1);
-    efeitosPendentes.push({ r: r, c: c, sp: p.sp, vale: vale, alvos: (p.sp === ARCO || p.sp === CARDUME) ? area.slice() : null });
+    efeitosPendentes.push({ r: r, c: c, sp: p.sp, vale: vale, alvos: (p.sp === ARCO || p.sp === CARDUME || p.sp === PEIXE) ? area.slice() : null });
     for (const a of area) {
       if (!conj.has(a)) conj.add(a);
       if (!feitos.has(a)) fila.push(a);
@@ -263,7 +297,12 @@ function criaCombo(r1, c1, r2, c2) {
   const a = grid[r1][c1], b = grid[r2][c2];
   if (!a || !b) return false;
   grid[r1][c1] = b; grid[r2][c2] = a;
-  const ok = temCorridaEm(r1, c1) || temCorridaEm(r2, c2);
+  let ok = temCorridaEm(r1, c1) || temCorridaEm(r2, c2);
+  /* nas fases com quadrado, fechar um 2x2 também é jogada válida */
+  if (!ok && QUADRADO_ATIVO) {
+    const ks = [chave(r1, c1), chave(r2, c2)];
+    ok = acharQuadrados([]).some(q => q.r !== undefined && [chave(q.r, q.c), chave(q.r, q.c + 1)].some(k => ks.indexOf(k) >= 0));
+  }
   grid[r1][c1] = a; grid[r2][c2] = b;
   return ok;
 }
