@@ -2,7 +2,7 @@
    MERGULHO · combinar 3 da beira da praia até 4.000 metros
    ═══════════════════════════════════════════════════════════════ */
 
-const VERSAO_JOGO = '2026.11.21';
+const VERSAO_JOGO = '2026.11.22';
 const W = 7, H = 8, TIPOS = 6;
 const NADA = 0, LH = 1, LV = 2, BOMBA = 3, ARCO = 4, ONDA = 5, ONDAV = 6, CARDUME = 7, PEIXE = 8;
 /* fases com o quadrado ligado: 4 peças iguais em 2x2 viram um peixe-guia */
@@ -389,13 +389,17 @@ const FORMATOS = [
    tinta não machuca, então limpar a tinta faz parte da briga.   */
 const MESTRES = [
   { nome:'Lula-gigante',   cor:'#B07CFF', cor2:'#5A2E8C', forma:'lula',
-    fala:'Oito braços, nenhuma pressa. Ele já viu mergulhador demais.' },
+    fala:'Oito braços, nenhuma pressa. Ele já viu mergulhador demais.',
+    golpe:'Cospe tinta: casa com tinta não machuca ele. Limpe a tinta e continue batendo.' },
   { nome:'Enguia-elétrica', cor:'#6BFFE0', cor2:'#0A6C7A', forma:'enguia',
-    fala:'A água em volta dela formiga. Não é medo seu, é corrente mesmo.' },
+    fala:'A água em volta dela formiga. Não é medo seu, é corrente mesmo.',
+    golpe:'Dá choque: prende peças numa rede elétrica. Estoure do lado delas para soltar.' },
   { nome:'Caranguejo-rei',  cor:'#FF8A5C', cor2:'#8C2F14', forma:'caranguejo',
-    fala:'Ele subiu na pedra mais alta e acha que o fundo é dele.' },
+    fala:'Ele subiu na pedra mais alta e acha que o fundo é dele.',
+    golpe:'Joga areia grossa: casas com duas camadas, que protegem ele até você limpar.' },
   { nome:'Serpente-do-abismo', cor:'#FF7390', cor2:'#6E1030', forma:'serpente',
-    fala:'Ninguém sabe onde ela termina. Só que a cabeça está bem aqui.' }
+    fala:'Ninguém sabe onde ela termina. Só que a cabeça está bem aqui.',
+    golpe:'Engole e cospe lixo: peças viram entulho que não combina. Estoure colado para tirar.' }
 ];
 const ehMestre = i => (i + 1) % 100 === 0;
 function faseMestre(i) {

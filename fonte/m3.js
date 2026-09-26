@@ -797,11 +797,23 @@ async function passoMestre() {
   if (vida <= 0) return false;
   const fase3 = vida < f.obj.vida * .35, fase2 = vida < f.obj.vida * .65;
   const quantas = fase3 ? 7 : fase2 ? 5 : 3;
+  const forma = MESTRES[f.obj.mestre].forma;
+  const pecasSoltas = () => { const l = []; for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) { const q = grid[r][c]; if (q && !q.sp && !q.bau && !q.gaiola && !q.lixo) l.push(q); } return l; };
+  if (forma === 'enguia' || forma === 'serpente') {
+    /* enguia prende peças em rede elétrica; serpente transforma peças em lixo */
+    const l = pecasSoltas();
+    for (let k = 0; k < Math.min(quantas, l.length); k++) {
+      const q = l.splice(sorteia(l.length), 1)[0];
+      if (forma === 'enguia') q.gaiola = 1; else q.lixo = 1;
+      atualizaEl(q);
+    }
+  }
   const livres = [];
   for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) if (papel[r][c] === 0 && temCasa(r, c)) livres.push([r, c]);
-  for (let k = 0; k < quantas && livres.length; k++) {
+  const tintaQuantas = forma === 'lula' ? quantas : forma === 'caranguejo' ? Math.ceil(quantas * .7) : 1;
+  for (let k = 0; k < tintaQuantas && livres.length; k++) {
     const idx = sorteia(livres.length), [r, c] = livres.splice(idx, 1)[0];
-    papel[r][c] = 1;
+    papel[r][c] = forma === 'caranguejo' ? 2 : 1;   /* areia do caranguejo vem em duas camadas */
     const casa = celulasBox.children[r * W + c];
     casa.classList.add('cresceu');
     setTimeout(() => casa.classList.remove('cresceu'), 520);
@@ -813,7 +825,8 @@ async function passoMestre() {
   J.dano = Math.max(0, (J.dano || 0) - cura);
   Som.liga(); Som.nao(); vibra(TREMIDA.forte);
   tremeTela();
-  faixaTexto(fase3 ? 'Furioso: duas jogadas a menos e ele se curou ' + cura : 'O mestre cospe tinta e se cura ' + cura, 2200);
+  const acao = { lula: 'cospe tinta', enguia: 'dá choque e prende peças', caranguejo: 'joga areia grossa', serpente: 'cospe lixo' }[forma] || 'ataca';
+  faixaTexto((fase3 ? 'Furioso! ' : '') + 'O mestre ' + acao + ' e se cura ' + cura, 2200);
   const ret = document.querySelector('.retrato-mestre');
   if (ret) { ret.classList.remove('ataca'); void ret.offsetWidth; ret.classList.add('ataca'); }
   /* o golpe agora acontece na tela toda, não só no retratinho */

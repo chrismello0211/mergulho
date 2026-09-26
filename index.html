@@ -763,6 +763,7 @@ body.leve .cartao .aviso-arte{animation:none}
   animation:dia-hoje 1.6s ease-in-out infinite}
 .cartao p.presente-txt{font-family:var(--display);font-size:18px;color:#E0456A;margin:6px 0}
 
+.cartao p.golpe-mestre{margin-top:8px;padding:8px 12px;border-radius:14px;background:rgba(255,106,61,.14);font-size:13.5px;text-align:left}
 .cartao p.legenda-rank{margin-top:8px;font-size:11.5px;opacity:.7}
 
 /* ── condição do mar ─────────────────────────────────────────── */
@@ -1037,7 +1038,7 @@ body.leve .mestre-fundo{animation:none}
 .linha-rank .val small{display:block;font-family:Nunito,sans-serif;font-size:10.5px;font-weight:700;opacity:.72;letter-spacing:.01em}
 .tag-cresce{font-style:normal;font-size:10px;font-weight:800;letter-spacing:.02em;text-transform:uppercase;
   background:rgba(255,106,61,.22);color:#FFD6C4;border-radius:999px;padding:2px 7px;margin-left:6px;vertical-align:middle}
-.tag-mestre{font-style:normal;font-size:10.5px;background:rgba(176,124,255,.25);color:#7A3CD0;border-radius:999px;padding:1px 6px;margin-left:4px}
+.tag-mestre{font-style:normal;font-size:12px;font-weight:900;background:#5B2FB0;color:#fff;border-radius:999px;padding:2px 8px;margin-left:5px;box-shadow:0 1px 3px rgba(0,0,0,.3)}
 [data-mundo="3"] .tag-mestre,[data-mundo="4"] .tag-cresce{font-style:normal;font-size:10px;font-weight:800;letter-spacing:.02em;text-transform:uppercase;
   background:rgba(255,106,61,.22);color:#FFD6C4;border-radius:999px;padding:2px 7px;margin-left:6px;vertical-align:middle}
 .tag-mestre{color:#D9C3FF}
@@ -1406,7 +1407,7 @@ body.leve .cartao{animation-duration:.18s}
    MERGULHO · combinar 3 da beira da praia até 4.000 metros
    ═══════════════════════════════════════════════════════════════ */
 
-const VERSAO_JOGO = '2026.11.21';
+const VERSAO_JOGO = '2026.11.22';
 const W = 7, H = 8, TIPOS = 6;
 const NADA = 0, LH = 1, LV = 2, BOMBA = 3, ARCO = 4, ONDA = 5, ONDAV = 6, CARDUME = 7, PEIXE = 8;
 /* fases com o quadrado ligado: 4 peças iguais em 2x2 viram um peixe-guia */
@@ -1793,13 +1794,17 @@ const FORMATOS = [
    tinta não machuca, então limpar a tinta faz parte da briga.   */
 const MESTRES = [
   { nome:'Lula-gigante',   cor:'#B07CFF', cor2:'#5A2E8C', forma:'lula',
-    fala:'Oito braços, nenhuma pressa. Ele já viu mergulhador demais.' },
+    fala:'Oito braços, nenhuma pressa. Ele já viu mergulhador demais.',
+    golpe:'Cospe tinta: casa com tinta não machuca ele. Limpe a tinta e continue batendo.' },
   { nome:'Enguia-elétrica', cor:'#6BFFE0', cor2:'#0A6C7A', forma:'enguia',
-    fala:'A água em volta dela formiga. Não é medo seu, é corrente mesmo.' },
+    fala:'A água em volta dela formiga. Não é medo seu, é corrente mesmo.',
+    golpe:'Dá choque: prende peças numa rede elétrica. Estoure do lado delas para soltar.' },
   { nome:'Caranguejo-rei',  cor:'#FF8A5C', cor2:'#8C2F14', forma:'caranguejo',
-    fala:'Ele subiu na pedra mais alta e acha que o fundo é dele.' },
+    fala:'Ele subiu na pedra mais alta e acha que o fundo é dele.',
+    golpe:'Joga areia grossa: casas com duas camadas, que protegem ele até você limpar.' },
   { nome:'Serpente-do-abismo', cor:'#FF7390', cor2:'#6E1030', forma:'serpente',
-    fala:'Ninguém sabe onde ela termina. Só que a cabeça está bem aqui.' }
+    fala:'Ninguém sabe onde ela termina. Só que a cabeça está bem aqui.',
+    golpe:'Engole e cospe lixo: peças viram entulho que não combina. Estoure colado para tirar.' }
 ];
 const ehMestre = i => (i + 1) % 100 === 0;
 function faseMestre(i) {
@@ -4053,11 +4058,23 @@ async function passoMestre() {
   if (vida <= 0) return false;
   const fase3 = vida < f.obj.vida * .35, fase2 = vida < f.obj.vida * .65;
   const quantas = fase3 ? 7 : fase2 ? 5 : 3;
+  const forma = MESTRES[f.obj.mestre].forma;
+  const pecasSoltas = () => { const l = []; for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) { const q = grid[r][c]; if (q && !q.sp && !q.bau && !q.gaiola && !q.lixo) l.push(q); } return l; };
+  if (forma === 'enguia' || forma === 'serpente') {
+    /* enguia prende peças em rede elétrica; serpente transforma peças em lixo */
+    const l = pecasSoltas();
+    for (let k = 0; k < Math.min(quantas, l.length); k++) {
+      const q = l.splice(sorteia(l.length), 1)[0];
+      if (forma === 'enguia') q.gaiola = 1; else q.lixo = 1;
+      atualizaEl(q);
+    }
+  }
   const livres = [];
   for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) if (papel[r][c] === 0 && temCasa(r, c)) livres.push([r, c]);
-  for (let k = 0; k < quantas && livres.length; k++) {
+  const tintaQuantas = forma === 'lula' ? quantas : forma === 'caranguejo' ? Math.ceil(quantas * .7) : 1;
+  for (let k = 0; k < tintaQuantas && livres.length; k++) {
     const idx = sorteia(livres.length), [r, c] = livres.splice(idx, 1)[0];
-    papel[r][c] = 1;
+    papel[r][c] = forma === 'caranguejo' ? 2 : 1;   /* areia do caranguejo vem em duas camadas */
     const casa = celulasBox.children[r * W + c];
     casa.classList.add('cresceu');
     setTimeout(() => casa.classList.remove('cresceu'), 520);
@@ -4069,7 +4086,8 @@ async function passoMestre() {
   J.dano = Math.max(0, (J.dano || 0) - cura);
   Som.liga(); Som.nao(); vibra(TREMIDA.forte);
   tremeTela();
-  faixaTexto(fase3 ? 'Furioso: duas jogadas a menos e ele se curou ' + cura : 'O mestre cospe tinta e se cura ' + cura, 2200);
+  const acao = { lula: 'cospe tinta', enguia: 'dá choque e prende peças', caranguejo: 'joga areia grossa', serpente: 'cospe lixo' }[forma] || 'ataca';
+  faixaTexto((fase3 ? 'Furioso! ' : '') + 'O mestre ' + acao + ' e se cura ' + cura, 2200);
   const ret = document.querySelector('.retrato-mestre');
   if (ret) { ret.classList.remove('ataca'); void ret.offsetWidth; ret.classList.add('ataca'); }
   /* o golpe agora acontece na tela toda, não só no retratinho */
@@ -5258,7 +5276,7 @@ async function recebeVidas() {
 const NOVIDADES = [
   ['❤', 'Sair no meio da fase agora gasta vida', 'O jogo avisa antes, e dá pra desistir de sair.'],
   ['👆', 'Toque no objetivo', 'As casas que faltam acendem por dois segundos. Ótimo quando está tudo da mesma cor.'],
-  ['🦑', 'Mestres mais bravos', 'Mais vida, menos jogadas, tinta bem visível e, a cada golpe, ele se recupera um pouco.'],
+  ['🦑', 'Cada mestre com seu golpe', 'A lula cospe tinta, a enguia dá choque e prende peças, o caranguejo joga areia grossa e a serpente cospe lixo. Todos mais fortes e se curando a cada golpe.'],
   ['🌊', 'Fases mais apertadas', 'Menos jogadas nas fases normais, difíceis e lendárias.'],
   ['🎁', 'Mandar vida tem limite', 'Até 5 por dia, pra vida continuar valendo.'],
   ['🎲', 'Condições do mar', 'Muitas fases agora vêm com uma regra extra: especiais de presente, cor que vale o dobro ou moedas escondidas no fundo.'],
@@ -6482,6 +6500,7 @@ function abreFase(i, ignoraParada) {
   for (let c = 0; c < W; c++) for (let r = 0; r < TOPO[c]; r++) { papel[r][c] = 0; if (J.papelBase) J.papelBase[r][c] = 0; }
   J.papelTotal = contaPapel(papel);
   pontosNaTela = 0;
+  QUADRADO_ATIVO = !!f.quadrado && !J.desafio;   /* antes de montar: o tabuleiro não pode nascer com quadrado pronto */
   montaTabuleiro();
   preparaEspeciaisDaFase();
   fechaCartao();
@@ -6574,7 +6593,8 @@ function comecaFase() {
     return cartao('<div class="intro-mestre">' + desenhaMestre(f.obj.mestre) + '</div>' +
       '<p class="prof-faixa">fase ' + (J.fase + 1) + ' · ' + metros(f.prof) + '</p>' +
       '<h3>' + M.nome + '</h3><p>' + M.fala + '</p>' +
-      '<p>Cada peça que você estoura machuca ele. De duas em duas jogadas ele revida: rouba uma jogada e cospe tinta, e casa com tinta não machuca. Limpe a tinta e continue batendo.</p>' +
+      '<p>Cada peça que você estoura machuca ele. De duas em duas jogadas ele revida, rouba jogada e se cura um pouco.</p>' +
+      '<p class="golpe-mestre"><b>O golpe dele:</b> ' + M.golpe + '</p>' +
       '<div class="bts"><button class="bt" data-ac="comeca">Encarar</button></div>');
   }
   if (!prog.vistos.perolas2 && f.obj.tipo === 'perolas') { prog.vistos.perolas2 = true; salvaProg(); return mostraAviso('Ostras com pérola', '#i-perola',

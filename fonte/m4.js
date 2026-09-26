@@ -765,7 +765,7 @@ async function recebeVidas() {
 const NOVIDADES = [
   ['❤', 'Sair no meio da fase agora gasta vida', 'O jogo avisa antes, e dá pra desistir de sair.'],
   ['👆', 'Toque no objetivo', 'As casas que faltam acendem por dois segundos. Ótimo quando está tudo da mesma cor.'],
-  ['🦑', 'Mestres mais bravos', 'Mais vida, menos jogadas, tinta bem visível e, a cada golpe, ele se recupera um pouco.'],
+  ['🦑', 'Cada mestre com seu golpe', 'A lula cospe tinta, a enguia dá choque e prende peças, o caranguejo joga areia grossa e a serpente cospe lixo. Todos mais fortes e se curando a cada golpe.'],
   ['🌊', 'Fases mais apertadas', 'Menos jogadas nas fases normais, difíceis e lendárias.'],
   ['🎁', 'Mandar vida tem limite', 'Até 5 por dia, pra vida continuar valendo.'],
   ['🎲', 'Condições do mar', 'Muitas fases agora vêm com uma regra extra: especiais de presente, cor que vale o dobro ou moedas escondidas no fundo.'],
@@ -1989,6 +1989,7 @@ function abreFase(i, ignoraParada) {
   for (let c = 0; c < W; c++) for (let r = 0; r < TOPO[c]; r++) { papel[r][c] = 0; if (J.papelBase) J.papelBase[r][c] = 0; }
   J.papelTotal = contaPapel(papel);
   pontosNaTela = 0;
+  QUADRADO_ATIVO = !!f.quadrado && !J.desafio;   /* antes de montar: o tabuleiro não pode nascer com quadrado pronto */
   montaTabuleiro();
   preparaEspeciaisDaFase();
   fechaCartao();
@@ -2081,7 +2082,8 @@ function comecaFase() {
     return cartao('<div class="intro-mestre">' + desenhaMestre(f.obj.mestre) + '</div>' +
       '<p class="prof-faixa">fase ' + (J.fase + 1) + ' · ' + metros(f.prof) + '</p>' +
       '<h3>' + M.nome + '</h3><p>' + M.fala + '</p>' +
-      '<p>Cada peça que você estoura machuca ele. De duas em duas jogadas ele revida: rouba uma jogada e cospe tinta, e casa com tinta não machuca. Limpe a tinta e continue batendo.</p>' +
+      '<p>Cada peça que você estoura machuca ele. De duas em duas jogadas ele revida, rouba jogada e se cura um pouco.</p>' +
+      '<p class="golpe-mestre"><b>O golpe dele:</b> ' + M.golpe + '</p>' +
       '<div class="bts"><button class="bt" data-ac="comeca">Encarar</button></div>');
   }
   if (!prog.vistos.perolas2 && f.obj.tipo === 'perolas') { prog.vistos.perolas2 = true; salvaProg(); return mostraAviso('Ostras com pérola', '#i-perola',
