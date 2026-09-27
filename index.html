@@ -1407,7 +1407,7 @@ body.leve .cartao{animation-duration:.18s}
    MERGULHO · combinar 3 da beira da praia até 4.000 metros
    ═══════════════════════════════════════════════════════════════ */
 
-const VERSAO_JOGO = '2026.11.23';
+const VERSAO_JOGO = '2026.11.24';
 const W = 7, H = 8, TIPOS = 6;
 const NADA = 0, LH = 1, LV = 2, BOMBA = 3, ARCO = 4, ONDA = 5, ONDAV = 6, CARDUME = 7, PEIXE = 8;
 /* fases com o quadrado ligado: 4 peças iguais em 2x2 viram um peixe-guia */
@@ -6097,17 +6097,12 @@ async function mostraRanking(aba) {
   if (alvo() && document.querySelector('.abas .aba.on')) alvo().innerHTML = html;
 }
 const PRESENTES = {
-  /* seu, de 20 mil */
-  'ABISMO20000': 20000,
-  /* dez de 3 mil, pra distribuir */
-  'ONDA3000': 3000, 'RECIFE3000': 3000, 'CONCHA3000': 3000, 'ESTRELA3000': 3000, 'POLVO3000': 3000,
-  'ARRAIA3000': 3000, 'GOLFINHO3000': 3000, 'TUBARAO3000': 3000, 'BALEIA3000': 3000, 'TARTARUGA3000': 3000,
-  /* estes enchem as vidas em vez de dar moedas */
+  /* de vida (continuam valendo) */
   'VIDACHEIA': 'vidas', 'FOLEGO5': 'vidas',
-  /* cinco de 5 mil, pra distribuir; cada pessoa usa cada código uma vez */
-  'PEROLA5000': 5000, 'CARDUME5000': 5000, 'MARESIA5000': 5000, 'NAUFRAGIO5000': 5000, 'CORRENTEZA5000': 5000,
-  /* os antigos continuam valendo para quem ainda não usou */
-  'MERGULHO5000': 5000, 'CARDUME1000': 1000, 'ABISMO500': 500, 'MARE250': 250
+  /* três de 3 mil */
+  'MARUJO3000': 3000, 'ANCORA3000': 3000, 'FAROL3000': 3000,
+  /* cinco de 10 mil */
+  'SEREIA10K': 10000, 'NETUNO10K': 10000, 'KRAKEN10K': 10000, 'CORSARIO10K': 10000, 'TRIDENTE10K': 10000
 };
 function mostraCodigo(aviso) {
   cartao('<h3>Código de presente</h3><p>Se alguém te passou um código, digite aqui.</p>' +
@@ -6593,8 +6588,26 @@ function mostraPreFase() {
     '</div><div class="bts"><button class="bt vidro" data-ac="mapa">Voltar</button>' +
     '<button class="bt" data-ac="comeca">Mergulhar</button></div>');
 }
+function vigiaTabuleiro(fase, tentativa) {
+  setTimeout(() => {
+    if (!J || J.fase !== fase || J.fim) return;
+    if (!document.getElementById('tela-jogo').classList.contains('ativa')) return;
+    if (document.getElementById('veu').classList.contains('aberto')) return vigiaTabuleiro(fase, tentativa);   /* espera o cartão fechar */
+    const f = faseAtual();
+    const vazio = document.querySelectorAll('#pecas .peca').length === 0;
+    const semJogada = J.mov <= 0 && !J.movExtra && (J.pontos || 0) === 0;
+    if (!vazio && !semJogada) return;
+    console.warn('tabuleiro abriu estranho, reconstruindo', { vazio, semJogada });
+    if (tentativa >= 2) return;
+    if (semJogada) J.mov = f.mov;
+    try { montaPecas(); pintaPapel(); atualizaHud(); } catch (e) {}
+    if (document.querySelectorAll('#pecas .peca').length === 0) { limpaPartida(); abreFase(fase, true); }
+    vigiaTabuleiro(fase, tentativa + 1);
+  }, 1600);
+}
 function comecaFase() {
   const f = faseAtual();
+  if (!J.desafio) vigiaTabuleiro(J.fase, 0);
   if (!J.viuPre && !J.desafio) { J.viuPre = true; return mostraPreFase(); }
   J.faltaInicial = Math.max(1, faltaObjetivo() || 1);
   garanteBolhas();
