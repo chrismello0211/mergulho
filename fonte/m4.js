@@ -772,13 +772,31 @@ const NOVIDADES = [
   ['🐟', 'Peixe-guia', 'Em algumas fases, 4 peças iguais em quadrado viram um peixe que nada direto até o que o objetivo pede.'],
   ['⚡', 'Enguia-elétrica redesenhada', 'O mestre da fase 200 ganhou cara de bicho de verdade.']
 ];
+/* A lista de novidades tem um nome de lote. O cartão só abre sozinho
+   quando o lote muda, e não a cada versão: correção de bug não é
+   novidade. Quem viu o cartão antigo (marcado pela versão) já viu
+   este primeiro lote. Pra publicar novidade nova: troque o lote e a lista. */
+const NOVIDADES_LOTE = 'lote-1', NOVIDADES_DATA = '28 de setembro';
+function viuEsteLote() {
+  const v = prog.viuNovidades || '';
+  return v === NOVIDADES_LOTE || (NOVIDADES_LOTE === 'lote-1' && /^20\d\d\./.test(v));
+}
 function mostraNovidades() {
-  if (!prog.max || prog.viuNovidades === VERSAO_JOGO || document.getElementById('veu').classList.contains('aberto')) return false;
-  prog.viuNovidades = VERSAO_JOGO; salvaProg();
-  cartao('<div class="aviso-arte coracao"><span>✨</span></div><p class="aviso-novo">versão ' + VERSAO_JOGO + '</p><h3>Novidades no fundo do mar</h3>' +
-    '<div class="novidades">' + NOVIDADES.map(([ic, t1, t2]) => '<div class="novidade"><span class="ic-nov">' + ic + '</span><div><b>' + t1 + '</b><small>' + t2 + '</small></div></div>').join('') + '</div>' +
-    '<div class="bts"><button class="bt" data-ac="fecha">Bora mergulhar</button></div>', true);
+  if (!prog.max || viuEsteLote() || document.getElementById('veu').classList.contains('aberto')) return false;
+  prog.viuNovidades = NOVIDADES_LOTE; salvaProg(); pintaBotaoNovidades();
+  cartaoNovidades();
   return true;
+}
+function pintaBotaoNovidades() {
+  const b = document.getElementById('bt-novidades');
+  if (b) b.classList.toggle('tem-novo', !viuEsteLote());
+}
+function cartaoNovidades() {
+  prog.viuNovidades = NOVIDADES_LOTE; salvaProg(); pintaBotaoNovidades();
+  cartao('<div class="aviso-arte coracao"><span>✨</span></div><p class="aviso-novo">o que mudou</p><h3>Novidades no fundo do mar</h3>' +
+    '<div class="novidades">' + NOVIDADES.map(([ic, t1, t2]) => '<div class="novidade"><span class="ic-nov">' + ic + '</span><div><b>' + t1 + '</b><small>' + t2 + '</small></div></div>').join('') + '</div>' +
+    '<p class="novidades-data">Atualização de ' + NOVIDADES_DATA + '</p>' +
+    '<div class="bts"><button class="bt" data-ac="fecha">Bora mergulhar</button></div>', true);
 }
 async function avisaPedidos() {
   if (!Ranking.ligado || !prog.cardume) return;
@@ -1733,7 +1751,7 @@ function tela(id) {
   document.body.classList.toggle('em-jogo', id === 'tela-jogo');
   if (id === 'tela-jogo') Musica.liga('jogo', mundoAtual);
   else { document.body.classList.remove('aperto'); Musica.liga('menu', mundoAtual); setTimeout(talvezAtualizar, 400); }
-  if (id === 'tela-inicio') { requestAnimationFrame(() => { pintaSemanaHome(); encaixaInicio(); }); setTimeout(pintaPodio, 300); setTimeout(async () => {
+  if (id === 'tela-inicio') { requestAnimationFrame(() => { pintaSemanaHome(); pintaBotaoNovidades(); encaixaInicio(); }); setTimeout(pintaPodio, 300); setTimeout(async () => {
     if (!window.__fichaSubiu && Ranking.ligado) { window.__fichaSubiu = true; Ranking.subeFicha(); }   /* corrige o ranking já ao abrir */
     if (mostraNovidades()) return; await recebeVidas(); avisaPedidos(); }, 1500); }
   /* a faixa de baixo do celular acompanha a cor da tela */
@@ -2210,6 +2228,16 @@ function iniciar() {
   if (window.Atualizacao && window.Atualizacao.pronta) avisaVersao();
   document.getElementById('bt-ajustes').onclick = () => { Som.liga(); mostraAjustes(); };
   document.getElementById('podio').onclick = () => { Som.liga(); mostraRanking('geral'); };
+  (() => {
+    const v = document.getElementById('versao');
+    if (!v || document.getElementById('bt-novidades')) return;
+    const b = document.createElement('button');
+    b.id = 'bt-novidades'; b.type = 'button';
+    b.innerHTML = '✨ Novidades';
+    b.onclick = () => { Som.liga(); cartaoNovidades(); };
+    v.insertAdjacentElement('afterend', b);
+    pintaBotaoNovidades();
+  })();
   [['#tela-inicio', 'vidas-home'], ['#tela-mapa', 'vidas-mapa']].forEach(([alvo, cls]) => {
     const onde = document.querySelector(alvo);
     if (!onde || onde.querySelector('.pilula-vidas')) return;
