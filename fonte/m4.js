@@ -1141,10 +1141,17 @@ async function procuraVersao(botao) {
    desfoque, partícula e brilho e deixa o essencial.              */
 function aplicaLeve() { document.body.classList.toggle('leve', !!prog.leve); }
 function decideLeve() {
+  /* O Safari do iPhone esconde núcleos e memória (privacidade) e informa
+     números baixos pra qualquer aparelho, até o mais potente. Por isso
+     a adivinhação ligava o modo leve em todo iPhone. Agora só acredita
+     quando o próprio navegador informa memória (Android) e ela é baixa;
+     no resto entra cheio, e quem decide é o medidor de quadros.       */
+  if (!prog.leveEscolhido && prog.leve && !prog.migrouLeve) { prog.leve = false; prog.migrouLeve = true; salvaProg(); }   /* desfaz o modo leve ligado por engano */
   if (prog.leve !== null && prog.leve !== undefined) return;
-  const nucleos = navigator.hardwareConcurrency || 4;
-  const memoria = navigator.deviceMemory || 4;
-  prog.leve = nucleos <= 4 && memoria <= 4;   /* na dúvida entra cheio: o vigia de fps corrige depois */
+  const memoria = navigator.deviceMemory;
+  const nucleos = navigator.hardwareConcurrency || 8;
+  prog.leve = memoria !== undefined && memoria <= 2 && nucleos <= 4;
+  prog.migrouLeve = true;
   salvaProg();
 }
 let olhoFps = null, jaMediu = false;
@@ -1158,7 +1165,7 @@ function vigiaFps() {
     const dt = performance.now() - t0;
     if (dt < 4000) { olhoFps = requestAnimationFrame(passo); return; }
     olhoFps = null;
-    if (quadros / (dt / 1000) < 38) {
+    if (quadros / (dt / 1000) < 24) {   /* o modo economia do iPhone trava em 30: isso não é aparelho fraco */
       prog.leve = true; salvaProg(); aplicaLeve();
       faixaTexto('Modo leve');
       setTimeout(() => cartao('<h3>Liguei o modo leve</h3>' +
@@ -1195,7 +1202,7 @@ function mostraAjustes() {
     '<div class="bts"><button class="bt" data-ac="fecha">Fechar</button></div>', true);
 }
 function mudaAjuste(k) {
-  if (k === 'cheio') { prog.leve = !prog.leve; aplicaLeve(); }
+  if (k === 'cheio') { prog.leve = !prog.leve; prog.leveEscolhido = true; aplicaLeve(); }
   else prog[k] = !prog[k];
   salvaProg();
   pintaBotaoSom();
