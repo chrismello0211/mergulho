@@ -767,6 +767,7 @@ body.leve .cartao .aviso-arte{animation:none}
 .cartao p.legenda-rank{margin-top:8px;font-size:11.5px;opacity:.7}
 
 /* ── região, enigma e evento ──────────────────────────────────── */
+.cartao p.pre-fig{margin-top:8px;padding:7px 10px;border-radius:12px;background:rgba(255,211,92,.22);font-size:12.5px;font-weight:800}
 .cartao p.pre-regiao,.cartao p.pre-enigma,.cartao p.pre-evento{margin-top:8px;padding:8px 10px;border-radius:12px;font-size:12.5px;text-align:left}
 .cartao p.pre-regiao{background:rgba(107,255,224,.14)}
 .cartao p.pre-enigma{background:rgba(176,124,255,.18)}
@@ -1462,7 +1463,7 @@ body.leve .cartao{animation-duration:.18s}
    MERGULHO · combinar 3 da beira da praia até 4.000 metros
    ═══════════════════════════════════════════════════════════════ */
 
-const VERSAO_JOGO = '2026.12.02';
+const VERSAO_JOGO = '2026.12.03';
 const W = 7, H = 8, TIPOS = 6;
 const NADA = 0, LH = 1, LV = 2, BOMBA = 3, ARCO = 4, ONDA = 5, ONDAV = 6, CARDUME = 7, PEIXE = 8;
 /* fases com o quadrado ligado: 4 peças iguais em 2x2 viram um peixe-guia */
@@ -5127,7 +5128,10 @@ async function venceu() {
   if (J.fase + 1 > prog.max) prog.max = J.fase + 1;
   await esperaAcalmar(explodiuNoFim ? 900 : eraMestre ? 300 : 700);
   const tinha3 = estrelasAntes >= 3;
-  J.figurinhaNova = (!J.desafio && (eraMestre || (e >= 3 && !tinha3))) ? ganhaFigurinha(eraMestre ? faseAtual().obj.mestre : null) : null;
+  /* figurinha é conquista: só fase Difícil ou Lendária com 3 estrelas pela
+     primeira vez (ou mestre derrotado, que dá a lendária) */
+  const valeFig = ['D', 'L'].indexOf(classeDaFase(J.fase)) >= 0;
+  J.figurinhaNova = (!J.desafio && (eraMestre || (e >= 3 && !tinha3 && valeFig))) ? ganhaFigurinha(eraMestre ? faseAtual().obj.mestre : null) : null;
   const ganho = moedasDaFase(e, primeira) + (eraMestre ? 150 : 0);
   prog.moedas += ganho;
   salvaProg();
@@ -5326,7 +5330,7 @@ function mostraAlbum() {
     '<div class="album-grade">' + todos.map(id => temFigurinha(id)
       ? '<button class="fig' + (id[0] === 'm' ? ' lendaria' : '') + '" data-ac="figurinha" data-id="' + id + '">' + desenhoFigurinha(id) + '<small>' + nomeFigurinha(id) + '</small></button>'
       : '<div class="fig vazia' + (id[0] === 'm' ? ' lendaria' : '') + '"><span class="fig-arte">?</span><small>' + (id[0] === 'm' ? 'Lendária' : '???') + '</small></div>').join('') + '</div>' +
-    '<p class="album-dica">Ganhe 3 estrelas numa fase pela primeira vez pra ganhar uma figurinha. As lendárias vêm dos mestres.</p>' +
+    '<p class="album-dica">Figurinhas vêm das fases Difíceis e Lendárias: faça 3 estrelas nelas pela primeira vez. As lendárias vêm dos mestres.</p>' +
     '<div class="bts"><button class="bt" data-ac="fecha">Fechar</button></div>', true);
 }
 function mostraFigurinha(id) {
@@ -5593,7 +5597,7 @@ const NOVIDADES = [
   ['🧩', 'Enigmas', 'Fases curtas, com especiais prontos e poucas jogadas: a ordem certa faz toda a diferença.'],
   ['🎉', 'Eventos de fim de semana', 'Todo sábado e domingo uma regra especial vale pra todas as fases, e muda a cada semana.'],
   ['🦈', 'Dois mestres novos', 'Na fase 600, o Tubarão-martelo e sua investida. Na 1000, o Leviatã, que usa os golpes de todos os mestres.'],
-  ['📖', 'Álbum do fundo do mar', 'Cada fase com 3 estrelas pela primeira vez rende uma figurinha com uma curiosidade real. Os mestres dão as lendárias. Completar vale 2.000 moedas.'],
+  ['📖', 'Álbum do fundo do mar', 'Fases Difíceis e Lendárias com 3 estrelas pela primeira vez rendem uma figurinha com uma curiosidade real. Os mestres dão as lendárias. Completar vale 2.000 moedas.'],
   ['⏱', 'Contra a Maré', 'Fases com relógio no lugar das jogadas: jogue rápido, e jogada grande devolve tempo.'],
   ['🎲', 'Condições do mar', 'Muitas fases agora vêm com uma regra extra: especiais de presente, cor que vale o dobro ou moedas escondidas no fundo.'],
   ['🐟', 'Peixe-guia', 'Em algumas fases, 4 peças iguais em quadrado viram um peixe que nada direto até o que o objetivo pede.'],
@@ -6926,6 +6930,7 @@ function mostraPreFase() {
     '<p class="pre-texto">' + C.texto + '</p>' +
     '<div class="pre-linhas"><div class="pre-obj"><small>objetivo</small><b>' + resumoObjetivo(f) + '</b>' + iconesObjetivo(f) + '</div>' +
     '<div><small>' + (tempoDa(J.fase) ? 'segundos' : 'jogadas') + '</small><b class="pre-grande">' + (tempoDa(J.fase) || f.mov) + '</b></div></div>' +
+    (['D', 'L'].indexOf(k) >= 0 && (prog.estrelas[J.fase] || 0) < 3 && f.obj.tipo !== 'chefe' ? '<p class="pre-fig">📖 3 estrelas aqui valem uma figurinha pro álbum</p>' : '') +
     (f.enigma ? '<p class="pre-enigma">🧩 <b>Enigma</b> · só ' + f.mov + ' jogadas, com especiais já prontos no tabuleiro. Pense antes de mexer.</p>' : '') +
     (regraDa(J.fase) && regraDa(J.fase).id !== 'calma' ? '<p class="pre-regiao">' + regraDa(J.fase).ic + ' <b>' + regraDa(J.fase).nome + '</b> · ' + regraDa(J.fase).texto + '</p>' : '') +
     (eventoHoje() ? '<p class="pre-evento">' + EVENTOS[eventoHoje()].ic + ' <b>' + EVENTOS[eventoHoje()].nome + '</b> · ' + EVENTOS[eventoHoje()].texto + '</p>' : '') +
