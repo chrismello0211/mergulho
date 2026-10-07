@@ -766,6 +766,16 @@ body.leve .cartao .aviso-arte{animation:none}
 .cartao p.golpe-mestre{margin-top:8px;padding:8px 12px;border-radius:14px;background:rgba(255,106,61,.14);font-size:13.5px;text-align:left}
 .cartao p.legenda-rank{margin-top:8px;font-size:11.5px;opacity:.7}
 
+/* ── região, enigma e evento ──────────────────────────────────── */
+.cartao p.pre-regiao,.cartao p.pre-enigma,.cartao p.pre-evento{margin-top:8px;padding:8px 10px;border-radius:12px;font-size:12.5px;text-align:left}
+.cartao p.pre-regiao{background:rgba(107,255,224,.14)}
+.cartao p.pre-enigma{background:rgba(176,124,255,.18)}
+.cartao p.pre-evento{background:rgba(255,211,92,.2)}
+#faixa-evento{margin:8px auto 0;max-width:300px;padding:7px 12px;border-radius:14px;text-align:center;color:#fff;
+  background:linear-gradient(90deg,rgba(255,106,61,.85),rgba(255,154,61,.85));box-shadow:0 4px 12px -4px rgba(255,106,61,.7);font-size:13px;
+  animation:entra-podio .5s ease}
+#faixa-evento b{font-family:var(--display)}#faixa-evento small{display:block;font-size:11.5px;opacity:.92}
+
 /* ── contra a maré ───────────────────────────────────────────── */
 .cartao p.pre-tempo{margin-top:8px;padding:8px 10px;border-radius:12px;background:rgba(255,106,61,.16);font-size:12.5px;text-align:left}
 body.relogio-urgente #movimentos{animation:relogio-pulsa .5s ease-in-out infinite}
@@ -1451,7 +1461,7 @@ body.leve .cartao{animation-duration:.18s}
    MERGULHO · combinar 3 da beira da praia até 4.000 metros
    ═══════════════════════════════════════════════════════════════ */
 
-const VERSAO_JOGO = '2026.11.29';
+const VERSAO_JOGO = '2026.11.30';
 const W = 7, H = 8, TIPOS = 6;
 const NADA = 0, LH = 1, LV = 2, BOMBA = 3, ARCO = 4, ONDA = 5, ONDAV = 6, CARDUME = 7, PEIXE = 8;
 /* fases com o quadrado ligado: 4 peças iguais em 2x2 viram um peixe-guia */
@@ -1469,6 +1479,38 @@ const CONDICOES = {
 const tempoDa = i => { if (i < 39 || (i + 1) % 100 === 0) return 0; const f = fase(i);
   if (f.obj.tipo !== 'pontos' && f.obj.tipo !== 'coletar') return 0;
   return ((i + 5) * 2246822519 >>> 0) % 100 < 45 ? Math.max(40, Math.round(f.mov * 3.2 / 5) * 5) : 0; };
+/* ═══ IDENTIDADE DAS REGIÕES ══════════════════════════════════════
+   Cada região tem uma regra que vale em todas as fases dela. Descer
+   passa a ser viagem: o mangue prende, o gelo congela, o vulcão
+   cospe cinza, as ruínas escondem tesouro.                          */
+const REGRAS_REGIAO = {
+  'Litoral':        { id: 'calma',  ic: '🏖️', nome: 'Águas calmas',     texto: 'O começo da viagem: nenhuma regra extra por aqui.' },
+  'Mangue':         { id: 'raizes', ic: '🌿', nome: 'Raízes do mangue', texto: 'Duas peças começam presas nas raízes. Estoure do lado pra soltar.' },
+  'Mar Polar':      { id: 'gelo',   ic: '❄️', nome: 'Água congelante',  texto: 'A cada 5 jogadas, uma peça congela. Estoure do lado pra quebrar o gelo.' },
+  'Cordilheira':    { id: 'eco',    ic: '⛰️', nome: 'Eco das pedras',   texto: 'Cascatas valem 50% a mais de pontos aqui.' },
+  'Boca do Vulcão': { id: 'cinza',  ic: '🌋', nome: 'Chuva de cinzas',  texto: 'A cada 6 jogadas, uma peça vira entulho de cinza. Estoure do lado pra tirar.' },
+  'Ruínas':         { id: 'tesouro',ic: '🏺', nome: 'Tesouro antigo',   texto: 'Três moedas escondidas no chão de cada fase. Estoure em cima pra pegar.' },
+  'Sargaço':        { id: 'cardume',ic: '🐟', nome: 'Cardume do sargaço', texto: 'Toda fase começa com um especial de cardume pronto.' },
+  'Fossa':          { id: 'abismo', ic: '🌑', nome: 'Pressão do abismo', texto: 'Especiais valem o dobro de pontos aqui embaixo.' }
+};
+const regraDa = i => { if (i < 30 || (i + 1) % 100 === 0) return null; const a = ambiente(i); return (a && a.reg && REGRAS_REGIAO[a.reg.nome]) || null; };
+
+/* ═══ ENIGMAS ══════════════════════════════════════════════════════
+   De vez em quando, uma fase de pontuar vira enigma: poucas jogadas,
+   especiais já prontos no tabuleiro e meta ajustada. Pede pensar
+   antes de mexer, em vez de sair combinando.                        */
+const enigmaDa = i => !!fase(i).enigma;
+
+/* ═══ EVENTO DE FIM DE SEMANA ══════════════════════════════════════
+   Sábado e domingo, uma regra especial vale pra todas as fases,
+   trocando a cada semana.                                           */
+const EVENTOS = {
+  moedas: { ic: '🪙', nome: 'Chuva de moedas', texto: 'Neste fim de semana, toda fase esconde moedas no chão.' },
+  peixe:  { ic: '🐟', nome: 'Fim de semana do peixe-guia', texto: 'Quatro peças em quadrado viram peixe em todas as fases.' },
+  dobro:  { ic: '✨', nome: 'Especiais em dobro', texto: 'Todo especial vale o dobro de pontos até domingo.' }
+};
+const eventoHoje = () => { const d = new Date(), dia = d.getDay(); if (dia !== 0 && dia !== 6) return null;
+  const semana = Math.floor((Date.now() / 864e5 + 3) / 7); return ['moedas', 'peixe', 'dobro'][semana % 3]; };
 const condicaoDa = i => { if (i < 30 || (i + 1) % 100 === 0) return null; const h = ((i + 17) * 2654435761 >>> 0) % 100; return h < 22 ? 'brinde' : h < 40 ? 'corvez' : h < 55 ? 'moedas' : null; };
 
 const $ = s => document.querySelector(s);
@@ -1665,7 +1707,7 @@ function classeDaFase(i) {
   const k = i % 6;                                   /* fases feitas à mão: rótulo pela posição no mundo */
   return i < 6 ? (k === 5 ? 'N' : 'F') : k === 0 ? 'F' : k === 5 ? 'D' : i === 29 ? 'L' : 'N';
 }
-function fase(i) {
+function faseBruta(i) {
   if (i < BASE.length) return BASE[i];
   if (geradas[i]) return geradas[i];
   if (ehMestre(i)) return (geradas[i] = faseMestre(i));
@@ -1800,6 +1842,16 @@ function fase(i) {
       return t;
     })() : fm.topo), formaNome: fm.nome, exped: Math.floor(i / CICLO) + 1 });
 }
+function fase(i) {
+  const f = faseBruta(i);
+  if (i >= BASE.length && !f.enigmaFeito && enigmaDa0(f, i)) {
+    f.enigmaFeito = true; f.enigma = true;
+    f.mov = Math.max(6, Math.round(f.mov * .38));
+    f.marcas = f.marcas.map(m => Math.round(m * .5 / 100) * 100);
+  }
+  return f;
+}
+const enigmaDa0 = (f, i) => !((i + 1) % 100 === 0) && i >= 44 && f.obj && f.obj.tipo === 'pontos' && ((i + 11) * 2654435761 >>> 0) % 100 < 65;
 const expedicao = i => Math.floor(i / CICLO) + 1;
 
 /* ── poderes e moedas ──────────────────────────────────────────
@@ -3672,7 +3724,8 @@ async function limpar(conj, novos) {
     if (!p) continue;                     /* já saiu nesta mesma explosão (lixo colado) */
     if (p.sp) temEsp = true;
     J.coletado[p.t]++;
-    ganho += 60 * Math.min(J.cascata, 10) * (J.soltoSozinho && J.cascata === 1 ? .5 : 1) * (J.corVez != null && p && p.t === J.corVez ? 2 : 1);
+    ganho += 60 * Math.min(J.cascata, 10) * (J.soltoSozinho && J.cascata === 1 ? .5 : 1) * (J.corVez != null && p && p.t === J.corVez ? 2 : 1)
+      * (J.regra === 'eco' && J.cascata > 1 ? 1.5 : 1) * ((J.regra === 'abismo' || J.evento === 'dobro') && p && p.sp ? 2 : 1);
     if (J.moedasFundo && J.moedasFundo[r][c]) {
       J.moedasFundo[r][c] = 0; J.moedasPegas = (J.moedasPegas || 0) + 1;
       prog.moedas += 5; salvaProg(); if (typeof pintaMoedas === 'function') pintaMoedas();
@@ -4009,6 +4062,7 @@ async function tentaTrocaInterna(a, b) {
   garanteBolhas();
   garantePresos();
   passoNinho();
+  passoRegiao();
   if (J.mudouCasas) pintaCasasEspeciais();
   await passoMestre();
   salvaPartida();
@@ -4051,7 +4105,7 @@ function salvaPartida() {
       pr: J.presosFeitos || 0, bo: J.bolhasFeitas || 0, bfg: J.bolhasFugiram || 0,
       nin: J.ninhos || null, ninf: J.ninhosFeitos || 0,
       per: J.perolas || null, pef: J.perolasFeitas || 0, cor: J.coral || null, cof: J.coralFeito || 0, lxf: J.lixoFeito || 0,
-      ot: faseAtual().obj.tipo, tmp: J.tempoModo ? J.tempoRestante : null, cnd: J.cond || null, cvz: J.corVez, mfd: J.moedasFundo || null, mpg: J.moedasPegas || 0,
+      ot: faseAtual().obj.tipo, rg: J.regra || null, ev: J.evento || null, jr: J.jogadasRegiao || 0, tmp: J.tempoModo ? J.tempoRestante : null, cnd: J.cond || null, cvz: J.corVez, mfd: J.moedasFundo || null, mpg: J.moedasPegas || 0,
       dn: J.dano || 0, cm: J.contaMestre || 0, cb: J.contaBolha || 0, bpa: J.bauParado || 0,
       g: grid.map(l => l.map(p => p ? (p.bau ? 'b' : p.t + '.' + p.sp + '.' + (p.gaiola || 0) + '.' + (p.bolha ? 1 : 0) + '.' + (p.lixo || 0)) : ''))
     }));
@@ -4242,6 +4296,22 @@ function pintaAvisoCresce() {
   celulasBox.querySelectorAll('.vai-crescer').forEach(e => e.classList.remove('vai-crescer'));
   if (J.alvoCresce) celulasBox.children[J.alvoCresce[0] * W + J.alvoCresce[1]].classList.add('vai-crescer');
 }
+/* regra da região que age durante a fase: o gelo congela, a cinza vira entulho */
+function passoRegiao() {
+  if (!J || J.fim || (J.regra !== 'gelo' && J.regra !== 'cinza')) return;
+  J.jogadasRegiao = (J.jogadasRegiao || 0) + 1;
+  if (J.jogadasRegiao % (J.regra === 'gelo' ? 5 : 6) !== 0) return;
+  const l = [];
+  for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) { const q = grid[r][c]; if (q && !q.sp && !q.bau && !q.gaiola && !q.lixo && !q.bolha) l.push(q); }
+  if (!l.length) return;
+  const q = l[sorteia(l.length)];
+  if (J.regra === 'gelo') q.gaiola = 1; else q.lixo = 1;
+  atualizaEl(q);
+  const el = els.get(q.id); if (el) { el.classList.remove('nasce'); void el.offsetWidth; el.classList.add('nasce'); }
+  Som.liga(); Som.cresce();
+  faixaTexto(J.regra === 'gelo' ? '❄️ Uma peça congelou' : '🌋 Caiu cinza: uma peça virou entulho', 1800);
+}
+
 /* ═══ PÉROLAS, LIXO E CORAL ══════════════════════════════════════ */
 /* ostra abre e coral acende no mesmo instante do estouro */
 let casasAgendadas = false;
@@ -4628,6 +4698,19 @@ function preparaEspeciaisDaFase() {
     }
   }
   if (J.cond === 'corvez') J.corVez = ((J.fase + 5) * 31) % 6;
+  /* regra da região, evento do fim de semana e enigma */
+  J.regra = J.desafio ? null : (regraDa(J.fase) || {}).id || null;
+  J.evento = J.desafio ? null : eventoHoje();
+  if (J.evento === 'peixe') QUADRADO_ATIVO = true;
+  const pecasLivres = () => { const l = []; for (let r = 1; r < H; r++) for (let c = 0; c < W; c++) { const q = grid[r] && grid[r][c]; if (q && !q.sp && !q.bau && !q.gaiola && !q.lixo && !q.bolha) l.push(q); } return l; };
+  if (J.regra === 'raizes') { const l = pecasLivres(); for (let k = 0; k < 2 && l.length; k++) l.splice(sorteia(l.length), 1)[0].gaiola = 1; }
+  if (J.regra === 'cardume') { const l = pecasLivres(); if (l.length) l[sorteia(l.length)].sp = CARDUME; }
+  if (f.enigma) { const l = pecasLivres(); [LH, LV, BOMBA, ARCO].forEach(sp => { if (l.length) l.splice(sorteia(l.length), 1)[0].sp = sp; }); }
+  if (J.regra === 'tesouro' || J.evento === 'moedas') {
+    J.moedasFundo = J.moedasFundo || Array.from({ length: H }, () => Array(W).fill(0));
+    let n = 0;
+    for (let tent = 0; tent < 80 && n < (J.evento === 'moedas' ? 4 : 3); tent++) { const r = sorteia(H), c = sorteia(W); if (temCasa(r, c) && !J.moedasFundo[r][c]) { J.moedasFundo[r][c] = 1; n++; } }
+  }
   if (J.cond === 'moedas') {
     J.moedasFundo = Array.from({ length: H }, () => Array(W).fill(0));
     let n = 0;
@@ -5443,6 +5526,9 @@ const NOVIDADES = [
   ['🦑', 'Cada mestre com seu golpe', 'A lula cospe tinta, a enguia dá choque e prende peças, o caranguejo joga areia grossa e a serpente cospe lixo. Todos mais fortes e se curando a cada golpe.'],
   ['🌊', 'Fases mais apertadas', 'Menos jogadas nas fases normais, difíceis e lendárias.'],
   ['🎁', 'Mandar vida tem limite', 'Até 5 por dia, pra vida continuar valendo.'],
+  ['🗺️', 'Cada região com sua regra', 'Mangue com raízes, Mar Polar que congela, Vulcão que cospe cinza, Ruínas com tesouro, e mais. Vale em todas as fases da região.'],
+  ['🧩', 'Enigmas', 'Fases curtas, com especiais prontos e poucas jogadas: a ordem certa faz toda a diferença.'],
+  ['🎉', 'Eventos de fim de semana', 'Todo sábado e domingo uma regra especial vale pra todas as fases, e muda a cada semana.'],
   ['🦈', 'Dois mestres novos', 'Na fase 600, o Tubarão-martelo e sua investida. Na 1000, o Leviatã, que usa os golpes de todos os mestres.'],
   ['📖', 'Álbum do fundo do mar', 'Cada fase com 3 estrelas pela primeira vez rende uma figurinha com uma curiosidade real. Os mestres dão as lendárias. Completar vale 2.000 moedas.'],
   ['⏱', 'Contra a Maré', 'Fases com relógio no lugar das jogadas: jogue rápido, e jogada grande devolve tempo.'],
@@ -5454,7 +5540,7 @@ const NOVIDADES = [
    quando o lote muda, e não a cada versão: correção de bug não é
    novidade. Quem viu o cartão antigo (marcado pela versão) já viu
    este primeiro lote. Pra publicar novidade nova: troque o lote e a lista. */
-const NOVIDADES_LOTE = 'lote-3', NOVIDADES_DATA = '30 de setembro';
+const NOVIDADES_LOTE = 'lote-4', NOVIDADES_DATA = '1º de outubro';
 function viuEsteLote() {
   const v = prog.viuNovidades || '';
   return v === NOVIDADES_LOTE || (NOVIDADES_LOTE === 'lote-1' && /^20\d\d\./.test(v));
@@ -5465,7 +5551,16 @@ function mostraNovidades() {
   cartaoNovidades();
   return true;
 }
+function pintaEventoHome() {
+  const ev = eventoHoje(), velho = document.getElementById('faixa-evento');
+  if (velho) velho.remove();
+  if (!ev) return;
+  const v = document.querySelector('.linha-extras') || document.getElementById('versao');
+  if (!v) return;
+  v.insertAdjacentHTML('beforebegin', '<div id="faixa-evento">' + EVENTOS[ev].ic + ' <b>' + EVENTOS[ev].nome + '</b><small>' + EVENTOS[ev].texto + '</small></div>');
+}
 function pintaBotaoNovidades() {
+  pintaEventoHome();
   const al = document.getElementById('bt-album');
   if (al) al.innerHTML = '📖 Álbum ' + (prog.album || []).length + '/' + ALBUM_TOTAL();
   const b = document.getElementById('bt-novidades');
@@ -6627,7 +6722,7 @@ function retomaPartida(d) {
         presosFeitos: d.pr || 0, bolhasFeitas: d.bo || 0, bolhasFugiram: d.bfg || 0,
         ninhos: d.nin || null, ninhosFeitos: d.ninf || 0,
         perolas: d.per || null, perolasFeitas: d.pef || 0, coral: d.cor || null, coralFeito: d.cof || 0, lixoFeito: d.lxf || 0,
-        tempoRestante: d.tmp != null ? d.tmp : null, cond: d.cnd || null, corVez: d.cvz != null ? d.cvz : null, moedasFundo: d.mfd || null, moedasPegas: d.mpg || 0,
+        tempoRestante: d.tmp != null ? d.tmp : null, regra: d.rg || null, evento: d.ev || null, jogadasRegiao: d.jr || 0, cond: d.cnd || null, corVez: d.cvz != null ? d.cvz : null, moedasFundo: d.mfd || null, moedasPegas: d.mpg || 0,
         dano: d.dn || 0, contaMestre: d.cm || 0, contaBolha: d.cb || 0, bauParado: d.bpa || 0 };
   TOPO = (d.topo || f.forma || Array(W).fill(0)).slice();
   QUADRADO_ATIVO = !!f.quadrado;
@@ -6767,6 +6862,9 @@ function mostraPreFase() {
     '<p class="pre-texto">' + C.texto + '</p>' +
     '<div class="pre-linhas"><div class="pre-obj"><small>objetivo</small><b>' + resumoObjetivo(f) + '</b>' + iconesObjetivo(f) + '</div>' +
     '<div><small>' + (tempoDa(J.fase) ? 'segundos' : 'jogadas') + '</small><b class="pre-grande">' + (tempoDa(J.fase) || f.mov) + '</b></div></div>' +
+    (f.enigma ? '<p class="pre-enigma">🧩 <b>Enigma</b> · só ' + f.mov + ' jogadas, com especiais já prontos no tabuleiro. Pense antes de mexer.</p>' : '') +
+    (regraDa(J.fase) && regraDa(J.fase).id !== 'calma' ? '<p class="pre-regiao">' + regraDa(J.fase).ic + ' <b>' + regraDa(J.fase).nome + '</b> · ' + regraDa(J.fase).texto + '</p>' : '') +
+    (eventoHoje() ? '<p class="pre-evento">' + EVENTOS[eventoHoje()].ic + ' <b>' + EVENTOS[eventoHoje()].nome + '</b> · ' + EVENTOS[eventoHoje()].texto + '</p>' : '') +
     (tempoDa(J.fase) ? '<p class="pre-tempo">⏱ <b>Contra a Maré</b> · sem limite de jogadas: você tem ' + tempoDa(J.fase) + ' segundos. Jogada de 5 peças ou mais devolve tempo.</p>' : '') +
     (condicaoDa(J.fase) ? '<p class="pre-cond">' + CONDICOES[condicaoDa(J.fase)].ic + ' <b>' + CONDICOES[condicaoDa(J.fase)].nome + '</b> · ' + CONDICOES[condicaoDa(J.fase)].texto + '</p>' : '') +
     (f.quadrado ? '<p class="pre-quadrado">🐟 Nesta fase, 4 peças iguais em quadrado viram um peixe-guia</p>' : '') +
@@ -6841,6 +6939,11 @@ function comecaFase() {
     'O coral cinza está morto. Toda peça estourada em cima dele ou bem do lado devolve a cor daquele pedaço. Recupere o recife inteiro.'); }
   if (!prog.vistos.lixo2 && f.obj.tipo === 'lixo') { prog.vistos.lixo2 = true; salvaProg(); return mostraAviso('Lixo no fundo', '#i-lixo0',
     'Garrafas, latas e sacolas não combinam com nada. Estoure peças coladas nelas para tirar do mar; especial que acerta em cheio também leva. Os mais sujos aguentam dois estouros.'); }
+  const rg = regraDa(J.fase);
+  if (rg && rg.id !== 'calma' && !prog.vistos['regiao-' + rg.id]) { prog.vistos['regiao-' + rg.id] = true; salvaProg();
+    return mostraAviso(ambiente(J.fase).reg.nome, null, rg.ic + ' ' + rg.nome + '. ' + rg.texto + ' A regra vale em todas as fases desta região.'); }
+  if (!prog.vistos.enigma && f.enigma) { prog.vistos.enigma = true; salvaProg(); return mostraAviso('Enigma', null,
+    'Esta fase é um enigma: poucas jogadas e especiais já prontos no tabuleiro. A ordem em que você usa cada um faz toda a diferença. Olhe com calma antes de mexer.'); }
   if (!prog.vistos.tempo && tempoDa(J.fase)) { prog.vistos.tempo = true; salvaProg(); return mostraAviso('Contra a Maré', '#i-bolha-ar',
     'Nesta fase não existe limite de jogadas: existe um relógio. Jogue rápido, sem medo. Toda jogada que estoura 5 peças ou mais devolve um segundo. Com cartão aberto ou o jogo minimizado, o relógio para.'); }
   if (!prog.vistos.quadrado && f.quadrado) { prog.vistos.quadrado = true; salvaProg(); return mostraAviso('Peixe-guia', '#sp-peixe',
