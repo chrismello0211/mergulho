@@ -1462,7 +1462,7 @@ body.leve .cartao{animation-duration:.18s}
    MERGULHO · combinar 3 da beira da praia até 4.000 metros
    ═══════════════════════════════════════════════════════════════ */
 
-const VERSAO_JOGO = '2026.12.01';
+const VERSAO_JOGO = '2026.12.02';
 const W = 7, H = 8, TIPOS = 6;
 const NADA = 0, LH = 1, LV = 2, BOMBA = 3, ARCO = 4, ONDA = 5, ONDAV = 6, CARDUME = 7, PEIXE = 8;
 /* fases com o quadrado ligado: 4 peças iguais em 2x2 viram um peixe-guia */
@@ -1911,6 +1911,15 @@ const MESTRES = [
   { nome:'Tubarão-martelo', cor:'#9FB6C8', cor2:'#33485A', forma:'tubarao',
     fala:'Ele sente o seu coração bater a metros de distância. E vem direto.',
     golpe:'Investida: arranca duas jogadas de uma vez e espalha lixo pelo caminho.' },
+  { nome:'Peixe-pescador', cor:'#FFB86B', cor2:'#3A2A55', forma:'pescador',
+    fala:'Aquela luzinha no escuro parece amiga. Não é.',
+    golpe:'Lanterna hipnótica: prende duas peças na luz e mancha duas casas de tinta.' },
+  { nome:'Polvo-colossal', cor:'#FF7A7A', cor2:'#5A1E3A', forma:'polvo',
+    fala:'Oito braços maiores que um barco. E ele usa todos ao mesmo tempo.',
+    golpe:'Abraço de oito braços: prende quatro peças de uma vez.' },
+  { nome:'Orca-sombria', cor:'#E8EEF5', cor2:'#141C2B', forma:'orca',
+    fala:'Caça em grupo, pensa antes de atacar e nunca desiste.',
+    golpe:'Cerco: arranca uma jogada a mais e levanta areia grossa em volta.' },
   { nome:'Leviatã', cor:'#5FE3FF', cor2:'#3B1D6E', forma:'leviata', epico: true,
     fala:'Dizem que ele dorme no fundo de tudo. Você acabou de acordar ele.',
     golpe:'Usa os golpes de todos os mestres, um depois do outro: tinta, choque, areia e lixo. E fica mais forte quando está ferido.' }
@@ -1920,7 +1929,8 @@ function faseMestre(i) {
   const volta = Math.floor((i + 1) / 100);          /* 1º mestre na fase 100 */
   /* 600 e 1000 têm mestres próprios; as outras voltas revezam os clássicos,
      e depois da 1000 entram todos no rodízio */
-  const mestre = volta === 6 ? 4 : volta === 10 ? 5 : volta > 10 ? (volta - 1) % MESTRES.length : (volta - 1) % 4;
+  const PROPRIO = { 6: 4, 7: 5, 8: 6, 9: 7, 10: 8 };   /* 600 a 1000 têm mestre próprio; 500 repete o primeiro */
+  const mestre = PROPRIO[volta] != null ? PROPRIO[volta] : volta > 10 ? (volta - 1) % MESTRES.length : (volta - 1) % 4;
   const m = 4, dif = Math.min(1, .45 + (i - CICLO) / 420);
   const vida = Math.round((110 + volta * 26) * (MESTRES[mestre].epico ? 1.25 : 1));
   const mov = 26 + Math.min(6, volta * 2);
@@ -2821,6 +2831,14 @@ function desenhaMestre(idx) {
       '<path d="M22 44C12 40 8 30 12 20c8 2 14 10 14 20M78 44c10-4 14-14 10-24-8 2-14 10-14 20" fill="' + c + '"/>' +
       '<path d="M26 70l-12 14M38 76l-8 18M62 76l8 18M74 70l12 14" fill="none" stroke="' + c + '" stroke-width="6" stroke-linecap="round"/>' +
       '<path d="M34 62q16 8 32 0" fill="none" stroke="' + c2 + '" stroke-width="4" stroke-linecap="round"/>',
+    pescador: '<path d="M14 56c0-22 18-34 38-34s34 14 34 32-16 30-36 30S14 76 14 56Z" fill="' + c2 + '"/>' +
+      '<path d="M50 22C46 10 34 6 26 12" fill="none" stroke="' + c + '" stroke-width="3.5"/><circle cx="25" cy="13" r="6" fill="#FFF36B"/><circle cx="25" cy="13" r="11" fill="#FFF36B" opacity=".25"/>' +
+      '<path d="M22 64q30 22 60 0" fill="#0A0D1A"/><path d="M28 66l4 7 4-6 4 8 4-8 4 8 4-8 4 7 4-6 4 6" fill="none" stroke="#fff" stroke-width="2.5" stroke-linejoin="round"/>',
+    polvo: '<ellipse cx="50" cy="38" rx="28" ry="24" fill="' + c + '"/>' +
+      '<path d="M26 54q-14 14-18 34M34 58q-6 18-14 32M42 60q0 18-6 32M50 60v32M58 60q0 18 6 32M66 58q6 18 14 32M74 54q14 14 18 34" fill="none" stroke="' + c + '" stroke-width="7" stroke-linecap="round"/>' +
+      '<circle cx="40" cy="26" r="3" fill="' + c2 + '" opacity=".5"/><circle cx="60" cy="24" r="4" fill="' + c2 + '" opacity=".5"/>',
+    orca: '<path d="M8 58c8-20 34-30 58-24l14-14 2 18c10 6 12 16 6 24-16 10-50 12-80-4Z" fill="#26324A" stroke="' + c + '" stroke-width="3" stroke-linejoin="round"/>' +
+      '<path d="M22 66c14 8 38 8 56 0-14 2-38 2-56 0Z" fill="' + c + '"/><ellipse cx="58" cy="44" rx="8" ry="4" fill="' + c + '"/>',
     tubarao: '<path d="M14 58c14-14 40-20 60-14l18-8-6 16 6 14-18-6c-20 8-46 4-60-2Z" fill="' + c + '"/>' +
       '<path d="M8 36h40M8 36l-2 10M48 36l2 10" stroke="' + c2 + '" stroke-width="9" stroke-linecap="round"/>' +
       '<path d="M40 44l8-16 8 16" fill="' + c2 + '"/><path d="M30 64q14 8 30 2" fill="none" stroke="#0A0D1A" stroke-width="3.5" stroke-linecap="round"/>' +
@@ -4187,13 +4205,17 @@ async function passoMestre() {
   const quantas = fase3 ? 7 : fase2 ? 5 : 3;
   let forma = MESTRES[f.obj.mestre].forma;
   if (forma === 'leviata') { J.golpesLev = (J.golpesLev || 0) + 1; forma = ['lula', 'enguia', 'caranguejo', 'serpente'][(J.golpesLev - 1) % 4]; }
+  /* os novos mestres combinam golpes conhecidos de um jeito próprio */
+  const PERFIL = { pescador: ['enguia', 0, 2, 2], polvo: ['enguia', 0, 4, 1], orca: ['caranguejo', 1, 0, 0] };
+  let golpeExtra = 0, prendeQuantas = null, tintaFixa = null;
+  if (PERFIL[forma]) { const pf = PERFIL[forma]; golpeExtra = pf[1]; prendeQuantas = pf[2] || null; tintaFixa = pf[3] || null; forma = pf[0]; }
   const ehTubarao = forma === 'tubarao';
   if (ehTubarao) forma = 'serpente';   /* espalha lixo como a serpente, mas leva mais jogadas */
   const pecasSoltas = () => { const l = []; for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) { const q = grid[r][c]; if (q && !q.sp && !q.bau && !q.gaiola && !q.lixo) l.push(q); } return l; };
   if (forma === 'enguia' || forma === 'serpente') {
     /* enguia prende peças em rede elétrica; serpente transforma peças em lixo */
     const l = pecasSoltas();
-    for (let k = 0; k < Math.min(quantas, l.length); k++) {
+    for (let k = 0; k < Math.min(prendeQuantas || quantas, l.length); k++) {
       const q = l.splice(sorteia(l.length), 1)[0];
       if (forma === 'enguia') q.gaiola = 1; else q.lixo = 1;
       atualizaEl(q);
@@ -4201,7 +4223,7 @@ async function passoMestre() {
   }
   const livres = [];
   for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) if (papel[r][c] === 0 && temCasa(r, c)) livres.push([r, c]);
-  const tintaQuantas = forma === 'lula' ? quantas : forma === 'caranguejo' ? Math.ceil(quantas * .7) : 1;
+  const tintaQuantas = tintaFixa != null ? tintaFixa : forma === 'lula' ? quantas : forma === 'caranguejo' ? Math.ceil(quantas * .7) : 1;
   for (let k = 0; k < tintaQuantas && livres.length; k++) {
     const idx = sorteia(livres.length), [r, c] = livres.splice(idx, 1)[0];
     papel[r][c] = forma === 'caranguejo' ? 2 : 1;   /* areia do caranguejo vem em duas camadas */
@@ -4210,7 +4232,7 @@ async function passoMestre() {
     setTimeout(() => casa.classList.remove('cresceu'), 520);
   }
   pintaPapel();
-  J.mov = Math.max(0, J.mov - (fase3 ? 2 : 1) - (ehTubarao ? 1 : 0));
+  J.mov = Math.max(0, J.mov - (fase3 ? 2 : 1) - (ehTubarao ? 1 : 0) - golpeExtra);
   /* a cada golpe ele se recupera um pouco: não dá pra só esperar */
   const cura = (fase3 ? 7 : fase2 ? 5 : 3) + (MESTRES[f.obj.mestre].epico && fase3 ? 3 : 0);
   J.dano = Math.max(0, (J.dano || 0) - cura);
@@ -5311,7 +5333,7 @@ function mostraFigurinha(id) {
   cartao('<div class="fig-detalhe' + (id[0] === 'm' ? ' lendaria' : '') + '">' + desenhoFigurinha(id, true) + '</div>' +
     '<p class="aviso-novo">' + (id[0] === 'm' ? 'figurinha lendária' : 'figurinha') + '</p><h3>' + nomeFigurinha(id) + '</h3>' +
     '<p class="aviso-lead">' + textoFigurinha(id) + '</p>' +
-    '<div class="bts"><button class="bt vidro" data-ac="album">Álbum</button><button class="bt" data-ac="fecha">Fechar</button></div>', true);
+    '<div class="bts"><button class="bt vidro" data-ac="album">Álbum</button><button class="bt" data-ac="fecha">' + (J && J.fim && ultimoCartaoFim ? 'Voltar' : 'Fechar') + '</button></div>', true);
 }
 function mestresDerrotados() {
   let n = 0;
@@ -5347,7 +5369,10 @@ async function mostraPosicaoFase(i, pontos) {
 }
 
 /* ═══ CARTÕES ═══════════════════════════════════════════════════ */
+let ultimoCartaoFim = null;
 function cartao(html, fechavel) {
+  /* guarda o cartão de vitória ou derrota, pra poder voltar a ele */
+  if (html.indexOf('estrelas-grandes') >= 0 || html.indexOf('placar-final') >= 0) ultimoCartaoFim = html;
   const c = document.getElementById('cartao');
   c.className = 'cartao' + (fechavel ? ' fechavel' : '');
   c.innerHTML = html;
@@ -5368,6 +5393,15 @@ function tocaFila() {
   if (f) f();
 }
 function fechaCartao() {
+  /* fase terminada e ninguém saiu da tela de jogo: o cartão de fim volta,
+     senão a pessoa fica presa num tabuleiro acabado (acontecia ao fechar
+     a figurinha nova aberta a partir da vitória) */
+  setTimeout(() => {
+    if (!ultimoCartaoFim || !J || !J.fim) return;
+    if (!document.getElementById('tela-jogo').classList.contains('ativa')) return;
+    if (document.getElementById('veu').classList.contains('aberto')) return;
+    cartao(ultimoCartaoFim);
+  }, 250);
   document.getElementById('veu').classList.remove('aberto');
   if (filaCartoes.length) setTimeout(tocaFila, 300);
 }
@@ -5554,6 +5588,7 @@ const NOVIDADES = [
   ['🦑', 'Cada mestre com seu golpe', 'A lula cospe tinta, a enguia dá choque e prende peças, o caranguejo joga areia grossa e a serpente cospe lixo. Todos mais fortes e se curando a cada golpe.'],
   ['🌊', 'Fases mais apertadas', 'Menos jogadas nas fases normais, difíceis e lendárias.'],
   ['🎁', 'Mandar vida tem limite', 'Até 5 por dia, pra vida continuar valendo.'],
+  ['🐙', 'Três mestres novos', 'Peixe-pescador na 700, Polvo-colossal na 800 e Orca-sombria na 900, cada um com golpe próprio. Agora só a 500 repete mestre.'],
   ['🗺️', 'Cada região com sua regra', 'Mangue com raízes, Mar Polar que congela, Vulcão que cospe cinza, Ruínas com tesouro, e mais. Vale em todas as fases da região.'],
   ['🧩', 'Enigmas', 'Fases curtas, com especiais prontos e poucas jogadas: a ordem certa faz toda a diferença.'],
   ['🎉', 'Eventos de fim de semana', 'Todo sábado e domingo uma regra especial vale pra todas as fases, e muda a cada semana.'],
@@ -5568,7 +5603,7 @@ const NOVIDADES = [
    quando o lote muda, e não a cada versão: correção de bug não é
    novidade. Quem viu o cartão antigo (marcado pela versão) já viu
    este primeiro lote. Pra publicar novidade nova: troque o lote e a lista. */
-const NOVIDADES_LOTE = 'lote-4', NOVIDADES_DATA = '1º de outubro';
+const NOVIDADES_LOTE = 'lote-5', NOVIDADES_DATA = '2 de outubro';
 function viuEsteLote() {
   const v = prog.viuNovidades || '';
   return v === NOVIDADES_LOTE || (NOVIDADES_LOTE === 'lote-1' && /^20\d\d\./.test(v));
@@ -6787,6 +6822,7 @@ function retomaPartida(d) {
 }
 
 function abreFase(i, ignoraParada) {
+  ultimoCartaoFim = null;
   const parada = lePartida();
   atualizaVidas();
   if (!(parada && parada.f === i) && prog.vidas <= 0) { recebeVidas().then(() => semVidas()); return; }
