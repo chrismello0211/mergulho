@@ -766,6 +766,11 @@ body.leve .cartao .aviso-arte{animation:none}
 .cartao p.golpe-mestre{margin-top:8px;padding:8px 12px;border-radius:14px;background:rgba(255,106,61,.14);font-size:13.5px;text-align:left}
 .cartao p.legenda-rank{margin-top:8px;font-size:11.5px;opacity:.7}
 
+/* ── contra a maré ───────────────────────────────────────────── */
+.cartao p.pre-tempo{margin-top:8px;padding:8px 10px;border-radius:12px;background:rgba(255,106,61,.16);font-size:12.5px;text-align:left}
+body.relogio-urgente #movimentos{animation:relogio-pulsa .5s ease-in-out infinite}
+@keyframes relogio-pulsa{0%,100%{transform:scale(1)}50%{transform:scale(1.1)}}
+
 /* ── botão de novidades na home ─────────────────────────────── */
 #bt-novidades{display:block;margin:6px auto 0;border:0;cursor:pointer;padding:6px 14px;border-radius:999px;font-family:Nunito,sans-serif;
   font-weight:800;font-size:12.5px;color:#fff;background:rgba(4,30,48,.45);box-shadow:inset 0 0 0 1px rgba(255,255,255,.25);position:relative}
@@ -1414,7 +1419,7 @@ body.leve .cartao{animation-duration:.18s}
    MERGULHO · combinar 3 da beira da praia até 4.000 metros
    ═══════════════════════════════════════════════════════════════ */
 
-const VERSAO_JOGO = '2026.11.26';
+const VERSAO_JOGO = '2026.11.27';
 const W = 7, H = 8, TIPOS = 6;
 const NADA = 0, LH = 1, LV = 2, BOMBA = 3, ARCO = 4, ONDA = 5, ONDAV = 6, CARDUME = 7, PEIXE = 8;
 /* fases com o quadrado ligado: 4 peças iguais em 2x2 viram um peixe-guia */
@@ -1426,6 +1431,12 @@ const CONDICOES = {
   moedas: { ic: '🪙', nome: 'Moedas no fundo', texto: 'Algumas casas escondem moedas de verdade: estoure em cima pra pegar.' }
 };
 /* sorteio próprio, que não mexe no sorteio das fases: nada que já existe muda */
+/* Contra a Maré: fase com relógio em vez de jogadas. Sorteio próprio
+   (não mexe nas fases existentes), em boa parte das fases de pontuar
+   e de juntar peças, que são as que combinam com pressa.            */
+const tempoDa = i => { if (i < 39 || (i + 1) % 100 === 0) return 0; const f = fase(i);
+  if (f.obj.tipo !== 'pontos' && f.obj.tipo !== 'coletar') return 0;
+  return ((i + 5) * 2246822519 >>> 0) % 100 < 45 ? Math.max(40, Math.round(f.mov * 3.2 / 5) * 5) : 0; };
 const condicaoDa = i => { if (i < 30 || (i + 1) % 100 === 0) return null; const h = ((i + 17) * 2654435761 >>> 0) % 100; return h < 22 ? 'brinde' : h < 40 ? 'corvez' : h < 55 ? 'moedas' : null; };
 
 const $ = s => document.querySelector(s);
@@ -3601,6 +3612,7 @@ async function limpar(conj, novos) {
   if (!vivas.length && !(novos && novos.length)) return false;
 
   let ganho = 0, temEsp = false;
+  if (J.tempoModo && vivas.length >= 5 && J.cascata === 1) { J.tempoRestante = (J.tempoRestante || 0) + 1; pintaRelogio(); }
   let sr = 0, sc = 0;
   for (const k of vivas) {
     const r = linha(k), c = coluna(k), p = grid[r][c];
@@ -3986,7 +3998,7 @@ function salvaPartida() {
       pr: J.presosFeitos || 0, bo: J.bolhasFeitas || 0, bfg: J.bolhasFugiram || 0,
       nin: J.ninhos || null, ninf: J.ninhosFeitos || 0,
       per: J.perolas || null, pef: J.perolasFeitas || 0, cor: J.coral || null, cof: J.coralFeito || 0, lxf: J.lixoFeito || 0,
-      ot: faseAtual().obj.tipo, cnd: J.cond || null, cvz: J.corVez, mfd: J.moedasFundo || null, mpg: J.moedasPegas || 0,
+      ot: faseAtual().obj.tipo, tmp: J.tempoModo ? J.tempoRestante : null, cnd: J.cond || null, cvz: J.corVez, mfd: J.moedasFundo || null, mpg: J.moedasPegas || 0,
       dn: J.dano || 0, cm: J.contaMestre || 0, cb: J.contaBolha || 0, bpa: J.bauParado || 0,
       g: grid.map(l => l.map(p => p ? (p.bau ? 'b' : p.t + '.' + p.sp + '.' + (p.gaiola || 0) + '.' + (p.bolha ? 1 : 0) + '.' + (p.lixo || 0)) : ''))
     }));
@@ -4704,9 +4716,12 @@ function atualizaHud() {
   const obj = document.getElementById('objetivo');
   if (obj && !obj.dataset.toca) { obj.dataset.toca = '1'; obj.addEventListener('click', destacaAlvos); obj.title = 'Toque para ver onde estão'; }
   const f = faseAtual();
-  document.getElementById('mov-n').textContent = J.mov;
-  document.getElementById('mov-lb').textContent = J.mov === 1 ? 'jogada' : 'jogadas';
-  document.getElementById('movimentos').classList.toggle('aperto', J.mov <= 5);
+  if (J.tempoModo) pintaRelogio();
+  else {
+    document.getElementById('mov-n').textContent = J.mov;
+    document.getElementById('mov-lb').textContent = J.mov === 1 ? 'jogada' : 'jogadas';
+    document.getElementById('movimentos').classList.toggle('aperto', J.mov <= 5);
+  }
   animaPontos();
 
   const teto = f.marcas[2];
@@ -4888,7 +4903,7 @@ async function esperaAcalmar(minimo) {
 async function bonusDoFolego() {
   const f = faseAtual();
   J.folegoBonus = null;
-  if (f.obj.tipo === 'pontos' || f.obj.tipo === 'chefe') return 0;
+  if (f.obj.tipo === 'pontos' || f.obj.tipo === 'chefe' || J.tempoModo) return 0;
   if (J.movExtra > 0) return 0;
   const sobra = Math.max(0, J.mov | 0);
   const minimo = Math.max(2, Math.ceil(f.mov * .2));
@@ -5025,9 +5040,9 @@ async function perdeu() {
   if (faltaExtra()) falta += ' E faltou juntar ' + faltaExtra() + (faltaExtra() === 1 ? ' peça' : ' peças') + ' da cor pedida.';
   await espera(400);
   cartao(
-    '<h3>' + (perto && !J.segundaChance ? (muitoPerto ? 'Você quase conseguiu! 🌊' : 'Foi por pouco! 🌊') : 'Acabaram as jogadas') + '</h3>' +
+    '<h3>' + (perto && !J.segundaChance ? (muitoPerto ? 'Você quase conseguiu! 🌊' : 'Foi por pouco! 🌊') : (J.tempoModo ? 'Acabou o tempo' : 'Acabaram as jogadas')) + '</h3>' +
     '<p>' + falta + '</p>' +
-    (perto && !J.segundaChance ? '<div class="continuar-info"><span>Continuar com <b>+5 jogadas</b> do ponto em que parou</span>' +
+    (perto && !J.segundaChance ? '<div class="continuar-info"><span>Continuar com <b>' + (J.tempoModo ? '+15 segundos' : '+5 jogadas') + '</b> do ponto em que parou</span>' +
       '<span class="preco"><svg viewBox="0 0 100 100"><use href="#i-moeda"/></svg>' + CUSTO_CONTINUAR + '</span></div>' : '') +
     (perto && !J.segundaChance && prog.moedas < CUSTO_CONTINUAR ? '<p class="aviso">Você precisa de mais ' + (CUSTO_CONTINUAR - prog.moedas) + ' moedas para continuar.</p>' : '') +
     '<p class="vidas-derrota">Desistir gasta uma vida · ❤&nbsp;' + prog.vidas + '</p>' +
@@ -5298,6 +5313,7 @@ const NOVIDADES = [
   ['🦑', 'Cada mestre com seu golpe', 'A lula cospe tinta, a enguia dá choque e prende peças, o caranguejo joga areia grossa e a serpente cospe lixo. Todos mais fortes e se curando a cada golpe.'],
   ['🌊', 'Fases mais apertadas', 'Menos jogadas nas fases normais, difíceis e lendárias.'],
   ['🎁', 'Mandar vida tem limite', 'Até 5 por dia, pra vida continuar valendo.'],
+  ['⏱', 'Contra a Maré', 'Fases com relógio no lugar das jogadas: jogue rápido, e jogada grande devolve tempo.'],
   ['🎲', 'Condições do mar', 'Muitas fases agora vêm com uma regra extra: especiais de presente, cor que vale o dobro ou moedas escondidas no fundo.'],
   ['🐟', 'Peixe-guia', 'Em algumas fases, 4 peças iguais em quadrado viram um peixe que nada direto até o que o objetivo pede.'],
   ['⚡', 'Enguia-elétrica redesenhada', 'O mestre da fase 200 ganhou cara de bicho de verdade.']
@@ -5306,7 +5322,7 @@ const NOVIDADES = [
    quando o lote muda, e não a cada versão: correção de bug não é
    novidade. Quem viu o cartão antigo (marcado pela versão) já viu
    este primeiro lote. Pra publicar novidade nova: troque o lote e a lista. */
-const NOVIDADES_LOTE = 'lote-1', NOVIDADES_DATA = '28 de setembro';
+const NOVIDADES_LOTE = 'lote-2', NOVIDADES_DATA = '29 de setembro';
 function viuEsteLote() {
   const v = prog.viuNovidades || '';
   return v === NOVIDADES_LOTE || (NOVIDADES_LOTE === 'lote-1' && /^20\d\d\./.test(v));
@@ -5415,7 +5431,8 @@ function continuaPorMoedas() {
   J.segundaChance = true; J.derrota = false;
   fechaCartao();
   J.fim = false; J.ocupado = false; J.mov += 5; J.movExtra = (J.movExtra || 0) + 5;
-  atualizaHud(); reiniciaDica(); Som.liga(); Som.pop(5); faixaTexto('+5 jogadas');
+  if (J.tempoModo) { J.mov = 999; J.tempoRestante = (J.tempoRestante || 0) + 15; iniciaRelogio(); faixaTexto('+15 segundos', 1800); }
+  atualizaHud(); reiniciaDica(); Som.liga(); Som.pop(5); faixaTexto(J.tempoModo ? '+15 segundos' : '+5 jogadas');
 }
 
 function usaFolegoNoCartao() {
@@ -5424,9 +5441,10 @@ function usaFolegoNoCartao() {
   J.segundaChance = true; J.derrota = false;
   fechaCartao();
   J.fim = false; J.ocupado = false; J.mov += 5; J.movExtra = (J.movExtra || 0) + 5;
+  if (J.tempoModo) { J.mov = 999; J.tempoRestante = (J.tempoRestante || 0) + 15; iniciaRelogio(); }
   atualizaHud(); reiniciaDica();
   Som.liga(); Som.pop(5);
-  faixaTexto('+5 jogadas');
+  faixaTexto(J.tempoModo ? '+15 segundos' : '+5 jogadas');
 }
 const moedaSvg = '<svg viewBox="0 0 100 100"><use href="#i-moeda"/></svg>';
 function mostraLoja() {
@@ -6473,7 +6491,7 @@ function retomaPartida(d) {
         presosFeitos: d.pr || 0, bolhasFeitas: d.bo || 0, bolhasFugiram: d.bfg || 0,
         ninhos: d.nin || null, ninhosFeitos: d.ninf || 0,
         perolas: d.per || null, perolasFeitas: d.pef || 0, coral: d.cor || null, coralFeito: d.cof || 0, lixoFeito: d.lxf || 0,
-        cond: d.cnd || null, corVez: d.cvz != null ? d.cvz : null, moedasFundo: d.mfd || null, moedasPegas: d.mpg || 0,
+        tempoRestante: d.tmp != null ? d.tmp : null, cond: d.cnd || null, corVez: d.cvz != null ? d.cvz : null, moedasFundo: d.mfd || null, moedasPegas: d.mpg || 0,
         dano: d.dn || 0, contaMestre: d.cm || 0, contaBolha: d.cb || 0, bauParado: d.bpa || 0 };
   TOPO = (d.topo || f.forma || Array(W).fill(0)).slice();
   QUADRADO_ATIVO = !!f.quadrado;
@@ -6612,13 +6630,35 @@ function mostraPreFase() {
     '<span class="selo-classe" style="--cor-classe:' + C.cor + '">' + C.emoji + ' ' + C.nome.toUpperCase() + '</span>' +
     '<p class="pre-texto">' + C.texto + '</p>' +
     '<div class="pre-linhas"><div class="pre-obj"><small>objetivo</small><b>' + resumoObjetivo(f) + '</b>' + iconesObjetivo(f) + '</div>' +
-    '<div><small>jogadas</small><b class="pre-grande">' + f.mov + '</b></div></div>' +
+    '<div><small>' + (tempoDa(J.fase) ? 'segundos' : 'jogadas') + '</small><b class="pre-grande">' + (tempoDa(J.fase) || f.mov) + '</b></div></div>' +
+    (tempoDa(J.fase) ? '<p class="pre-tempo">⏱ <b>Contra a Maré</b> · sem limite de jogadas: você tem ' + tempoDa(J.fase) + ' segundos. Jogada de 5 peças ou mais devolve tempo.</p>' : '') +
     (condicaoDa(J.fase) ? '<p class="pre-cond">' + CONDICOES[condicaoDa(J.fase)].ic + ' <b>' + CONDICOES[condicaoDa(J.fase)].nome + '</b> · ' + CONDICOES[condicaoDa(J.fase)].texto + '</p>' : '') +
     (f.quadrado ? '<p class="pre-quadrado">🐟 Nesta fase, 4 peças iguais em quadrado viram um peixe-guia</p>' : '') +
     '<div class="pre-estrelas"><span>★ ' + nf(f.marcas[0]) + '</span><span>★★ ' + nf(f.marcas[1]) + '</span><span>★★★ ' + nf(f.marcas[2]) + '</span></div>' +
     (prog.estrelas[J.fase] ? '<p class="pre-recorde">Seu melhor aqui: ' + '★'.repeat(prog.estrelas[J.fase]) + (prog.melhores && prog.melhores[J.fase] ? ' · ' + nf(prog.melhores[J.fase]) + ' pontos' : '') + '</p>' : '') +
     '</div><div class="bts"><button class="bt vidro" data-ac="mapa">Voltar</button>' +
     '<button class="bt" data-ac="comeca">Mergulhar</button></div>');
+}
+/* ═══ CONTRA A MARÉ ════════════════════════════════════════════════ */
+let relogio = null;
+function iniciaRelogio() {
+  clearInterval(relogio);
+  relogio = setInterval(() => {
+    if (!J || !J.tempoModo || J.fim) { clearInterval(relogio); document.body.classList.remove('relogio-urgente'); return; }
+    /* para com cartão aberto, com o jogo em segundo plano e durante a cascata */
+    if (document.hidden || document.getElementById('veu').classList.contains('aberto') || J.ocupado) return;
+    J.tempoRestante = Math.max(0, (J.tempoRestante || 0) - 1);
+    pintaRelogio();
+    if (J.tempoRestante <= 10 && J.tempoRestante > 0) { Som.liga(); Som.pop(1); }
+    if (J.tempoRestante <= 0) { clearInterval(relogio); J.mov = 0; confere(); }
+  }, 1000);
+}
+function pintaRelogio() {
+  if (!J || !J.tempoModo) return;
+  document.getElementById('mov-n').textContent = J.tempoRestante;
+  document.getElementById('mov-lb').textContent = 'segundos';
+  document.getElementById('movimentos').classList.toggle('aperto', J.tempoRestante <= 10);
+  document.body.classList.toggle('relogio-urgente', J.tempoRestante <= 10);
 }
 function vigiaTabuleiro(fase, tentativa) {
   setTimeout(() => {
@@ -6640,6 +6680,9 @@ function vigiaTabuleiro(fase, tentativa) {
 function comecaFase() {
   const f = faseAtual();
   if (!J.desafio) vigiaTabuleiro(J.fase, 0);
+  J.tempoModo = !J.desafio && tempoDa(J.fase) > 0;
+  if (J.tempoModo) { if (J.tempoRestante == null) J.tempoRestante = tempoDa(J.fase); J.mov = 999; iniciaRelogio(); setTimeout(pintaRelogio, 30); }
+  else { clearInterval(relogio); document.body.classList.remove('relogio-urgente'); }
   if (!J.viuPre && !J.desafio) { J.viuPre = true; return mostraPreFase(); }
   J.faltaInicial = Math.max(1, faltaObjetivo() || 1);
   garanteBolhas();
@@ -6662,6 +6705,8 @@ function comecaFase() {
     'O coral cinza está morto. Toda peça estourada em cima dele ou bem do lado devolve a cor daquele pedaço. Recupere o recife inteiro.'); }
   if (!prog.vistos.lixo2 && f.obj.tipo === 'lixo') { prog.vistos.lixo2 = true; salvaProg(); return mostraAviso('Lixo no fundo', '#i-lixo0',
     'Garrafas, latas e sacolas não combinam com nada. Estoure peças coladas nelas para tirar do mar; especial que acerta em cheio também leva. Os mais sujos aguentam dois estouros.'); }
+  if (!prog.vistos.tempo && tempoDa(J.fase)) { prog.vistos.tempo = true; salvaProg(); return mostraAviso('Contra a Maré', '#i-bolha-ar',
+    'Nesta fase não existe limite de jogadas: existe um relógio. Jogue rápido, sem medo. Toda jogada que estoura 5 peças ou mais devolve um segundo. Com cartão aberto ou o jogo minimizado, o relógio para.'); }
   if (!prog.vistos.quadrado && f.quadrado) { prog.vistos.quadrado = true; salvaProg(); return mostraAviso('Peixe-guia', '#sp-peixe',
     'Juntar quatro peças iguais em quadrado cria um peixe-guia. Quando ele dispara, nada direto até três casas que o objetivo pede: cobertura, coral, ostra, lixo ou bicho preso. Ele só aparece em algumas fases, avisadas antes de começar.'); }
   if (!prog.vistos.ninho2 && f.obj.tipo === 'ninho') { prog.vistos.ninho2 = true; salvaProg(); return mostraAviso('Ninho de algas', '#i-ninho',
