@@ -1475,7 +1475,7 @@ body.leve .cartao{animation-duration:.18s}
    MERGULHO · combinar 3 da beira da praia até 4.000 metros
    ═══════════════════════════════════════════════════════════════ */
 
-const VERSAO_JOGO = '2026.12.05';
+const VERSAO_JOGO = '2026.12.06';
 const W = 7, H = 8, TIPOS = 6;
 const NADA = 0, LH = 1, LV = 2, BOMBA = 3, ARCO = 4, ONDA = 5, ONDAV = 6, CARDUME = 7, PEIXE = 8;
 /* fases com o quadrado ligado: 4 peças iguais em 2x2 viram um peixe-guia */
@@ -6851,6 +6851,13 @@ function retomaPartida(d) {
   QUADRADO_ATIVO = !!f.quadrado;
   pintaFundoMestre(f.obj.tipo === 'chefe' ? f.obj.mestre : null);
   document.body.classList.toggle('com-mestre', f.obj.tipo === 'chefe');
+  /* fase de relógio retomada: religa o relógio. Antes ficava com as 999
+     jogadas internas visíveis, e a pessoa jogava sem limite */
+  if (tempoDa(d.f) > 0) {
+    J.tempoModo = true; J.mov = 999;
+    if (J.tempoRestante == null) J.tempoRestante = tempoDa(d.f);
+    setTimeout(() => { iniciaRelogio(); pintaRelogio(); }, 400);
+  } else if (J.mov > fase(d.f).mov + 20) J.mov = fase(d.f).mov;   /* trava de segurança: nunca mais jogadas que o possível */
   papel = d.papel;
   uid = 0;
   grid = d.g.map(l => l.map(cod => {
