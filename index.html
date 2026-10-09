@@ -801,6 +801,9 @@ body.relogio-urgente #movimentos{animation:relogio-pulsa .5s ease-in-out infinit
 .fig.vazia .fig-arte{font-family:var(--display);font-size:22px;color:rgba(10,108,122,.35)}
 .fig.vazia small{opacity:.45}
 .resgate{display:grid;grid-template-columns:repeat(auto-fit,minmax(70px,1fr));gap:8px;margin:10px 0 4px}
+.album-rola{max-height:48vh;overflow-y:auto;padding:2px}
+.album-rola .album-grade{max-height:none;overflow:visible}
+.cartao p.album-serie{margin:10px 0 6px;font-family:var(--display);font-size:14px;text-align:left}
 .cartao p.album-dica{margin-top:8px;font-size:11.5px;opacity:.75}
 .fig-detalhe{width:120px;height:120px;margin:0 auto 6px;border-radius:30px;display:grid;place-items:center;
   background:radial-gradient(circle at 50% 40%,#fff,#D9F4F2);box-shadow:0 10px 24px -8px rgba(0,40,60,.45);animation:aviso-arte 3s ease-in-out infinite}
@@ -1463,7 +1466,7 @@ body.leve .cartao{animation-duration:.18s}
    MERGULHO · combinar 3 da beira da praia até 4.000 metros
    ═══════════════════════════════════════════════════════════════ */
 
-const VERSAO_JOGO = '2026.12.03';
+const VERSAO_JOGO = '2026.12.04';
 const W = 7, H = 8, TIPOS = 6;
 const NADA = 0, LH = 1, LV = 2, BOMBA = 3, ARCO = 4, ONDA = 5, ONDAV = 6, CARDUME = 7, PEIXE = 8;
 /* fases com o quadrado ligado: 4 peças iguais em 2x2 viram um peixe-guia */
@@ -5131,7 +5134,16 @@ async function venceu() {
   /* figurinha é conquista: só fase Difícil ou Lendária com 3 estrelas pela
      primeira vez (ou mestre derrotado, que dá a lendária) */
   const valeFig = ['D', 'L'].indexOf(classeDaFase(J.fase)) >= 0;
-  J.figurinhaNova = (!J.desafio && (eraMestre || (e >= 3 && !tinha3 && valeFig))) ? ganhaFigurinha(eraMestre ? faseAtual().obj.mestre : null) : null;
+  let sorteioFig = false;
+  if (!J.desafio && !eraMestre && e >= 3 && !tinha3 && valeFig) {
+    /* Difícil 30%, Lendária 60%; depois de 12 tentativas sem nada, vem garantida */
+    const chance = classeDaFase(J.fase) === 'L' ? .6 : .3;
+    prog.semFig = (prog.semFig || 0) + 1;
+    sorteioFig = Math.random() < chance || prog.semFig >= 12;
+    if (sorteioFig) prog.semFig = 0;
+    salvaProg();
+  }
+  J.figurinhaNova = (!J.desafio && (eraMestre || sorteioFig)) ? ganhaFigurinha(eraMestre ? faseAtual().obj.mestre : null) : null;
   const ganho = moedasDaFase(e, primeira) + (eraMestre ? 150 : 0);
   prog.moedas += ganho;
   salvaProg();
@@ -5272,14 +5284,44 @@ const ALBUM = [
   ['🐸','Rã-do-mangue','Uma das poucas rãs do mundo que aguenta água salgada.'],
   ['🌊','Plâncton','Bilhões de seres minúsculos que produzem boa parte do oxigênio que a gente respira.']
 ];
-const ALBUM_TOTAL = () => ALBUM.length + MESTRES.length;
+/* Série 2: o abismo e o Brasil. Os desenhos repetidos ganham outra cor. */
+const ALBUM2 = [
+  ['🦑','Lula-vampira','Vive no escuro total e, assustada, vira a própria capa do avesso pra se esconder.',300],
+  ['🐙','Polvo-dumbo','Tem nadadeiras que parecem orelhas de elefante e vive a mais de 3 mil metros.',200],
+  ['🐟','Peixe-lanterna','Tem luzinhas pelo corpo que piscam como sinal pros outros da espécie.',160],
+  ['🐡','Peixe-bolha','Fora d\'água parece uma gelatina triste; lá embaixo, tem cara de peixe normal.',290],
+  ['🦐','Krill','É minúsculo, mas é a comida principal da baleia-azul.',330],
+  ['🐋','Baleia-azul','O maior animal que já existiu, maior que qualquer dinossauro.',20],
+  ['🦈','Tubarão-da-groenlândia','Pode viver mais de 400 anos: alguns nadando hoje nasceram antes do Brasil existir.',180],
+  ['🪼','Água-viva-imortal','Quando envelhece, consegue voltar a ser jovem e começar a vida de novo.',60],
+  ['🐠','Peixe-cirurgião','Tem uma lâmina afiada perto do rabo, igual a um bisturi.',120],
+  ['🦀','Caranguejo-aranha','As pernas dele podem medir quase 4 metros de ponta a ponta.',40],
+  ['🐚','Caramujo-cone','Dispara um ferrão venenoso como se fosse um arpão.',250],
+  ['🦞','Lagosta-azul','Só uma em cada 2 milhões nasce azul.',190],
+  ['🐬','Boto-cor-de-rosa','Vive nos rios da Amazônia e fica mais rosado quando está agitado.',300],
+  ['🦭','Leão-marinho','O filhote reconhece a voz da mãe no meio de milhares de outros.',30],
+  ['🐢','Tartaruga-de-couro','Mergulha a mais de mil metros e se alimenta de águas-vivas.',100],
+  ['🦦','Ariranha','A onça-d\'água do Pantanal: vive em família e caça junto.',330],
+  ['🐧','Pinguim-de-magalhães','Às vezes aparece nas praias do Brasil no inverno, perdido na corrente.',200],
+  ['🐟','Peixe-espada','Nada a mais de 90 km por hora.',260],
+  ['🦑','Lula-de-humboldt','Caça em grupo e pisca cores no corpo pra conversar com as outras.',90],
+  ['🐙','Polvo-mimético','Imita peixe-leão, cobra-do-mar e linguado pra enganar predadores.',330],
+  ['🪸','Coral-de-fogo','Parece coral, mas queima a pele de quem encosta.',300],
+  ['🌋','Fonte hidrotermal','No fundo do mar, bichos vivem do calor de vulcões, sem nunca ver o sol.',0],
+  ['⭐','Coroa-de-espinhos','Uma estrela-do-mar que come coral e pode devastar um recife inteiro.',280],
+  ['🪨','Peixe-pedra','O peixe mais venenoso do mundo, e parece uma pedra no fundo.',0]
+];
+const ALBUM_TOTAL = () => ALBUM.length + ALBUM2.length + MESTRES.length;
+const daSerie = id => id[0] === 'd' ? ALBUM2[+id.slice(1)] : ALBUM[+id.slice(1)];
 const temFigurinha = id => (prog.album || []).indexOf(id) >= 0;
 function ganhaFigurinha(lendaria) {
   prog.album = prog.album || [];
   let id = null;
   if (lendaria != null) id = 'm' + lendaria;
   else {
-    const faltam = ALBUM.map((_, k) => 'c' + k).filter(x => !temFigurinha(x));
+    /* termina a primeira série antes de abrir a segunda */
+    let faltam = ALBUM.map((_, k) => 'c' + k).filter(x => !temFigurinha(x));
+    if (!faltam.length) faltam = ALBUM2.map((_, k) => 'd' + k).filter(x => !temFigurinha(x));
     if (faltam.length) id = faltam[Math.floor(Math.random() * faltam.length)];
   }
   if (!id || temFigurinha(id)) return null;
@@ -5290,10 +5332,11 @@ function ganhaFigurinha(lendaria) {
 }
 function desenhoFigurinha(id, grande) {
   if (id[0] === 'm') return '<span class="fig-arte">' + desenhaMestre(+id.slice(1)) + '</span>';
-  return '<span class="fig-arte fig-emoji' + (grande ? ' grande' : '') + '">' + ALBUM[+id.slice(1)][0] + '</span>';
+  const d = daSerie(id);
+  return '<span class="fig-arte fig-emoji' + (grande ? ' grande' : '') + '"' + (d[3] ? ' style="filter:hue-rotate(' + d[3] + 'deg)"' : '') + '>' + d[0] + '</span>';
 }
-const nomeFigurinha = id => id[0] === 'm' ? MESTRES[+id.slice(1)].nome : ALBUM[+id.slice(1)][1];
-const textoFigurinha = id => id[0] === 'm' ? MESTRES[+id.slice(1)].fala : ALBUM[+id.slice(1)][2];
+const nomeFigurinha = id => id[0] === 'm' ? MESTRES[+id.slice(1)].nome : daSerie(id)[1];
+const textoFigurinha = id => id[0] === 'm' ? MESTRES[+id.slice(1)].fala : daSerie(id)[2];
 /* Quem venceu mestres antes do álbum existir recebe as lendárias deles:
    olha as fases de mestre que já têm estrela e entrega o que faltar. */
 function resgataLendarias() {
@@ -5322,15 +5365,18 @@ function avisaResgate(novas) {
 }
 function mostraAlbum() {
   resgataLendarias();
-  const todos = ALBUM.map((_, k) => 'c' + k).concat(MESTRES.map((_, k) => 'm' + k));
+  const s1 = ALBUM.map((_, k) => 'c' + k), s2 = ALBUM2.map((_, k) => 'd' + k), lend = MESTRES.map((_, k) => 'm' + k);
+  const conta = l => l.filter(temFigurinha).length + '/' + l.length;
+  const grade = (titulo, l) => '<p class="album-serie">' + titulo + ' · ' + conta(l) + '</p><div class="album-grade">' + l.map(id => temFigurinha(id)
+      ? '<button class="fig' + (id[0] === 'm' ? ' lendaria' : '') + '" data-ac="figurinha" data-id="' + id + '">' + desenhoFigurinha(id) + '<small>' + nomeFigurinha(id) + '</small></button>'
+      : '<div class="fig vazia' + (id[0] === 'm' ? ' lendaria' : '') + '"><span class="fig-arte">?</span><small>' + (id[0] === 'm' ? 'Lendária' : '???') + '</small></div>').join('') + '</div>';
+  const todos = s1.concat(s2, lend);
   const n = (prog.album || []).length;
   cartao('<h3>Álbum do fundo do mar</h3>' +
     '<p class="album-conta">' + n + ' de ' + ALBUM_TOTAL() + ' figurinhas' + (prog.albumCompleto ? ' · completo! 🏆' : ' · completar vale 2.000 moedas') + '</p>' +
     '<div class="album-barra"><i style="width:' + Math.round(n / ALBUM_TOTAL() * 100) + '%"></i></div>' +
-    '<div class="album-grade">' + todos.map(id => temFigurinha(id)
-      ? '<button class="fig' + (id[0] === 'm' ? ' lendaria' : '') + '" data-ac="figurinha" data-id="' + id + '">' + desenhoFigurinha(id) + '<small>' + nomeFigurinha(id) + '</small></button>'
-      : '<div class="fig vazia' + (id[0] === 'm' ? ' lendaria' : '') + '"><span class="fig-arte">?</span><small>' + (id[0] === 'm' ? 'Lendária' : '???') + '</small></div>').join('') + '</div>' +
-    '<p class="album-dica">Figurinhas vêm das fases Difíceis e Lendárias: faça 3 estrelas nelas pela primeira vez. As lendárias vêm dos mestres.</p>' +
+    '<div class="album-rola">' + grade('Série 1 · Costeira', s1) + grade('Série 2 · Abismo', s2) + grade('Lendárias', lend) + '</div>' +
+    '<p class="album-dica">3 estrelas pela primeira vez numa fase Difícil têm 30% de chance de dar figurinha; numa Lendária, 60%. Depois de 12 tentativas sem nada, a próxima é garantida. As lendárias vêm dos mestres.</p>' +
     '<div class="bts"><button class="bt" data-ac="fecha">Fechar</button></div>', true);
 }
 function mostraFigurinha(id) {
@@ -5592,6 +5638,7 @@ const NOVIDADES = [
   ['🦑', 'Cada mestre com seu golpe', 'A lula cospe tinta, a enguia dá choque e prende peças, o caranguejo joga areia grossa e a serpente cospe lixo. Todos mais fortes e se curando a cada golpe.'],
   ['🌊', 'Fases mais apertadas', 'Menos jogadas nas fases normais, difíceis e lendárias.'],
   ['🎁', 'Mandar vida tem limite', 'Até 5 por dia, pra vida continuar valendo.'],
+  ['📖', 'Álbum: série 2 e mais desafio', 'Chegaram 24 figurinhas novas do abismo e do Brasil. E agora figurinha é sorte e mérito: 30% de chance nas fases Difíceis com 3 estrelas, 60% nas Lendárias.'],
   ['🐙', 'Três mestres novos', 'Peixe-pescador na 700, Polvo-colossal na 800 e Orca-sombria na 900, cada um com golpe próprio. Agora só a 500 repete mestre.'],
   ['🗺️', 'Cada região com sua regra', 'Mangue com raízes, Mar Polar que congela, Vulcão que cospe cinza, Ruínas com tesouro, e mais. Vale em todas as fases da região.'],
   ['🧩', 'Enigmas', 'Fases curtas, com especiais prontos e poucas jogadas: a ordem certa faz toda a diferença.'],
@@ -5607,7 +5654,7 @@ const NOVIDADES = [
    quando o lote muda, e não a cada versão: correção de bug não é
    novidade. Quem viu o cartão antigo (marcado pela versão) já viu
    este primeiro lote. Pra publicar novidade nova: troque o lote e a lista. */
-const NOVIDADES_LOTE = 'lote-5', NOVIDADES_DATA = '2 de outubro';
+const NOVIDADES_LOTE = 'lote-6', NOVIDADES_DATA = '3 de outubro';
 function viuEsteLote() {
   const v = prog.viuNovidades || '';
   return v === NOVIDADES_LOTE || (NOVIDADES_LOTE === 'lote-1' && /^20\d\d\./.test(v));
@@ -6447,10 +6494,8 @@ async function mostraRanking(aba) {
 const PRESENTES = {
   /* de vida (continuam valendo) */
   'VIDACHEIA': 'vidas', 'FOLEGO5': 'vidas',
-  /* três de 3 mil */
-  'MARUJO3000': 3000, 'ANCORA3000': 3000, 'FAROL3000': 3000,
-  /* cinco de 10 mil */
-  'SEREIA10K': 10000, 'NETUNO10K': 10000, 'KRAKEN10K': 10000, 'CORSARIO10K': 10000, 'TRIDENTE10K': 10000
+  /* seis de 10 mil */
+  'POSEIDON10K': 10000, 'MARESIA10K': 10000, 'NAUFRAGO10K': 10000, 'CORAL10K': 10000, 'ABISSAL10K': 10000, 'LEVIATA10K': 10000
 };
 function mostraCodigo(aviso) {
   cartao('<h3>Código de presente</h3><p>Se alguém te passou um código, digite aqui.</p>' +
@@ -6930,7 +6975,7 @@ function mostraPreFase() {
     '<p class="pre-texto">' + C.texto + '</p>' +
     '<div class="pre-linhas"><div class="pre-obj"><small>objetivo</small><b>' + resumoObjetivo(f) + '</b>' + iconesObjetivo(f) + '</div>' +
     '<div><small>' + (tempoDa(J.fase) ? 'segundos' : 'jogadas') + '</small><b class="pre-grande">' + (tempoDa(J.fase) || f.mov) + '</b></div></div>' +
-    (['D', 'L'].indexOf(k) >= 0 && (prog.estrelas[J.fase] || 0) < 3 && f.obj.tipo !== 'chefe' ? '<p class="pre-fig">📖 3 estrelas aqui valem uma figurinha pro álbum</p>' : '') +
+    (['D', 'L'].indexOf(k) >= 0 && (prog.estrelas[J.fase] || 0) < 3 && f.obj.tipo !== 'chefe' ? '<p class="pre-fig">📖 3 estrelas aqui podem render uma figurinha pro álbum (' + (k === 'L' ? '60%' : '30%') + ' de chance)</p>' : '') +
     (f.enigma ? '<p class="pre-enigma">🧩 <b>Enigma</b> · só ' + f.mov + ' jogadas, com especiais já prontos no tabuleiro. Pense antes de mexer.</p>' : '') +
     (regraDa(J.fase) && regraDa(J.fase).id !== 'calma' ? '<p class="pre-regiao">' + regraDa(J.fase).ic + ' <b>' + regraDa(J.fase).nome + '</b> · ' + regraDa(J.fase).texto + '</p>' : '') +
     (eventoHoje() ? '<p class="pre-evento">' + EVENTOS[eventoHoje()].ic + ' <b>' + EVENTOS[eventoHoje()].nome + '</b> · ' + EVENTOS[eventoHoje()].texto + '</p>' : '') +
