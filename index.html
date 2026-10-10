@@ -314,7 +314,7 @@ body:not(.em-jogo) #cena{display:none}
 @keyframes acende{0%{background:#000}35%{background:#6BFFE0;box-shadow:0 0 18px 4px rgba(107,255,224,.85)}100%{background:rgba(107,255,224,.14);box-shadow:inset 0 0 0 1px rgba(107,255,224,.4)}}
 
 /* ── peças ─────────────────────────────────────────────────── */
-.peca{position:absolute;width:var(--cel);height:var(--cel);display:grid;place-items:center;will-change:transform;transition:transform .19s cubic-bezier(.34,1.3,.64,1);z-index:2}
+.peca{position:absolute;width:var(--cel);height:var(--cel);display:grid;place-items:center;will-change:transform;transition:transform .16s cubic-bezier(.34,1.3,.64,1);z-index:2}
 .peca .corpo{position:relative;width:calc(var(--cel) - 4px);height:calc(var(--cel) - 4px);display:grid;place-items:center}
 .peca svg{width:100%;height:100%;display:block;filter:var(--sombra-peca);pointer-events:none}
 .peca .corpo > svg{animation:respira 3.6s ease-in-out infinite;animation-delay:var(--atraso,0s)}
@@ -781,10 +781,15 @@ body.em-segundo-plano *,body.em-segundo-plano *::before,body.em-segundo-plano *:
 .cartao p.pre-regiao{background:rgba(107,255,224,.14)}
 .cartao p.pre-enigma{background:rgba(176,124,255,.18)}
 .cartao p.pre-evento{background:rgba(255,211,92,.2)}
-#faixa-evento{margin:8px auto 0;max-width:300px;padding:7px 12px;border-radius:14px;text-align:center;color:#fff;
-  background:linear-gradient(90deg,rgba(255,106,61,.85),rgba(255,154,61,.85));box-shadow:0 4px 12px -4px rgba(255,106,61,.7);font-size:13px;
-  animation:entra-podio .5s ease}
-#faixa-evento b{font-family:var(--display)}#faixa-evento small{display:block;font-size:11.5px;opacity:.92}
+#faixa-evento{display:flex;align-items:center;gap:6px;margin:8px auto 0;max-width:92%;border:0;cursor:pointer;padding:6px 14px;border-radius:999px;
+  color:#fff;background:linear-gradient(90deg,#FF6A3D,#FF9A3D);box-shadow:0 4px 12px -4px rgba(255,106,61,.7);font-size:12.5px;white-space:nowrap;
+  font-family:Nunito,sans-serif;animation:entra-podio .5s ease}
+#faixa-evento.compacta{margin:0;padding:6px 12px;max-width:none}
+.linha-extras.tres{flex-wrap:nowrap;gap:5px}
+.linha-extras.tres > button{padding:5px 9px;font-size:11.5px;white-space:nowrap}
+@media (max-width:340px){ .linha-extras.tres #faixa-evento b{display:none} }
+#faixa-evento b{font-family:var(--display);overflow:hidden;text-overflow:ellipsis}
+#faixa-evento span{font-size:11px;font-weight:800;padding:1px 7px;border-radius:999px;background:rgba(255,255,255,.25)}
 
 /* ── contra a maré ───────────────────────────────────────────── */
 .cartao p.pre-tempo{margin-top:8px;padding:8px 10px;border-radius:12px;background:rgba(255,106,61,.16);font-size:12.5px;text-align:left}
@@ -1475,7 +1480,7 @@ body.leve .cartao{animation-duration:.18s}
    MERGULHO · combinar 3 da beira da praia até 4.000 metros
    ═══════════════════════════════════════════════════════════════ */
 
-const VERSAO_JOGO = '2026.12.06';
+const VERSAO_JOGO = '2026.12.08';
 const W = 7, H = 8, TIPOS = 6;
 const NADA = 0, LH = 1, LV = 2, BOMBA = 3, ARCO = 4, ONDA = 5, ONDAV = 6, CARDUME = 7, PEIXE = 8;
 /* fases com o quadrado ligado: 4 peças iguais em 2x2 viram um peixe-guia */
@@ -3905,7 +3910,7 @@ async function limpar(conj, novos) {
     if (el) { el.classList.add('nasce'); setTimeout(() => el.classList.remove('nasce'), 320); }
     Som.especial();
   }
-  await espera(peso >= 2 ? 170 : 90);
+  await espera(peso >= 2 ? 110 : 40);
   gravidade();
   sincroniza('cai');
   Som.cai(Math.min(J.cascata, 6));
@@ -3987,14 +3992,29 @@ function aoPressionar(e) {
   const cel = celulaDe(e.clientX, e.clientY);
   if (!cel) return;
   if (poderAtivo) { usaPoderNaCelula(cel); return; }
-  arrasto = { x: e.clientX, y: e.clientY, cel: cel, usado: false };
+  const pz = grid[cel.r] && grid[cel.r][cel.c], elz = pz ? els.get(pz.id) : null;
+  arrasto = { x: e.clientX, y: e.clientY, cel: cel, usado: false, el: elz, base: elz ? elz.style.transform : '' };
   mesa.setPointerCapture && mesa.setPointerCapture(e.pointerId);
+}
+/* a peça desliza junto com o dedo antes da troca, e volta se você desistir */
+function soltaArrastada(volta) {
+  if (!arrasto || !arrasto.el) return;
+  arrasto.el.style.transition = '';
+  if (volta) arrasto.el.style.transform = arrasto.base;
 }
 function aoMover(e) {
   if (!arrasto || arrasto.usado || J.ocupado) return;
   const dx = e.clientX - arrasto.x, dy = e.clientY - arrasto.y;
-  const lim = CEL * 0.42;
-  if (Math.abs(dx) < lim && Math.abs(dy) < lim) return;
+  const lim = CEL * 0.32;
+  if (Math.abs(dx) < lim && Math.abs(dy) < lim) {
+    if (arrasto.el && (Math.abs(dx) > 2 || Math.abs(dy) > 2)) {
+      const hor = Math.abs(dx) > Math.abs(dy), d = hor ? dx : dy, m = Math.max(-CEL * .3, Math.min(CEL * .3, d));
+      arrasto.el.style.transition = 'none';
+      arrasto.el.style.transform = arrasto.base + ' translate(' + (hor ? m : 0) + 'px,' + (hor ? 0 : m) + 'px)';
+    }
+    return;
+  }
+  soltaArrastada(false);
   let alvo;
   if (Math.abs(dx) > Math.abs(dy)) alvo = { r: arrasto.cel.r, c: arrasto.cel.c + (dx > 0 ? 1 : -1) };
   else alvo = { r: arrasto.cel.r + (dy > 0 ? 1 : -1), c: arrasto.cel.c };
@@ -4003,6 +4023,7 @@ function aoMover(e) {
   arrasto = null;
 }
 function aoSoltar(e) {
+  if (arrasto && !arrasto.usado) soltaArrastada(true);
   if (!arrasto || arrasto.usado) { arrasto = null; return; }
   const cel = arrasto.cel; arrasto = null;
   if (J.ocupado || J.fim) return;
@@ -4051,7 +4072,7 @@ async function tentaTrocaInterna(a, b) {
   grid[a.r][a.c] = pb; grid[b.r][b.c] = pa;
   posiciona(ea, b.r, b.c); posiciona(eb, a.r, a.c);
   Som.liga(); Som.troca();
-  await espera(190);
+  await espera(150);
 
   const especial = (pa.sp === ARCO || pb.sp === ARCO) || (pa.sp && pb.sp);
   const virouCombo = temCorridaEm(a.r, a.c) || temCorridaEm(b.r, b.c) ||
@@ -5680,9 +5701,23 @@ function pintaEventoHome() {
   const ev = eventoHoje(), velho = document.getElementById('faixa-evento');
   if (velho) velho.remove();
   if (!ev) return;
+  /* pílula de uma linha, depois dos botões: nunca empurra o Álbum e as
+     Novidades pra fora da tela; tocar abre a explicação */
   const v = document.querySelector('.linha-extras') || document.getElementById('versao');
   if (!v) return;
-  v.insertAdjacentHTML('beforebegin', '<div id="faixa-evento">' + EVENTOS[ev].ic + ' <b>' + EVENTOS[ev].nome + '</b><small>' + EVENTOS[ev].texto + '</small></div>');
+  v.insertAdjacentHTML('afterend', '<button id="faixa-evento" type="button">' + EVENTOS[ev].ic + ' <b>' + EVENTOS[ev].nome + '</b><span>ver</span></button>');
+  document.getElementById('faixa-evento').onclick = () => {
+    Som.liga();
+    cartao('<div class="aviso-arte coracao"><span>' + EVENTOS[ev].ic + '</span></div><p class="aviso-novo">evento de fim de semana</p><h3>' + EVENTOS[ev].nome + '</h3>' +
+      '<p class="aviso-lead">' + EVENTOS[ev].texto + '</p><p>Vale até o fim de domingo, em todas as fases. Na semana que vem, outro evento.</p>' +
+      '<div class="bts"><button class="bt" data-ac="fecha">Bora</button></div>', true);
+  };  /* tela curta: se a pílula não couber, ela entra compacta na linha dos botões */
+  setTimeout(() => {
+    const pill = document.getElementById('faixa-evento'), linha = document.querySelector('.linha-extras');
+    if (pill && linha && pill.getBoundingClientRect().bottom > innerHeight - 4) {
+      pill.classList.add('compacta'); pill.innerHTML = EVENTOS[ev].ic + ' <b>Evento</b>'; linha.appendChild(pill); linha.classList.add('tres');
+    }
+  }, 120);
 }
 function pintaBotaoNovidades() {
   pintaEventoHome();
@@ -7274,6 +7309,7 @@ function iniciar() {
   mesa.addEventListener('pointerdown', aoPressionar);
   mesa.addEventListener('pointermove', aoMover);
   mesa.addEventListener('pointerup', aoSoltar);
+  mesa.addEventListener('pointercancel', () => { if (arrasto && !arrasto.usado) soltaArrastada(true); arrasto = null; });   /* toque cancelado pelo sistema: a peça volta pro lugar */
   mesa.addEventListener('pointercancel', () => { arrasto = null; });
   mesa.addEventListener('contextmenu', e => e.preventDefault());
 
