@@ -245,7 +245,8 @@ body:not(.em-jogo) #cena{display:none}
 }
 .hud-linha{display:flex;align-items:center}
 .hud-linha > * + *{margin-left:10px}
-.objetivo{flex:1;min-width:0;display:flex;align-items:center;gap:10px;min-height:50px}
+.objetivo{flex:1;min-width:0;display:flex;align-items:center;gap:10px;min-height:50px;flex-wrap:wrap;row-gap:4px}
+.cond-linha{flex-basis:100%;display:flex}
 .objetivo .rotulo{font-size:12px;font-weight:800;color:rgba(243,251,255,.66);line-height:1.2}
 .objetivo .rotulo.feito{color:var(--biolum)}
 .objetivo .valor{font-family:var(--display);font-weight:800;font-size:18px;line-height:1.15}
@@ -840,7 +841,7 @@ body.relogio-urgente #movimentos{animation:relogio-pulsa .5s ease-in-out infinit
 .cartao p.novidades-data{margin-top:6px;font-size:11.5px;opacity:.65}
 
 /* ── condição do mar ─────────────────────────────────────────── */
-.cond-tag{display:inline-flex;align-items:center;gap:4px;margin-top:5px;padding:3px 10px;border-radius:999px;font-size:11.5px;font-weight:800;
+.cond-tag{display:inline-flex;align-items:center;gap:4px;margin-top:0;padding:3px 10px;border-radius:999px;font-size:11.5px;font-weight:800;
   background:rgba(255,211,92,.18);color:#FFE7A3}
 .cond-tag .ic{width:18px;height:18px}
 .cartao p.pre-cond{margin-top:8px;padding:7px 10px;border-radius:12px;background:rgba(107,255,224,.12);font-size:12.5px;text-align:left}
@@ -1480,7 +1481,7 @@ body.leve .cartao{animation-duration:.18s}
    MERGULHO · combinar 3 da beira da praia até 4.000 metros
    ═══════════════════════════════════════════════════════════════ */
 
-const VERSAO_JOGO = '2026.12.08';
+const VERSAO_JOGO = '2026.12.09';
 const W = 7, H = 8, TIPOS = 6;
 const NADA = 0, LH = 1, LV = 2, BOMBA = 3, ARCO = 4, ONDA = 5, ONDAV = 6, CARDUME = 7, PEIXE = 8;
 /* fases com o quadrado ligado: 4 peças iguais em 2x2 viram um peixe-guia */
@@ -4897,10 +4898,10 @@ function destacaAlvos() {
 function pintaExtra() {
   const f = faseAtual(), o = document.getElementById('objetivo');
   if (!o) return;
-  const vc = o.querySelector('.cond-tag'); if (vc) vc.remove();
-  if (J.cond) o.insertAdjacentHTML('beforeend', '<div class="cond-tag">' + CONDICOES[J.cond].ic + ' ' + CONDICOES[J.cond].nome +
+  const vc = o.querySelector('.cond-linha'); if (vc) vc.remove();
+  if (J.cond) o.insertAdjacentHTML('beforeend', '<div class="cond-linha"><div class="cond-tag">' + CONDICOES[J.cond].ic + ' ' + CONDICOES[J.cond].nome +
     (J.corVez != null ? ' <svg class="ic" viewBox="0 0 100 100"><use href="#s' + J.corVez + '"/></svg>' : '') +
-    (J.moedasFundo ? ' · ' + J.moedasPegas + '/4' : '') + '</div>');
+    (J.moedasFundo ? ' · ' + J.moedasPegas + '/4' : '') + '</div></div>');
   const velho = o.querySelector('.extra-obj'); if (velho) velho.remove();
   if (!f.obj.extra) return;
   const n = faltaExtra();
@@ -6956,7 +6957,7 @@ function abreFase(i, ignoraParada) {
   for (let c = 0; c < W; c++) for (let r = 0; r < TOPO[c]; r++) { papel[r][c] = 0; if (J.papelBase) J.papelBase[r][c] = 0; }
   J.papelTotal = contaPapel(papel);
   pontosNaTela = 0;
-  QUADRADO_ATIVO = !!f.quadrado && !J.desafio;   /* antes de montar: o tabuleiro não pode nascer com quadrado pronto */
+  QUADRADO_ATIVO = (!!f.quadrado || eventoHoje() === 'peixe') && !J.desafio;   /* antes de montar (inclusive no evento do peixe): o tabuleiro não pode nascer com quadrado pronto */
   montaTabuleiro();
   preparaEspeciaisDaFase();
   fechaCartao();
@@ -7314,6 +7315,23 @@ function iniciar() {
   mesa.addEventListener('contextmenu', e => e.preventDefault());
 
   let t = null;
+  /* painel de cima cresceu ou encolheu (objetivo comprido, condição do mar,
+     segundo objetivo): o tabuleiro se ajusta na hora, sem invadir os poderes */
+  if (window.ResizeObserver) {
+    const obj = document.getElementById('objetivo'), painel = obj && (obj.closest('.hud') || obj.parentElement.parentElement);
+    let alturaVista = 0, agenda = 0;
+    if (painel) new ResizeObserver(() => {
+      const h = Math.round(painel.getBoundingClientRect().height);
+      if (h === alturaVista) return;
+      alturaVista = h;
+      cancelAnimationFrame(agenda);
+      agenda = requestAnimationFrame(() => {
+        if (!document.getElementById('tela-jogo').classList.contains('ativa')) return;
+        dimensiona();
+        if (typeof alinhaMarcas === 'function') alinhaMarcas();
+      });
+    }).observe(painel);
+  }
   window.addEventListener('resize', () => {
     clearTimeout(t);
     t = setTimeout(() => {
