@@ -2,7 +2,7 @@
    MERGULHO · combinar 3 da beira da praia até 4.000 metros
    ═══════════════════════════════════════════════════════════════ */
 
-const VERSAO_JOGO = '2026.11.26';
+const VERSAO_JOGO = '2026.12.11';
 const W = 7, H = 8, TIPOS = 6;
 const NADA = 0, LH = 1, LV = 2, BOMBA = 3, ARCO = 4, ONDA = 5, ONDAV = 6, CARDUME = 7, PEIXE = 8;
 /* fases com o quadrado ligado: 4 peças iguais em 2x2 viram um peixe-guia */
@@ -14,6 +14,55 @@ const CONDICOES = {
   moedas: { ic: '🪙', nome: 'Moedas no fundo', texto: 'Algumas casas escondem moedas de verdade: estoure em cima pra pegar.' }
 };
 /* sorteio próprio, que não mexe no sorteio das fases: nada que já existe muda */
+/* Contra a Maré: fase com relógio em vez de jogadas. Sorteio próprio
+   (não mexe nas fases existentes), em boa parte das fases de pontuar
+   e de juntar peças, que são as que combinam com pressa.            */
+const tempoDa = i => { if (i < 39 || (i + 1) % 100 === 0) return 0; const f = fase(i);
+  if (f.obj.tipo !== 'pontos' && f.obj.tipo !== 'coletar') return 0;
+  return ((i + 5) * 2246822519 >>> 0) % 100 < 45 ? Math.max(40, Math.round(f.mov * 3.2 / 5) * 5) : 0; };
+/* ═══ IDENTIDADE DAS REGIÕES ══════════════════════════════════════
+   Cada região tem uma regra que vale em todas as fases dela. Descer
+   passa a ser viagem: o mangue prende, o gelo congela, o vulcão
+   cospe cinza, as ruínas escondem tesouro.                          */
+const REGRAS_REGIAO = {
+  'Litoral':        { id: 'calma',  ic: '🏖️', nome: 'Águas calmas',     texto: 'O começo da viagem: nenhuma regra extra por aqui.' },
+  'Mangue':         { id: 'raizes', ic: '🌿', nome: 'Raízes do mangue', texto: 'Duas peças começam presas nas raízes. Estoure do lado pra soltar.' },
+  'Mar Polar':      { id: 'gelo',   ic: '❄️', nome: 'Água congelante',  texto: 'A cada 5 jogadas, uma peça congela. Estoure do lado pra quebrar o gelo.' },
+  'Cordilheira':    { id: 'eco',    ic: '⛰️', nome: 'Eco das pedras',   texto: 'Cascatas valem 50% a mais de pontos aqui.' },
+  'Boca do Vulcão': { id: 'cinza',  ic: '🌋', nome: 'Chuva de cinzas',  texto: 'A cada 6 jogadas, uma peça vira entulho de cinza. Estoure do lado pra tirar.' },
+  'Ruínas':         { id: 'tesouro',ic: '🏺', nome: 'Tesouro antigo',   texto: 'Três moedas escondidas no chão de cada fase. Estoure em cima pra pegar.' },
+  'Sargaço':        { id: 'cardume',ic: '🐟', nome: 'Cardume do sargaço', texto: 'Toda fase começa com um especial de cardume pronto.' },
+  'Fossa':          { id: 'abismo', ic: '🌑', nome: 'Pressão do abismo', texto: 'Especiais valem o dobro de pontos aqui embaixo.' },
+  'Floresta de Kelp':     { id: 'emaranhado', ic: '🌿', nome: 'Emaranhado de algas', texto: 'Uma peça começa presa nas algas e, a cada 8 jogadas, outra se enrosca. Estoure do lado pra soltar.' },
+  'Cemitério de Baleias': { id: 'canto',      ic: '🐋', nome: 'Canto de baleia',     texto: 'A cada 6 jogadas o canto ecoa e uma peça vira especial de cardume.' },
+  'Cidade Submersa':      { id: 'janelas',    ic: '🏙️', nome: 'Luzes da cidade',     texto: 'A cor que vale o dobro muda a cada 3 jogadas. Fique de olho no painel.' },
+  'Jardim de Medusas':    { id: 'ferrao',     ic: '🪼', nome: 'Ferrão de medusa',    texto: 'A cada 6 jogadas uma peça é paralisada, e na vez seguinte uma vira entulho. Estoure do lado pra livrar.' },
+  'Gruta de Cristal':     { id: 'cristais',   ic: '💎', nome: 'Eco de cristal',      texto: 'Jogada que estoura 5 peças ou mais devolve 1 jogada (até 3 por fase).' },
+  'Recife de Neon':       { id: 'neon',       ic: '🌈', nome: 'Reta final neon',     texto: 'Nas últimas 5 jogadas, tudo vale o dobro de pontos.' },
+  'Fonte Termal':         { id: 'geiser',     ic: '♨️', nome: 'Gêiser',              texto: 'A cada 7 jogadas o gêiser transforma uma peça em bolha especial.' },
+  'Mar de Aurora':        { id: 'aurora',     ic: '🌌', nome: 'Aurora',              texto: 'Cascata de 3 ou mais rende 2 moedas.' }
+};
+const regraDa = i => { if (i < 30 || (i + 1) % 100 === 0) return null; const a = ambiente(i); return (a && a.reg && REGRAS_REGIAO[a.reg.nome]) || null; };
+
+/* ═══ ENIGMAS ══════════════════════════════════════════════════════
+   De vez em quando, uma fase de pontuar vira enigma: poucas jogadas,
+   especiais já prontos no tabuleiro e meta ajustada. Pede pensar
+   antes de mexer, em vez de sair combinando.                        */
+const enigmaDa = i => !!fase(i).enigma;
+
+/* ═══ EVENTO DE FIM DE SEMANA ══════════════════════════════════════
+   Sábado e domingo, uma regra especial vale pra todas as fases,
+   trocando a cada semana.                                           */
+const EVENTOS = {
+  moedas: { ic: '🪙', nome: 'Chuva de moedas', texto: 'Neste fim de semana, toda fase esconde moedas no chão.' },
+  peixe:  { ic: '🐟', nome: 'Fim de semana do peixe-guia', texto: 'Quatro peças em quadrado viram peixe em todas as fases.' },
+  dobro:  { ic: '✨', nome: 'Especiais em dobro', texto: 'Todo especial vale o dobro de pontos até domingo.' }
+};
+const eventoHoje = () => { const d = new Date(), dia = d.getDay(); if (dia !== 0 && dia !== 6) return null;
+  const semana = Math.floor((Date.now() / 864e5 + 3) / 7); return ['moedas', 'peixe', 'dobro'][semana % 3]; };
+/* teto de pontuação por fase: 4x a meta de 3 estrelas. Jogada boa passa
+   de 3x raramente; 30x só com bug, e uma fase assim não pode decidir o ranking */
+const tetoDaFase = i => { try { const m = fase(+i).marcas; return m && m[2] ? m[2] * 4 : Infinity; } catch (e) { return Infinity; } };
 const condicaoDa = i => { if (i < 30 || (i + 1) % 100 === 0) return null; const h = ((i + 17) * 2654435761 >>> 0) % 100; return h < 22 ? 'brinde' : h < 40 ? 'corvez' : h < 55 ? 'moedas' : null; };
 
 const $ = s => document.querySelector(s);
@@ -108,7 +157,40 @@ const REGIOES = [
   { nome:'Fossa', trato:'brilho', texto:'A água some rápido por aqui.',
     agua:['#93DAEA','#2E8BAC','#144670','#1A1250','#0B0620','#030109'], moldura:'#A98CD8', acento:'#B07CFF',
     bandas:['Borda','Talude','Degrau','Meia-água','Fundo da fossa'],
-    chao:['pedra','esponjas','tubulacao','longe','fumarola'], bloq:['areia','craca','rede','cinza','breu'] }
+    chao:['pedra','esponjas','tubulacao','longe','fumarola'], bloq:['areia','craca','rede','cinza','breu'] },
+  /* ── a segunda volta: o mar continua depois da Fossa ── */
+  { nome:'Floresta de Kelp', trato:'folha', texto:'Algas altas, luz que cai em feixes dourados.',
+    agua:['#E8F0A8','#B2C95A','#5E9A3E','#1E5A44','#0E2A2C','#041012'], moldura:'#C8B060', acento:'#F4D35E',
+    bandas:['Borda da floresta','Clareira dourada','Túnel de algas','Mata fechada','Coração escuro'],
+    chao:['floresta','floresta','floresta','longe','floresta'], bloq:['alga','alga','raiz','lodo','breu'] },
+  { nome:'Cemitério de Baleias', trato:'mineral', texto:'Costelas gigantes de bichos que nadaram aqui há séculos.',
+    agua:['#D8E6EC','#9BB4C4','#5F7E9C','#2B3F66','#121A38','#050816'], moldura:'#CBBF9F', acento:'#EAE2C6',
+    bandas:['Praia de ossos','Costelas','Corredor de coluna','Eco distante','Crânio'],
+    chao:['ossos','ossos','ossos','longe','ossos'], bloq:['areia','craca','coralmorto','lodo','breu'] },
+  { nome:'Cidade Submersa', trato:'patina', texto:'Avenidas inteiras onde agora só passa peixe.',
+    agua:['#C9ECE4','#6FC4C0','#2F8AA0','#27306A','#120F38','#04030E'], moldura:'#B8C4D8', acento:'#FFE08A',
+    bandas:['Portão','Avenida','Praça afundada','Bairro apagado','Subsolo'],
+    chao:['cidade','cidade','cidade','longe','cidade'], bloq:['areia','limo','rede','lodo','breu'] },
+  { nome:'Jardim de Medusas', trato:'brilho', texto:'Luz rosa e cortinas que ondulam sozinhas.',
+    agua:['#F0D8F4','#C58BE0','#7C54C0','#3A2C86','#1A1148','#07031A'], moldura:'#E2B8F0', acento:'#FF8FD8',
+    bandas:['Véu rosa','Cortina','Bosque de ferrão','Luz fantasma','Útero do mar'],
+    chao:['medusas','medusas','medusas','longe','medusas'], bloq:['gelo','limo','rede','cinza','breu'] },
+  { nome:'Gruta de Cristal', trato:'mineral', texto:'Um salão de pedra azul que brilha por dentro.',
+    agua:['#C4F4F0','#5CD0D8','#2A8CB8','#1E3A80','#10114A','#04041A'], moldura:'#9CD8E8', acento:'#7CFFF0',
+    bandas:['Boca da gruta','Salão claro','Galeria de cristais','Câmara azul','Geodo'],
+    chao:['gruta','gruta','gruta','longe','gruta'], bloq:['gelo','coralmorto','craca','lodo','breu'] },
+  { nome:'Recife de Neon', trato:'brilho', texto:'Coral que acende em rosa e verde no escuro.',
+    agua:['#A0F0E0','#2ED8C0','#0F8AA0','#152A70','#0A0B34','#030314'], moldura:'#FF8FE0', acento:'#5CFFB8',
+    bandas:['Néon raso','Avenida de luz','Túnel colorido','Apagão','Brasa fria'],
+    chao:['neon','neon','neon','longe','neon'], bloq:['alga','coralmorto','rede','lodo','breu'] },
+  { nome:'Fonte Termal', trato:'brasa', texto:'Chaminés de pedra soltando água quente do fundo.',
+    agua:['#F4E8B0','#E8B060','#B86A3C','#5A2A40','#240C26','#0C0210'], moldura:'#E0A070', acento:'#FFB347',
+    bandas:['Poça morna','Chaminé baixa','Névoa de enxofre','Garganta','Coração de fogo'],
+    chao:['chamines','chamines','chamines','longe','chamines'], bloq:['areiapreta','cinza','craca','cinza','breu'] },
+  { nome:'Mar de Aurora', trato:'geada', texto:'Gelo, silêncio e luz verde dançando no alto.',
+    agua:['#D8F8F0','#78E0C8','#3A9CC0','#2A3A9A','#1A1060','#06031E'], moldura:'#B8F0E0', acento:'#7CFFC8',
+    bandas:['Campo de gelo','Cortina verde','Luz do norte','Noite longa','Silêncio'],
+    chao:['aurora','aurora','aurora','longe','aurora'], bloq:['gelo','gelo','rede','lodo','breu'] }
 ];
 
 /* de que lugar é esta fase, e com que cara */
@@ -122,7 +204,7 @@ function ambiente(i) {
   const giro = Math.floor(volta / REGIOES.length);
   return { banda: banda, reg: reg, nome: reg.bandas[banda], de: b.de, ate: b.ate, bloq: bl,
            texto: reg.texto + ' ' + b.texto, dica: bl.dica, chao: reg.chao[banda],
-           tom: giro === 0 ? '' : 'hue-rotate(' + (((giro * 29) % 61) - 30) + 'deg) saturate(' + (giro % 2 ? 1.12 : .9) + ')' };
+           tom: giro === 0 ? '' : 'hue-rotate(' + (((giro * 53) % 140) - 70) + 'deg) saturate(' + (giro % 2 ? 1.12 : .9) + ')' };
 }
 
 /* ── as faixas de profundidade: elas mandam na luz e nas peças ──
@@ -210,7 +292,7 @@ function classeDaFase(i) {
   const k = i % 6;                                   /* fases feitas à mão: rótulo pela posição no mundo */
   return i < 6 ? (k === 5 ? 'N' : 'F') : k === 0 ? 'F' : k === 5 ? 'D' : i === 29 ? 'L' : 'N';
 }
-function fase(i) {
+function faseBruta(i) {
   if (i < BASE.length) return BASE[i];
   if (geradas[i]) return geradas[i];
   if (ehMestre(i)) return (geradas[i] = faseMestre(i));
@@ -245,11 +327,11 @@ function fase(i) {
     obj = { tipo:'bau', n: n };
   } else if (tipo === 'presos') {
     const n = 3 + Math.floor(r() * 2 + dif * 2);
-    mov = Math.max(22, Math.round(19 + n * 4.2 - dif * 2));
+    mov = Math.max(22, Math.round(5 + n * 3.4 - dif * 2));
     obj = { tipo:'presos', n: n, rede: 1 };
   } else if (tipo === 'bolhas') {
     const n = 4 + Math.floor(r() * 2 + dif * 3);
-    mov = Math.max(22, Math.round(19 + n * 3.6 - dif * 2));
+    mov = Math.max(24, Math.round(9 + n * 2.6 - dif * 2));
     obj = { tipo:'bolhas', n: n, sobe: 3, juntas: 3 };
   } else if (tipo === 'corrente') {
     const pd = PADROES_GER[Math.floor(r() * PADROES_GER.length)];
@@ -263,12 +345,12 @@ function fase(i) {
   } else if (tipo === 'lixo') {
     /* lixo no fundo: não combina, sai com estouro colado ou especial */
     const n = 5 + Math.floor(r() * 3 + dif * 4), dura = dif > .7 && r() < .5 ? 2 : 1;
-    mov = Math.max(20, Math.round(15 + n * 2.4 * dura - dif * 2));
+    mov = Math.max(24, Math.round(7 + n * 1.6 * dura - dif * 2));
     obj = { tipo:'lixo', n: n, dura: dura };
   } else if (tipo === 'coral') {
     /* coral morto volta a ter cor quando você estoura em cima ou do lado */
     const n = 12 + Math.floor(r() * 5 + dif * 6);
-    mov = Math.max(20, Math.round(14 + n * 1.25 - dif * 2));
+    mov = Math.max(22, Math.round(2 + n * 0.95 - dif * 2));
     obj = { tipo:'coral', n: n };
   } else if (tipo === 'ninho') {
     /* ninhos presos na borda de cima: de 1 a 3, conforme a profundidade */
@@ -345,6 +427,16 @@ function fase(i) {
       return t;
     })() : fm.topo), formaNome: fm.nome, exped: Math.floor(i / CICLO) + 1 });
 }
+function fase(i) {
+  const f = faseBruta(i);
+  if (i >= BASE.length && !f.enigmaFeito && enigmaDa0(f, i)) {
+    f.enigmaFeito = true; f.enigma = true;
+    f.mov = Math.max(6, Math.round(f.mov * .38));
+    f.marcas = f.marcas.map(m => Math.round(m * .5 / 100) * 100);
+  }
+  return f;
+}
+const enigmaDa0 = (f, i) => !((i + 1) % 100 === 0) && i >= 44 && f.obj && f.obj.tipo === 'pontos' && ((i + 11) * 2654435761 >>> 0) % 100 < 65;
 const expedicao = i => Math.floor(i / CICLO) + 1;
 
 /* ── poderes e moedas ──────────────────────────────────────────
@@ -399,14 +491,32 @@ const MESTRES = [
     golpe:'Joga areia grossa: casas com duas camadas, que protegem ele até você limpar.' },
   { nome:'Serpente-do-abismo', cor:'#FF7390', cor2:'#6E1030', forma:'serpente',
     fala:'Ninguém sabe onde ela termina. Só que a cabeça está bem aqui.',
-    golpe:'Engole e cospe lixo: peças viram entulho que não combina. Estoure colado para tirar.' }
+    golpe:'Engole e cospe lixo: peças viram entulho que não combina. Estoure colado para tirar.' },
+  { nome:'Tubarão-martelo', cor:'#9FB6C8', cor2:'#33485A', forma:'tubarao',
+    fala:'Ele sente o seu coração bater a metros de distância. E vem direto.',
+    golpe:'Investida: arranca duas jogadas de uma vez e espalha lixo pelo caminho.' },
+  { nome:'Peixe-pescador', cor:'#FFB86B', cor2:'#3A2A55', forma:'pescador',
+    fala:'Aquela luzinha no escuro parece amiga. Não é.',
+    golpe:'Lanterna hipnótica: prende duas peças na luz e mancha duas casas de tinta.' },
+  { nome:'Polvo-colossal', cor:'#FF7A7A', cor2:'#5A1E3A', forma:'polvo',
+    fala:'Oito braços maiores que um barco. E ele usa todos ao mesmo tempo.',
+    golpe:'Abraço de oito braços: prende quatro peças de uma vez.' },
+  { nome:'Orca-sombria', cor:'#E8EEF5', cor2:'#141C2B', forma:'orca',
+    fala:'Caça em grupo, pensa antes de atacar e nunca desiste.',
+    golpe:'Cerco: arranca uma jogada a mais e levanta areia grossa em volta.' },
+  { nome:'Leviatã', cor:'#5FE3FF', cor2:'#3B1D6E', forma:'leviata', epico: true,
+    fala:'Dizem que ele dorme no fundo de tudo. Você acabou de acordar ele.',
+    golpe:'Usa os golpes de todos os mestres, um depois do outro: tinta, choque, areia e lixo. E fica mais forte quando está ferido.' }
 ];
 const ehMestre = i => (i + 1) % 100 === 0;
 function faseMestre(i) {
   const volta = Math.floor((i + 1) / 100);          /* 1º mestre na fase 100 */
-  const mestre = (volta - 1) % MESTRES.length;
+  /* 600 e 1000 têm mestres próprios; as outras voltas revezam os clássicos,
+     e depois da 1000 entram todos no rodízio */
+  const PROPRIO = { 6: 4, 7: 5, 8: 6, 9: 7, 10: 8 };   /* 600 a 1000 têm mestre próprio; 500 repete o primeiro */
+  const mestre = PROPRIO[volta] != null ? PROPRIO[volta] : volta > 10 ? (volta - 1) % MESTRES.length : (volta - 1) % 4;
   const m = 4, dif = Math.min(1, .45 + (i - CICLO) / 420);
-  const vida = 110 + volta * 26;
+  const vida = Math.round((110 + volta * 26) * (MESTRES[mestre].epico ? 1.25 : 1));
   const mov = 26 + Math.min(6, volta * 2);
   const p50 = Math.round(mov * (980 + 320 * dif));
   return { m: m, prof: 4000 + volta * 500, nome: MESTRES[mestre].nome, mov: mov, mestre: mestre, classe: 'L',

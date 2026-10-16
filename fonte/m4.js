@@ -30,6 +30,21 @@ function preparaEspeciaisDaFase() {
     }
   }
   if (J.cond === 'corvez') J.corVez = ((J.fase + 5) * 31) % 6;
+  /* regra da região, evento do fim de semana e enigma */
+  J.regra = J.desafio ? null : (regraDa(J.fase) || {}).id || null;
+  J.evento = J.desafio ? null : eventoHoje();
+  if (J.evento === 'peixe') QUADRADO_ATIVO = true;
+  const pecasLivres = () => { const l = []; for (let r = 1; r < H; r++) for (let c = 0; c < W; c++) { const q = grid[r] && grid[r][c]; if (q && !q.sp && !q.bau && !q.gaiola && !q.lixo && !q.bolha) l.push(q); } return l; };
+  if (J.regra === 'raizes') { const l = pecasLivres(); for (let k = 0; k < 2 && l.length; k++) l.splice(sorteia(l.length), 1)[0].gaiola = 1; }
+  if (J.regra === 'emaranhado') { const l = pecasLivres(); if (l.length) l.splice(sorteia(l.length), 1)[0].gaiola = 1; }
+  if (J.regra === 'janelas' && J.corVez == null) J.corVez = (J.fase * 5 + 1) % 6;
+  if (J.regra === 'cardume') { const l = pecasLivres(); if (l.length) l[sorteia(l.length)].sp = CARDUME; }
+  if (f.enigma) { const l = pecasLivres(); [LH, LV, BOMBA, ARCO].forEach(sp => { if (l.length) l.splice(sorteia(l.length), 1)[0].sp = sp; }); }
+  if (J.regra === 'tesouro' || J.evento === 'moedas') {
+    J.moedasFundo = J.moedasFundo || Array.from({ length: H }, () => Array(W).fill(0));
+    let n = 0;
+    for (let tent = 0; tent < 80 && n < (J.evento === 'moedas' ? 4 : 3); tent++) { const r = sorteia(H), c = sorteia(W); if (temCasa(r, c) && !J.moedasFundo[r][c]) { J.moedasFundo[r][c] = 1; n++; } }
+  }
   if (J.cond === 'moedas') {
     J.moedasFundo = Array.from({ length: H }, () => Array(W).fill(0));
     let n = 0;
@@ -159,10 +174,11 @@ function destacaAlvos() {
 function pintaExtra() {
   const f = faseAtual(), o = document.getElementById('objetivo');
   if (!o) return;
-  const vc = o.querySelector('.cond-tag'); if (vc) vc.remove();
-  if (J.cond) o.insertAdjacentHTML('beforeend', '<div class="cond-tag">' + CONDICOES[J.cond].ic + ' ' + CONDICOES[J.cond].nome +
+  const vc = o.querySelector('.cond-linha'); if (vc) vc.remove();
+  const cdTag = J.cond ? CONDICOES[J.cond] : (J.regra === 'janelas' ? { ic: '🏙️', nome: 'Cor da vez' } : null);
+  if (cdTag) o.insertAdjacentHTML('beforeend', '<div class="cond-linha"><div class="cond-tag">' + cdTag.ic + ' ' + cdTag.nome +
     (J.corVez != null ? ' <svg class="ic" viewBox="0 0 100 100"><use href="#s' + J.corVez + '"/></svg>' : '') +
-    (J.moedasFundo ? ' · ' + J.moedasPegas + '/4' : '') + '</div>');
+    (J.moedasFundo ? ' · ' + J.moedasPegas + '/4' : '') + '</div></div>');
   const velho = o.querySelector('.extra-obj'); if (velho) velho.remove();
   if (!f.obj.extra) return;
   const n = faltaExtra();
@@ -174,9 +190,12 @@ function atualizaHud() {
   const obj = document.getElementById('objetivo');
   if (obj && !obj.dataset.toca) { obj.dataset.toca = '1'; obj.addEventListener('click', destacaAlvos); obj.title = 'Toque para ver onde estão'; }
   const f = faseAtual();
-  document.getElementById('mov-n').textContent = J.mov;
-  document.getElementById('mov-lb').textContent = J.mov === 1 ? 'jogada' : 'jogadas';
-  document.getElementById('movimentos').classList.toggle('aperto', J.mov <= 5);
+  if (J.tempoModo) pintaRelogio();
+  else {
+    document.getElementById('mov-n').textContent = J.mov;
+    document.getElementById('mov-lb').textContent = J.mov === 1 ? 'jogada' : 'jogadas';
+    document.getElementById('movimentos').classList.toggle('aperto', J.mov <= 5);
+  }
   animaPontos();
 
   const teto = f.marcas[2];
@@ -358,7 +377,7 @@ async function esperaAcalmar(minimo) {
 async function bonusDoFolego() {
   const f = faseAtual();
   J.folegoBonus = null;
-  if (f.obj.tipo === 'pontos' || f.obj.tipo === 'chefe') return 0;
+  if (f.obj.tipo === 'pontos' || f.obj.tipo === 'chefe' || J.tempoModo) return 0;
   if (J.movExtra > 0) return 0;
   const sobra = Math.max(0, J.mov | 0);
   const minimo = Math.max(2, Math.ceil(f.mov * .2));
@@ -366,7 +385,8 @@ async function bonusDoFolego() {
   const teto = f.marcas[2];
   const falta = Math.max(0, teto - J.pontos);
   if (!falta) return 0;
-  const porJogada = Math.max(250, Math.round(teto / Math.max(1, f.mov)));
+  /* cada jogada que sobra vale 60% do ritmo de uma 3ª estrela: compensa a pressa, mas não entrega a estrela */
+  const porJogada = Math.max(200, Math.round(teto / Math.max(1, f.mov) * 0.6));
   const bonus = Math.min(falta, sobra * porJogada);
   faixaTexto('Resolveu com ' + sobra + ' jogadas de sobra!', 2200);
   Som.liga(); Som.especial();
@@ -381,6 +401,7 @@ async function bonusDoFolego() {
 
 async function venceu() {
   const eraMestre = faseAtual().obj.tipo === 'chefe';
+  const estrelasAntes = (prog.estrelas && prog.estrelas[J.fase]) || 0;   /* antes de gravar as novas */
   J.folegoBonus = null;
   await bonusDoFolego();
   tiraBotaoEncerrar();
@@ -418,6 +439,20 @@ async function venceu() {
   prog.estrelas[J.fase] = Math.max(prog.estrelas[J.fase] || 0, e);
   if (J.fase + 1 > prog.max) prog.max = J.fase + 1;
   await esperaAcalmar(explodiuNoFim ? 900 : eraMestre ? 300 : 700);
+  const tinha3 = estrelasAntes >= 3;
+  /* figurinha é conquista: só fase Difícil ou Lendária com 3 estrelas pela
+     primeira vez (ou mestre derrotado, que dá a lendária) */
+  const valeFig = ['D', 'L'].indexOf(classeDaFase(J.fase)) >= 0;
+  let sorteioFig = false;
+  if (!J.desafio && !eraMestre && e >= 3 && !tinha3 && valeFig) {
+    /* Difícil 30%, Lendária 60%; depois de 12 tentativas sem nada, vem garantida */
+    const chance = classeDaFase(J.fase) === 'L' ? .6 : .3;
+    prog.semFig = (prog.semFig || 0) + 1;
+    sorteioFig = Math.random() < chance || prog.semFig >= 12;
+    if (sorteioFig) prog.semFig = 0;
+    salvaProg();
+  }
+  J.figurinhaNova = (!J.desafio && (eraMestre || sorteioFig)) ? ganhaFigurinha(eraMestre ? faseAtual().obj.mestre : null) : null;
   const ganho = moedasDaFase(e, primeira) + (eraMestre ? 150 : 0);
   prog.moedas += ganho;
   salvaProg();
@@ -437,6 +472,7 @@ async function venceu() {
     '</div>' +
     '<p class="placar-final">' + nf(J.pontos) + '<small>pontos</small></p>' +
     colheitaDaFase() +
+    (J.figurinhaNova ? '<button class="fig-nova" data-ac="figurinha" data-id="' + J.figurinhaNova + '">' + desenhoFigurinha(J.figurinhaNova) + '<span><b>Figurinha nova!</b><small>' + nomeFigurinha(J.figurinhaNova) + ' · toque pra ver</small></span></button>' : '') +
     '<p class="ganho-moedas"><svg viewBox="0 0 100 100"><use href="#i-moeda"/></svg>+' + ganho + '</p>' +
     '<p class="pos-fase" id="pos-fase"></p>' +
     (eraMestre ? '<div class="tesouro"><b>Tesouro do mestre</b><span>150 moedas e um de cada poder</span></div>' : '') +
@@ -495,9 +531,9 @@ async function perdeu() {
   if (faltaExtra()) falta += ' E faltou juntar ' + faltaExtra() + (faltaExtra() === 1 ? ' peça' : ' peças') + ' da cor pedida.';
   await espera(400);
   cartao(
-    '<h3>' + (perto && !J.segundaChance ? (muitoPerto ? 'Você quase conseguiu! 🌊' : 'Foi por pouco! 🌊') : 'Acabaram as jogadas') + '</h3>' +
+    '<h3>' + (perto && !J.segundaChance ? (muitoPerto ? 'Você quase conseguiu! 🌊' : 'Foi por pouco! 🌊') : (J.tempoModo ? 'Acabou o tempo' : 'Acabaram as jogadas')) + '</h3>' +
     '<p>' + falta + '</p>' +
-    (perto && !J.segundaChance ? '<div class="continuar-info"><span>Continuar com <b>+5 jogadas</b> do ponto em que parou</span>' +
+    (perto && !J.segundaChance ? '<div class="continuar-info"><span>Continuar com <b>' + (J.tempoModo ? '+15 segundos' : '+5 jogadas') + '</b> do ponto em que parou</span>' +
       '<span class="preco"><svg viewBox="0 0 100 100"><use href="#i-moeda"/></svg>' + CUSTO_CONTINUAR + '</span></div>' : '') +
     (perto && !J.segundaChance && prog.moedas < CUSTO_CONTINUAR ? '<p class="aviso">Você precisa de mais ' + (CUSTO_CONTINUAR - prog.moedas) + ' moedas para continuar.</p>' : '') +
     '<p class="vidas-derrota">Desistir gasta uma vida · ❤&nbsp;' + prog.vidas + '</p>' +
@@ -527,6 +563,137 @@ function compraFolegoNaHora() {
 /* depois da vitória, a colocação daquela fase aparece no cartão */
 /* o que você fez na fase, dito em uma linha, com o desenho de cada coisa */
 /* mestres diferentes já vencidos: jogar o mesmo mestre de novo não soma */
+/* ═══ ÁLBUM DE CRIATURAS ══════════════════════════════════════════
+   Cada fase que ganha 3 estrelas pela primeira vez rende uma figurinha
+   que você ainda não tem; cada mestre derrotado rende a figurinha
+   lendária dele. Completar o álbum paga um prêmio grande.            */
+const ALBUM = [
+  ['🐠','Peixe-palhaço','Vive entre os tentáculos da anêmona sem se queimar: o muco dele engana o veneno.'],
+  ['🐢','Tartaruga-verde','Pode passar dos 80 anos e volta pra mesma praia onde nasceu pra pôr os ovos.'],
+  ['🐙','Polvo','Tem três corações, sangue azul e consegue mudar de cor em menos de um segundo.'],
+  ['🦑','Lula','Solta uma nuvem de tinta do tamanho do próprio corpo pra despistar quem a persegue.'],
+  ['🦀','Caranguejo','Anda de lado porque as pernas dobram melhor pra esse lado.'],
+  ['🦞','Lagosta','Nunca para de crescer e pode viver mais de 50 anos.'],
+  ['🦐','Camarão-pistola','Estala a garra tão rápido que o estalo faz mais barulho que um tiro.'],
+  ['🐡','Baiacu','Incha de água até ficar grande demais pra ser engolido.'],
+  ['🐬','Golfinho','Dorme com metade do cérebro de cada vez, pra não esquecer de respirar.'],
+  ['🐳','Baleia-jubarte','O canto do macho dura até 20 minutos e é ouvido a quilômetros de distância.'],
+  ['🐋','Cachalote','Mergulha a mais de 2 mil metros atrás de lulas-gigantes.'],
+  ['🦈','Tubarão-baleia','É o maior peixe do mundo e se alimenta só de plâncton.'],
+  ['🪼','Água-viva','Não tem cérebro, nem coração, nem osso, e existe há mais de 500 milhões de anos.'],
+  ['🐚','Náutilo','Usa a concha como um submarino, enchendo e esvaziando câmaras de gás.'],
+  ['🪸','Coral','Parece pedra, mas é bicho: uma colônia de pólipos minúsculos.'],
+  ['⭐','Estrela-do-mar','Se perder um braço, nasce outro no lugar. Algumas regeneram o corpo inteiro.'],
+  ['🦭','Foca','Consegue prender a respiração por quase duas horas.'],
+  ['🐧','Pinguim-imperador','Mergulha a mais de 500 metros e aguenta 20 minutos sem respirar.'],
+  ['🦦','Lontra-marinha','Dorme de mãos dadas com outras lontras pra ninguém sair boiando.'],
+  ['🐟','Peixe-voador','Plana mais de 200 metros fora d\'água pra fugir dos predadores.'],
+  ['🦪','Ostra','Uma só pode filtrar mais de 100 litros de água por dia.'],
+  ['🐊','Crocodilo-marinho','O maior réptil vivo: atravessa o mar entre ilhas pegando carona nas correntes.'],
+  ['🐸','Rã-do-mangue','Uma das poucas rãs do mundo que aguenta água salgada.'],
+  ['🌊','Plâncton','Bilhões de seres minúsculos que produzem boa parte do oxigênio que a gente respira.']
+];
+/* Série 2: o abismo e o Brasil. Os desenhos repetidos ganham outra cor. */
+const ALBUM2 = [
+  ['🦑','Lula-vampira','Vive no escuro total e, assustada, vira a própria capa do avesso pra se esconder.',300],
+  ['🐙','Polvo-dumbo','Tem nadadeiras que parecem orelhas de elefante e vive a mais de 3 mil metros.',200],
+  ['🐟','Peixe-lanterna','Tem luzinhas pelo corpo que piscam como sinal pros outros da espécie.',160],
+  ['🐡','Peixe-bolha','Fora d\'água parece uma gelatina triste; lá embaixo, tem cara de peixe normal.',290],
+  ['🦐','Krill','É minúsculo, mas é a comida principal da baleia-azul.',330],
+  ['🐋','Baleia-azul','O maior animal que já existiu, maior que qualquer dinossauro.',20],
+  ['🦈','Tubarão-da-groenlândia','Pode viver mais de 400 anos: alguns nadando hoje nasceram antes do Brasil existir.',180],
+  ['🪼','Água-viva-imortal','Quando envelhece, consegue voltar a ser jovem e começar a vida de novo.',60],
+  ['🐠','Peixe-cirurgião','Tem uma lâmina afiada perto do rabo, igual a um bisturi.',120],
+  ['🦀','Caranguejo-aranha','As pernas dele podem medir quase 4 metros de ponta a ponta.',40],
+  ['🐚','Caramujo-cone','Dispara um ferrão venenoso como se fosse um arpão.',250],
+  ['🦞','Lagosta-azul','Só uma em cada 2 milhões nasce azul.',190],
+  ['🐬','Boto-cor-de-rosa','Vive nos rios da Amazônia e fica mais rosado quando está agitado.',300],
+  ['🦭','Leão-marinho','O filhote reconhece a voz da mãe no meio de milhares de outros.',30],
+  ['🐢','Tartaruga-de-couro','Mergulha a mais de mil metros e se alimenta de águas-vivas.',100],
+  ['🦦','Ariranha','A onça-d\'água do Pantanal: vive em família e caça junto.',330],
+  ['🐧','Pinguim-de-magalhães','Às vezes aparece nas praias do Brasil no inverno, perdido na corrente.',200],
+  ['🐟','Peixe-espada','Nada a mais de 90 km por hora.',260],
+  ['🦑','Lula-de-humboldt','Caça em grupo e pisca cores no corpo pra conversar com as outras.',90],
+  ['🐙','Polvo-mimético','Imita peixe-leão, cobra-do-mar e linguado pra enganar predadores.',330],
+  ['🪸','Coral-de-fogo','Parece coral, mas queima a pele de quem encosta.',300],
+  ['🌋','Fonte hidrotermal','No fundo do mar, bichos vivem do calor de vulcões, sem nunca ver o sol.',0],
+  ['⭐','Coroa-de-espinhos','Uma estrela-do-mar que come coral e pode devastar um recife inteiro.',280],
+  ['🪨','Peixe-pedra','O peixe mais venenoso do mundo, e parece uma pedra no fundo.',0]
+];
+const ALBUM_TOTAL = () => ALBUM.length + ALBUM2.length + MESTRES.length;
+const daSerie = id => id[0] === 'd' ? ALBUM2[+id.slice(1)] : ALBUM[+id.slice(1)];
+const temFigurinha = id => (prog.album || []).indexOf(id) >= 0;
+function ganhaFigurinha(lendaria) {
+  prog.album = prog.album || [];
+  let id = null;
+  if (lendaria != null) id = 'm' + lendaria;
+  else {
+    /* termina a primeira série antes de abrir a segunda */
+    let faltam = ALBUM.map((_, k) => 'c' + k).filter(x => !temFigurinha(x));
+    if (!faltam.length) faltam = ALBUM2.map((_, k) => 'd' + k).filter(x => !temFigurinha(x));
+    if (faltam.length) id = faltam[Math.floor(Math.random() * faltam.length)];
+  }
+  if (!id || temFigurinha(id)) return null;
+  prog.album.push(id);
+  if (prog.album.length >= ALBUM_TOTAL() && !prog.albumCompleto) { prog.albumCompleto = true; prog.moedas += 2000; }
+  salvaProg();
+  return id;
+}
+function desenhoFigurinha(id, grande) {
+  if (id[0] === 'm') return '<span class="fig-arte">' + desenhaMestre(+id.slice(1)) + '</span>';
+  const d = daSerie(id);
+  return '<span class="fig-arte fig-emoji' + (grande ? ' grande' : '') + '"' + (d[3] ? ' style="filter:hue-rotate(' + d[3] + 'deg)"' : '') + '>' + d[0] + '</span>';
+}
+const nomeFigurinha = id => id[0] === 'm' ? MESTRES[+id.slice(1)].nome : daSerie(id)[1];
+const textoFigurinha = id => id[0] === 'm' ? MESTRES[+id.slice(1)].fala : daSerie(id)[2];
+/* Quem venceu mestres antes do álbum existir recebe as lendárias deles:
+   olha as fases de mestre que já têm estrela e entrega o que faltar. */
+function resgataLendarias() {
+  prog.album = prog.album || [];
+  const novas = [];
+  for (const k in (prog.estrelas || {})) {
+    const i = +k;
+    if (!ehMestre(i) || !(prog.estrelas[k] > 0)) continue;
+    const id = 'm' + fase(i).obj.mestre;
+    if (!temFigurinha(id) && novas.indexOf(id) < 0) novas.push(id);
+  }
+  if (!novas.length) return [];
+  novas.forEach(id => prog.album.push(id));
+  if (prog.album.length >= ALBUM_TOTAL() && !prog.albumCompleto) { prog.albumCompleto = true; prog.moedas += 2000; }
+  salvaProg(); salvaNaNuvemDepois();
+  return novas;
+}
+function avisaResgate(novas) {
+  if (!novas.length) return false;
+  cartao('<div class="aviso-arte coracao"><span>🏆</span></div><p class="aviso-novo">álbum</p>' +
+    '<h3>' + (novas.length === 1 ? 'Figurinha lendária resgatada' : novas.length + ' figurinhas lendárias resgatadas') + '</h3>' +
+    '<p class="aviso-lead">Você já tinha derrotado ' + (novas.length === 1 ? 'esse mestre' : 'esses mestres') + ' antes do álbum existir, então elas são suas.</p>' +
+    '<div class="resgate">' + novas.map(id => '<div class="fig lendaria">' + desenhoFigurinha(id) + '<small>' + nomeFigurinha(id) + '</small></div>').join('') + '</div>' +
+    '<div class="bts"><button class="bt vidro" data-ac="album">Ver o álbum</button><button class="bt" data-ac="fecha">Beleza</button></div>', true);
+  return true;
+}
+function mostraAlbum() {
+  resgataLendarias();
+  const s1 = ALBUM.map((_, k) => 'c' + k), s2 = ALBUM2.map((_, k) => 'd' + k), lend = MESTRES.map((_, k) => 'm' + k);
+  const conta = l => l.filter(temFigurinha).length + '/' + l.length;
+  const grade = (titulo, l) => '<p class="album-serie">' + titulo + ' · ' + conta(l) + '</p><div class="album-grade">' + l.map(id => temFigurinha(id)
+      ? '<button class="fig' + (id[0] === 'm' ? ' lendaria' : '') + '" data-ac="figurinha" data-id="' + id + '">' + desenhoFigurinha(id) + '<small>' + nomeFigurinha(id) + '</small></button>'
+      : '<div class="fig vazia' + (id[0] === 'm' ? ' lendaria' : '') + '"><span class="fig-arte">?</span><small>' + (id[0] === 'm' ? 'Lendária' : '???') + '</small></div>').join('') + '</div>';
+  const todos = s1.concat(s2, lend);
+  const n = (prog.album || []).length;
+  cartao('<h3>Álbum do fundo do mar</h3>' +
+    '<p class="album-conta">' + n + ' de ' + ALBUM_TOTAL() + ' figurinhas' + (prog.albumCompleto ? ' · completo! 🏆' : ' · completar vale 2.000 moedas') + '</p>' +
+    '<div class="album-barra"><i style="width:' + Math.round(n / ALBUM_TOTAL() * 100) + '%"></i></div>' +
+    '<div class="album-rola">' + grade('Série 1 · Costeira', s1) + grade('Série 2 · Abismo', s2) + grade('Lendárias', lend) + '</div>' +
+    '<p class="album-dica">3 estrelas pela primeira vez numa fase Difícil têm 30% de chance de dar figurinha; numa Lendária, 60%. Depois de 12 tentativas sem nada, a próxima é garantida. As lendárias vêm dos mestres.</p>' +
+    '<div class="bts"><button class="bt" data-ac="fecha">Fechar</button></div>', true);
+}
+function mostraFigurinha(id) {
+  cartao('<div class="fig-detalhe' + (id[0] === 'm' ? ' lendaria' : '') + '">' + desenhoFigurinha(id, true) + '</div>' +
+    '<p class="aviso-novo">' + (id[0] === 'm' ? 'figurinha lendária' : 'figurinha') + '</p><h3>' + nomeFigurinha(id) + '</h3>' +
+    '<p class="aviso-lead">' + textoFigurinha(id) + '</p>' +
+    '<div class="bts"><button class="bt vidro" data-ac="album">Álbum</button><button class="bt" data-ac="fecha">' + (J && J.fim && ultimoCartaoFim ? 'Voltar' : 'Fechar') + '</button></div>', true);
+}
 function mestresDerrotados() {
   let n = 0;
   for (const k in (prog.estrelas || {})) if (ehMestre(+k) && prog.estrelas[k] > 0) n++;
@@ -561,7 +728,12 @@ async function mostraPosicaoFase(i, pontos) {
 }
 
 /* ═══ CARTÕES ═══════════════════════════════════════════════════ */
+let ultimoCartaoFim = null;
+/* jogo minimizado ou tela apagada: pausa tudo que anima */
+document.addEventListener('visibilitychange', () => document.body.classList.toggle('em-segundo-plano', document.hidden));
 function cartao(html, fechavel) {
+  /* guarda o cartão de vitória ou derrota, pra poder voltar a ele */
+  if (html.indexOf('estrelas-grandes') >= 0 || html.indexOf('placar-final') >= 0) ultimoCartaoFim = html;
   const c = document.getElementById('cartao');
   c.className = 'cartao' + (fechavel ? ' fechavel' : '');
   c.innerHTML = html;
@@ -582,6 +754,15 @@ function tocaFila() {
   if (f) f();
 }
 function fechaCartao() {
+  /* fase terminada e ninguém saiu da tela de jogo: o cartão de fim volta,
+     senão a pessoa fica presa num tabuleiro acabado (acontecia ao fechar
+     a figurinha nova aberta a partir da vitória) */
+  setTimeout(() => {
+    if (!ultimoCartaoFim || !J || !J.fim) return;
+    if (!document.getElementById('tela-jogo').classList.contains('ativa')) return;
+    if (document.getElementById('veu').classList.contains('aberto')) return;
+    cartao(ultimoCartaoFim);
+  }, 250);
   document.getElementById('veu').classList.remove('aberto');
   if (filaCartoes.length) setTimeout(tocaFila, 300);
 }
@@ -763,20 +944,15 @@ async function recebeVidas() {
    com o botão de mandar ali mesmo, e o ícone do app ganha o número */
 /* o que mudou nesta versão: aparece uma vez para cada pessoa */
 const NOVIDADES = [
-  ['❤', 'Sair no meio da fase agora gasta vida', 'O jogo avisa antes, e dá pra desistir de sair.'],
-  ['👆', 'Toque no objetivo', 'As casas que faltam acendem por dois segundos. Ótimo quando está tudo da mesma cor.'],
-  ['🦑', 'Cada mestre com seu golpe', 'A lula cospe tinta, a enguia dá choque e prende peças, o caranguejo joga areia grossa e a serpente cospe lixo. Todos mais fortes e se curando a cada golpe.'],
-  ['🌊', 'Fases mais apertadas', 'Menos jogadas nas fases normais, difíceis e lendárias.'],
-  ['🎁', 'Mandar vida tem limite', 'Até 5 por dia, pra vida continuar valendo.'],
-  ['🎲', 'Condições do mar', 'Muitas fases agora vêm com uma regra extra: especiais de presente, cor que vale o dobro ou moedas escondidas no fundo.'],
-  ['🐟', 'Peixe-guia', 'Em algumas fases, 4 peças iguais em quadrado viram um peixe que nada direto até o que o objetivo pede.'],
-  ['⚡', 'Enguia-elétrica redesenhada', 'O mestre da fase 200 ganhou cara de bicho de verdade.']
+  ['🗺️', 'Oito regiões novas', 'Depois da Fossa o mar continua: Floresta de Kelp, Cemitério de Baleias, Cidade Submersa, Jardim de Medusas, Gruta de Cristal, Recife de Neon, Fonte Termal e Mar de Aurora, cada uma com cenário e regra próprios.'],
+  ['⚖️', 'Fases mais equilibradas', 'Fases de lixo, coral, bicho preso e bolhas pediam jogadas demais: agora pedem o que de fato precisam. O bônus das jogadas que sobram ficou mais justo.'],
+  ['🏆', 'Ranking mais justo', 'Cada fase tem um teto de pontos no ranking, pra nenhuma pontuação fora do normal decidir a disputa.']
 ];
 /* A lista de novidades tem um nome de lote. O cartão só abre sozinho
    quando o lote muda, e não a cada versão: correção de bug não é
    novidade. Quem viu o cartão antigo (marcado pela versão) já viu
    este primeiro lote. Pra publicar novidade nova: troque o lote e a lista. */
-const NOVIDADES_LOTE = 'lote-1', NOVIDADES_DATA = '28 de setembro';
+const NOVIDADES_LOTE = 'lote-7', NOVIDADES_DATA = '12 de outubro';
 function viuEsteLote() {
   const v = prog.viuNovidades || '';
   return v === NOVIDADES_LOTE || (NOVIDADES_LOTE === 'lote-1' && /^20\d\d\./.test(v));
@@ -787,7 +963,32 @@ function mostraNovidades() {
   cartaoNovidades();
   return true;
 }
+function pintaEventoHome() {
+  const ev = eventoHoje(), velho = document.getElementById('faixa-evento');
+  if (velho) velho.remove();
+  if (!ev) return;
+  /* pílula de uma linha, depois dos botões: nunca empurra o Álbum e as
+     Novidades pra fora da tela; tocar abre a explicação */
+  const v = document.querySelector('.linha-extras') || document.getElementById('versao');
+  if (!v) return;
+  v.insertAdjacentHTML('afterend', '<button id="faixa-evento" type="button">' + EVENTOS[ev].ic + ' <b>' + EVENTOS[ev].nome + '</b><span>ver</span></button>');
+  document.getElementById('faixa-evento').onclick = () => {
+    Som.liga();
+    cartao('<div class="aviso-arte coracao"><span>' + EVENTOS[ev].ic + '</span></div><p class="aviso-novo">evento de fim de semana</p><h3>' + EVENTOS[ev].nome + '</h3>' +
+      '<p class="aviso-lead">' + EVENTOS[ev].texto + '</p><p>Vale até o fim de domingo, em todas as fases. Na semana que vem, outro evento.</p>' +
+      '<div class="bts"><button class="bt" data-ac="fecha">Bora</button></div>', true);
+  };  /* tela curta: se a pílula não couber, ela entra compacta na linha dos botões */
+  setTimeout(() => {
+    const pill = document.getElementById('faixa-evento'), linha = document.querySelector('.linha-extras');
+    if (pill && linha && pill.getBoundingClientRect().bottom > innerHeight - 4) {
+      pill.classList.add('compacta'); pill.innerHTML = EVENTOS[ev].ic + ' <b>Evento</b>'; linha.appendChild(pill); linha.classList.add('tres');
+    }
+  }, 120);
+}
 function pintaBotaoNovidades() {
+  pintaEventoHome();
+  const al = document.getElementById('bt-album');
+  if (al) al.innerHTML = '📖 Álbum ' + (prog.album || []).length + '/' + ALBUM_TOTAL();
   const b = document.getElementById('bt-novidades');
   if (b) b.classList.toggle('tem-novo', !viuEsteLote());
 }
@@ -797,6 +998,19 @@ function cartaoNovidades() {
     '<div class="novidades">' + NOVIDADES.map(([ic, t1, t2]) => '<div class="novidade"><span class="ic-nov">' + ic + '</span><div><b>' + t1 + '</b><small>' + t2 + '</small></div></div>').join('') + '</div>' +
     '<p class="novidades-data">Atualização de ' + NOVIDADES_DATA + '</p>' +
     '<div class="bts"><button class="bt" data-ac="fecha">Bora mergulhar</button></div>', true);
+}
+/* pontuações já salvas acima do teto (as do bug das fases de relógio) voltam ao teto,
+   no aparelho e no ranking da fase; o total do ranking nunca passa do teto */
+function aparaPontuacoes() {
+  const mexidas = [];
+  for (const k in (prog.melhores || {})) {
+    const teto = tetoDaFase(k);
+    if (prog.melhores[k] > teto) { prog.melhores[k] = teto; mexidas.push([k, teto]); }
+  }
+  if (!mexidas.length) return 0;
+  salvaProg();
+  if (Ranking.ligado && Conta.sessao) mexidas.forEach(([k, teto]) => Ranking.manda('/mergulho/fases/' + k + '/' + Conta.sessao.uid, { nome: Ranking.nome(), pontos: teto }));
+  return mexidas.length;
 }
 async function avisaPedidos() {
   if (!Ranking.ligado || !prog.cardume) return;
@@ -885,7 +1099,8 @@ function continuaPorMoedas() {
   J.segundaChance = true; J.derrota = false;
   fechaCartao();
   J.fim = false; J.ocupado = false; J.mov += 5; J.movExtra = (J.movExtra || 0) + 5;
-  atualizaHud(); reiniciaDica(); Som.liga(); Som.pop(5); faixaTexto('+5 jogadas');
+  if (J.tempoModo) { J.mov = 999; J.tempoRestante = (J.tempoRestante || 0) + 15; iniciaRelogio(); faixaTexto('+15 segundos', 1800); }
+  atualizaHud(); reiniciaDica(); Som.liga(); Som.pop(5); faixaTexto(J.tempoModo ? '+15 segundos' : '+5 jogadas');
 }
 
 function usaFolegoNoCartao() {
@@ -894,9 +1109,10 @@ function usaFolegoNoCartao() {
   J.segundaChance = true; J.derrota = false;
   fechaCartao();
   J.fim = false; J.ocupado = false; J.mov += 5; J.movExtra = (J.movExtra || 0) + 5;
+  if (J.tempoModo) { J.mov = 999; J.tempoRestante = (J.tempoRestante || 0) + 15; iniciaRelogio(); }
   atualizaHud(); reiniciaDica();
   Som.liga(); Som.pop(5);
-  faixaTexto('+5 jogadas');
+  faixaTexto(J.tempoModo ? '+15 segundos' : '+5 jogadas');
 }
 const moedaSvg = '<svg viewBox="0 0 100 100"><use href="#i-moeda"/></svg>';
 function mostraLoja() {
@@ -1147,6 +1363,7 @@ function decideLeve() {
      quando o próprio navegador informa memória (Android) e ela é baixa;
      no resto entra cheio, e quem decide é o medidor de quadros.       */
   if (!prog.leveEscolhido && prog.leve && !prog.migrouLeve) { prog.leve = false; prog.migrouLeve = true; salvaProg(); }   /* desfaz o modo leve ligado por engano */
+  if (!prog.leveEscolhido && prog.leve && !prog.migrouLeve2) { prog.leve = false; prog.migrouLeve2 = true; salvaProg(); }   /* e de novo pra quem o medidor apressado religou */
   if (prog.leve !== null && prog.leve !== undefined) return;
   const memoria = navigator.deviceMemory;
   const nucleos = navigator.hardwareConcurrency || 8;
@@ -1165,7 +1382,12 @@ function vigiaFps() {
     const dt = performance.now() - t0;
     if (dt < 4000) { olhoFps = requestAnimationFrame(passo); return; }
     olhoFps = null;
-    if (quadros / (dt / 1000) < 24) {   /* o modo economia do iPhone trava em 30: isso não é aparelho fraco */
+    const lento = quadros / (dt / 1000) < 24;   /* o modo economia do iPhone trava em 30: isso não é aparelho fraco */
+    /* uma medição ruim pode ser só um instante pesado (abrir o jogo, montar o mapa):
+       mede de novo 20 segundos depois e só liga o modo leve se as duas forem ruins */
+    if (lento && !prog.fpsLentoUmaVez) { prog.fpsLentoUmaVez = true; salvaProg(); jaMediu = false; setTimeout(vigiaFps, 20000); return; }
+    if (!lento && prog.fpsLentoUmaVez) { prog.fpsLentoUmaVez = false; salvaProg(); }
+    if (lento) {
       prog.leve = true; salvaProg(); aplicaLeve();
       faixaTexto('Modo leve');
       setTimeout(() => cartao('<h3>Liguei o modo leve</h3>' +
@@ -1341,6 +1563,8 @@ function juntaProg(a, b) {
   r.seq = (a.dia || '') >= (b.dia || '') ? (a.seq || 0) : (b.seq || 0);
   r.melhorSeq = Math.max(a.melhorSeq || 0, b.melhorSeq || 0);
   r.semanas = Math.max(a.semanas || 0, b.semanas || 0);
+  r.album = Array.from(new Set([].concat(a.album || [], b.album || [])));
+  r.albumCompleto = !!(a.albumCompleto || b.albumCompleto);
   r.vidas = a.vidas != null ? a.vidas : b.vidas;
   r.vidasAmigos = Math.max(a.vidasAmigos || 0, b.vidasAmigos || 0);
   r.enviadas = Object.assign({}, b.enviadas || {}, a.enviadas || {});
@@ -1469,13 +1693,14 @@ const Ranking = {
   async subeFicha() {
     if (!this.ligado) return;
     let soma = 0;
-    for (const k in (prog.melhores || {})) soma += prog.melhores[k] || 0;
+    for (const k in (prog.melhores || {})) soma += Math.min(prog.melhores[k] || 0, tetoDaFase(k));
     return this.manda('/mergulho/placar/' + Conta.sessao.uid,
       { nome: this.nome(), max: prog.max, estrelas: totalEstrelas(), pontos: soma,
         mestres: mestresDerrotados(), cardume: prog.cardume || '', quando: Date.now() });
   },
   async pontuaFase(i, pontos) {
     if (!this.ligado) return;
+    pontos = Math.min(pontos, tetoDaFase(i));
     const antes = prog.melhores && prog.melhores[i] || 0;
     if (pontos <= antes) return;
     prog.melhores = prog.melhores || {};
@@ -1601,10 +1826,8 @@ async function mostraRanking(aba) {
 const PRESENTES = {
   /* de vida (continuam valendo) */
   'VIDACHEIA': 'vidas', 'FOLEGO5': 'vidas',
-  /* três de 3 mil */
-  'MARUJO3000': 3000, 'ANCORA3000': 3000, 'FAROL3000': 3000,
-  /* cinco de 10 mil */
-  'SEREIA10K': 10000, 'NETUNO10K': 10000, 'KRAKEN10K': 10000, 'CORSARIO10K': 10000, 'TRIDENTE10K': 10000
+  /* seis de 10 mil */
+  'POSEIDON10K': 10000, 'MARESIA10K': 10000, 'NAUFRAGO10K': 10000, 'CORAL10K': 10000, 'ABISSAL10K': 10000, 'LEVIATA10K': 10000
 };
 function mostraCodigo(aviso) {
   cartao('<h3>Código de presente</h3><p>Se alguém te passou um código, digite aqui.</p>' +
@@ -1759,8 +1982,8 @@ function tela(id) {
   if (id === 'tela-jogo') Musica.liga('jogo', mundoAtual);
   else { document.body.classList.remove('aperto'); Musica.liga('menu', mundoAtual); setTimeout(talvezAtualizar, 400); }
   if (id === 'tela-inicio') { requestAnimationFrame(() => { pintaSemanaHome(); pintaBotaoNovidades(); encaixaInicio(); }); setTimeout(pintaPodio, 300); setTimeout(async () => {
-    if (!window.__fichaSubiu && Ranking.ligado) { window.__fichaSubiu = true; Ranking.subeFicha(); }   /* corrige o ranking já ao abrir */
-    if (mostraNovidades()) return; await recebeVidas(); avisaPedidos(); }, 1500); }
+    if (!window.__fichaSubiu && Ranking.ligado) { window.__fichaSubiu = true; aparaPontuacoes(); Ranking.subeFicha(); }   /* corrige o ranking já ao abrir */
+    if (mostraNovidades()) return; if (avisaResgate(resgataLendarias())) return; await recebeVidas(); avisaPedidos(); }, 1500); }
   /* a faixa de baixo do celular acompanha a cor da tela */
   document.body.style.backgroundColor = id === 'tela-jogo'
     ? (getComputedStyle(document.documentElement).getPropertyValue('--ag4').trim() || '#0B4F7A')
@@ -1943,12 +2166,19 @@ function retomaPartida(d) {
         presosFeitos: d.pr || 0, bolhasFeitas: d.bo || 0, bolhasFugiram: d.bfg || 0,
         ninhos: d.nin || null, ninhosFeitos: d.ninf || 0,
         perolas: d.per || null, perolasFeitas: d.pef || 0, coral: d.cor || null, coralFeito: d.cof || 0, lixoFeito: d.lxf || 0,
-        cond: d.cnd || null, corVez: d.cvz != null ? d.cvz : null, moedasFundo: d.mfd || null, moedasPegas: d.mpg || 0,
+        tempoRestante: d.tmp != null ? d.tmp : null, regra: d.rg || null, evento: d.ev || null, jogadasRegiao: d.jr || 0, cond: d.cnd || null, corVez: d.cvz != null ? d.cvz : null, moedasFundo: d.mfd || null, moedasPegas: d.mpg || 0,
         dano: d.dn || 0, contaMestre: d.cm || 0, contaBolha: d.cb || 0, bauParado: d.bpa || 0 };
   TOPO = (d.topo || f.forma || Array(W).fill(0)).slice();
   QUADRADO_ATIVO = !!f.quadrado;
   pintaFundoMestre(f.obj.tipo === 'chefe' ? f.obj.mestre : null);
   document.body.classList.toggle('com-mestre', f.obj.tipo === 'chefe');
+  /* fase de relógio retomada: religa o relógio. Antes ficava com as 999
+     jogadas internas visíveis, e a pessoa jogava sem limite */
+  if (tempoDa(d.f) > 0) {
+    J.tempoModo = true; J.mov = 999;
+    if (J.tempoRestante == null) J.tempoRestante = tempoDa(d.f);
+    setTimeout(() => { iniciaRelogio(); pintaRelogio(); }, 400);
+  } else if (J.mov > fase(d.f).mov + 20) J.mov = fase(d.f).mov;   /* trava de segurança: nunca mais jogadas que o possível */
   papel = d.papel;
   uid = 0;
   grid = d.g.map(l => l.map(cod => {
@@ -1980,6 +2210,7 @@ function retomaPartida(d) {
 }
 
 function abreFase(i, ignoraParada) {
+  ultimoCartaoFim = null;
   const parada = lePartida();
   atualizaVidas();
   if (!(parada && parada.f === i) && prog.vidas <= 0) { recebeVidas().then(() => semVidas()); return; }
@@ -2011,7 +2242,7 @@ function abreFase(i, ignoraParada) {
   for (let c = 0; c < W; c++) for (let r = 0; r < TOPO[c]; r++) { papel[r][c] = 0; if (J.papelBase) J.papelBase[r][c] = 0; }
   J.papelTotal = contaPapel(papel);
   pontosNaTela = 0;
-  QUADRADO_ATIVO = !!f.quadrado && !J.desafio;   /* antes de montar: o tabuleiro não pode nascer com quadrado pronto */
+  QUADRADO_ATIVO = (!!f.quadrado || eventoHoje() === 'peixe') && !J.desafio;   /* antes de montar (inclusive no evento do peixe): o tabuleiro não pode nascer com quadrado pronto */
   montaTabuleiro();
   preparaEspeciaisDaFase();
   fechaCartao();
@@ -2082,13 +2313,39 @@ function mostraPreFase() {
     '<span class="selo-classe" style="--cor-classe:' + C.cor + '">' + C.emoji + ' ' + C.nome.toUpperCase() + '</span>' +
     '<p class="pre-texto">' + C.texto + '</p>' +
     '<div class="pre-linhas"><div class="pre-obj"><small>objetivo</small><b>' + resumoObjetivo(f) + '</b>' + iconesObjetivo(f) + '</div>' +
-    '<div><small>jogadas</small><b class="pre-grande">' + f.mov + '</b></div></div>' +
+    '<div><small>' + (tempoDa(J.fase) ? 'segundos' : 'jogadas') + '</small><b class="pre-grande">' + (tempoDa(J.fase) || f.mov) + '</b></div></div>' +
+    (['D', 'L'].indexOf(k) >= 0 && (prog.estrelas[J.fase] || 0) < 3 && f.obj.tipo !== 'chefe' ? '<p class="pre-fig">📖 3 estrelas aqui podem render uma figurinha pro álbum (' + (k === 'L' ? '60%' : '30%') + ' de chance)</p>' : '') +
+    (f.enigma ? '<p class="pre-enigma">🧩 <b>Enigma</b> · só ' + f.mov + ' jogadas, com especiais já prontos no tabuleiro. Pense antes de mexer.</p>' : '') +
+    (regraDa(J.fase) && regraDa(J.fase).id !== 'calma' ? '<p class="pre-regiao">' + regraDa(J.fase).ic + ' <b>' + regraDa(J.fase).nome + '</b> · ' + regraDa(J.fase).texto + '</p>' : '') +
+    (eventoHoje() ? '<p class="pre-evento">' + EVENTOS[eventoHoje()].ic + ' <b>' + EVENTOS[eventoHoje()].nome + '</b> · ' + EVENTOS[eventoHoje()].texto + '</p>' : '') +
+    (tempoDa(J.fase) ? '<p class="pre-tempo">⏱ <b>Contra a Maré</b> · sem limite de jogadas: você tem ' + tempoDa(J.fase) + ' segundos. Jogada de 5 peças ou mais devolve tempo.</p>' : '') +
     (condicaoDa(J.fase) ? '<p class="pre-cond">' + CONDICOES[condicaoDa(J.fase)].ic + ' <b>' + CONDICOES[condicaoDa(J.fase)].nome + '</b> · ' + CONDICOES[condicaoDa(J.fase)].texto + '</p>' : '') +
     (f.quadrado ? '<p class="pre-quadrado">🐟 Nesta fase, 4 peças iguais em quadrado viram um peixe-guia</p>' : '') +
     '<div class="pre-estrelas"><span>★ ' + nf(f.marcas[0]) + '</span><span>★★ ' + nf(f.marcas[1]) + '</span><span>★★★ ' + nf(f.marcas[2]) + '</span></div>' +
     (prog.estrelas[J.fase] ? '<p class="pre-recorde">Seu melhor aqui: ' + '★'.repeat(prog.estrelas[J.fase]) + (prog.melhores && prog.melhores[J.fase] ? ' · ' + nf(prog.melhores[J.fase]) + ' pontos' : '') + '</p>' : '') +
     '</div><div class="bts"><button class="bt vidro" data-ac="mapa">Voltar</button>' +
     '<button class="bt" data-ac="comeca">Mergulhar</button></div>');
+}
+/* ═══ CONTRA A MARÉ ════════════════════════════════════════════════ */
+let relogio = null;
+function iniciaRelogio() {
+  clearInterval(relogio);
+  relogio = setInterval(() => {
+    if (!J || !J.tempoModo || J.fim) { clearInterval(relogio); document.body.classList.remove('relogio-urgente'); return; }
+    /* para com cartão aberto, com o jogo em segundo plano e durante a cascata */
+    if (document.hidden || document.getElementById('veu').classList.contains('aberto') || J.ocupado) return;
+    J.tempoRestante = Math.max(0, (J.tempoRestante || 0) - 1);
+    pintaRelogio();
+    if (J.tempoRestante <= 10 && J.tempoRestante > 0) { Som.liga(); Som.pop(1); }
+    if (J.tempoRestante <= 0) { clearInterval(relogio); J.mov = 0; confere(); }
+  }, 1000);
+}
+function pintaRelogio() {
+  if (!J || !J.tempoModo) return;
+  document.getElementById('mov-n').textContent = J.tempoRestante;
+  document.getElementById('mov-lb').textContent = 'segundos';
+  document.getElementById('movimentos').classList.toggle('aperto', J.tempoRestante <= 10);
+  document.body.classList.toggle('relogio-urgente', J.tempoRestante <= 10);
 }
 function vigiaTabuleiro(fase, tentativa) {
   setTimeout(() => {
@@ -2110,6 +2367,9 @@ function vigiaTabuleiro(fase, tentativa) {
 function comecaFase() {
   const f = faseAtual();
   if (!J.desafio) vigiaTabuleiro(J.fase, 0);
+  J.tempoModo = !J.desafio && tempoDa(J.fase) > 0;
+  if (J.tempoModo) { if (J.tempoRestante == null) J.tempoRestante = tempoDa(J.fase); J.mov = 999; iniciaRelogio(); setTimeout(pintaRelogio, 30); }
+  else { clearInterval(relogio); document.body.classList.remove('relogio-urgente'); }
   if (!J.viuPre && !J.desafio) { J.viuPre = true; return mostraPreFase(); }
   J.faltaInicial = Math.max(1, faltaObjetivo() || 1);
   garanteBolhas();
@@ -2132,6 +2392,13 @@ function comecaFase() {
     'O coral cinza está morto. Toda peça estourada em cima dele ou bem do lado devolve a cor daquele pedaço. Recupere o recife inteiro.'); }
   if (!prog.vistos.lixo2 && f.obj.tipo === 'lixo') { prog.vistos.lixo2 = true; salvaProg(); return mostraAviso('Lixo no fundo', '#i-lixo0',
     'Garrafas, latas e sacolas não combinam com nada. Estoure peças coladas nelas para tirar do mar; especial que acerta em cheio também leva. Os mais sujos aguentam dois estouros.'); }
+  const rg = regraDa(J.fase);
+  if (rg && rg.id !== 'calma' && !prog.vistos['regiao-' + rg.id]) { prog.vistos['regiao-' + rg.id] = true; salvaProg();
+    return mostraAviso(ambiente(J.fase).reg.nome, null, rg.ic + ' ' + rg.nome + '. ' + rg.texto + ' A regra vale em todas as fases desta região.'); }
+  if (!prog.vistos.enigma && f.enigma) { prog.vistos.enigma = true; salvaProg(); return mostraAviso('Enigma', null,
+    'Esta fase é um enigma: poucas jogadas e especiais já prontos no tabuleiro. A ordem em que você usa cada um faz toda a diferença. Olhe com calma antes de mexer.'); }
+  if (!prog.vistos.tempo && tempoDa(J.fase)) { prog.vistos.tempo = true; salvaProg(); return mostraAviso('Contra a Maré', '#i-bolha-ar',
+    'Nesta fase não existe limite de jogadas: existe um relógio. Jogue rápido, sem medo. Toda jogada que estoura 5 peças ou mais devolve um segundo. Com cartão aberto ou o jogo minimizado, o relógio para.'); }
   if (!prog.vistos.quadrado && f.quadrado) { prog.vistos.quadrado = true; salvaProg(); return mostraAviso('Peixe-guia', '#sp-peixe',
     'Juntar quatro peças iguais em quadrado cria um peixe-guia. Quando ele dispara, nada direto até três casas que o objetivo pede: cobertura, coral, ostra, lixo ou bicho preso. Ele só aparece em algumas fases, avisadas antes de começar.'); }
   if (!prog.vistos.ninho2 && f.obj.tipo === 'ninho') { prog.vistos.ninho2 = true; salvaProg(); return mostraAviso('Ninho de algas', '#i-ninho',
@@ -2242,7 +2509,12 @@ function iniciar() {
     b.id = 'bt-novidades'; b.type = 'button';
     b.innerHTML = '✨ Novidades';
     b.onclick = () => { Som.liga(); cartaoNovidades(); };
-    v.insertAdjacentElement('afterend', b);
+    const al = document.createElement('button');
+    al.id = 'bt-album'; al.type = 'button';
+    al.onclick = () => { Som.liga(); mostraAlbum(); };
+    const linha = document.createElement('div'); linha.className = 'linha-extras';
+    linha.appendChild(al); linha.appendChild(b);
+    v.insertAdjacentElement('afterend', linha);
     pintaBotaoNovidades();
   })();
   [['#tela-inicio', 'vidas-home'], ['#tela-mapa', 'vidas-mapa']].forEach(([alvo, cls]) => {
@@ -2311,6 +2583,8 @@ function iniciar() {
     else if (ac === 'mapa') { cobraDerrota(); fechaCartao(); montaMapa(); tela('tela-mapa'); }
     else if (ac === 'denovo') { cobraDerrota(); if (prog.vidas <= 0) semVidas(); else abreFase(J.fase); }
     else if (ac === 'enchevidas') encheVidas();
+    else if (ac === 'album') mostraAlbum();
+    else if (ac === 'figurinha') mostraFigurinha(b.dataset.id);
     else if (ac === 'usavidaamigo') usaVidaDeAmigo();
     else if (ac === 'pedevidas') pedeVidas(b);
     else if (ac === 'mandavida') mandaVida(b.dataset.id, b.dataset.nome, b);
@@ -2321,10 +2595,28 @@ function iniciar() {
   mesa.addEventListener('pointerdown', aoPressionar);
   mesa.addEventListener('pointermove', aoMover);
   mesa.addEventListener('pointerup', aoSoltar);
+  mesa.addEventListener('pointercancel', () => { if (arrasto && !arrasto.usado) soltaArrastada(true); arrasto = null; });   /* toque cancelado pelo sistema: a peça volta pro lugar */
   mesa.addEventListener('pointercancel', () => { arrasto = null; });
   mesa.addEventListener('contextmenu', e => e.preventDefault());
 
   let t = null;
+  /* painel de cima cresceu ou encolheu (objetivo comprido, condição do mar,
+     segundo objetivo): o tabuleiro se ajusta na hora, sem invadir os poderes */
+  if (window.ResizeObserver) {
+    const obj = document.getElementById('objetivo'), painel = obj && (obj.closest('.hud') || obj.parentElement.parentElement);
+    let alturaVista = 0, agenda = 0;
+    if (painel) new ResizeObserver(() => {
+      const h = Math.round(painel.getBoundingClientRect().height);
+      if (h === alturaVista) return;
+      alturaVista = h;
+      cancelAnimationFrame(agenda);
+      agenda = requestAnimationFrame(() => {
+        if (!document.getElementById('tela-jogo').classList.contains('ativa')) return;
+        dimensiona();
+        if (typeof alinhaMarcas === 'function') alinhaMarcas();
+      });
+    }).observe(painel);
+  }
   window.addEventListener('resize', () => {
     clearTimeout(t);
     t = setTimeout(() => {

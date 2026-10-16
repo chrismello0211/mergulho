@@ -15,6 +15,80 @@ function rgba(c, a) {
 }
 
 const PROPS = {
+  floresta: p => {
+    let s = '<path d="M0 132Q100 122 200 130T400 126V170H0Z" fill="' + hex(p.fundo, -.25) + '"/>';
+    for (let i = 0; i < 11; i++) {
+      const x = 10 + i * 38, alt = 70 + ((i * 37) % 50), d = (i % 2 ? 1 : -1) * (6 + (i * 5) % 9);
+      s += '<path d="M' + x + ' 130q' + d + ' -' + (alt / 3) + ' 0 -' + (alt * 2 / 3) + 'q' + (-d) + ' -' + (alt / 3) + ' ' + (d / 2) + ' -' + (alt / 3) + '" fill="none" stroke="' + p.vida + '" stroke-width="' + (5 + (i % 3)) + '" stroke-linecap="round" opacity="' + (.45 + (i % 3) * .1) + '"/>';
+      s += '<ellipse cx="' + (x + d) + '" cy="' + (130 - alt * .55) + '" rx="9" ry="4" fill="' + p.acento + '" opacity=".35" transform="rotate(' + (d * 3) + ' ' + (x + d) + ' ' + (130 - alt * .55) + ')"/>';
+    }
+    return s;
+  },
+  ossos: p => {
+    let s = '<path d="M0 134Q90 124 180 132T400 128V170H0Z" fill="' + hex(p.fundo, -.25) + '"/>';
+    for (let i = 0; i < 5; i++) {
+      const x = 70 + i * 38;
+      s += '<path d="M' + x + ' 132Q' + (x + 6) + ' ' + (62 - i * 3) + ' ' + (x + 42) + ' 44" fill="none" stroke="' + p.pedra + '" stroke-width="7" stroke-linecap="round" opacity=".62"/>';
+    }
+    s += '<path d="M60 134L270 134" stroke="' + p.pedra + '" stroke-width="9" stroke-linecap="round" opacity=".55"/><g fill="' + p.pedra + '" opacity=".5">';
+    for (let k = 0; k < 6; k++) s += '<ellipse cx="' + (300 + k * 16) + '" cy="' + (128 - (k % 2) * 3) + '" rx="8" ry="6"/>';
+    return s + '</g><path d="M330 126q18-40 48-36q10 12-6 36Z" fill="' + p.pedra + '" opacity=".45"/>';
+  },
+  cidade: p => {
+    let s = '<path d="M0 138Q100 130 200 136T400 132V170H0Z" fill="' + hex(p.fundo, -.3) + '"/>';
+    const pr = [[10,60,34],[50,90,28],[84,48,40],[130,104,30],[166,70,36],[210,96,32],[248,56,38],[292,84,30],[328,66,36],[368,50,28]];
+    for (const [x, h, w] of pr) {
+      s += '<rect x="' + x + '" y="' + (134 - h) + '" width="' + w + '" height="' + h + '" fill="' + hex(p.fundo, -.18) + '"/>';
+      for (let y = 134 - h + 8; y < 126; y += 14) for (let q = 0; q < Math.floor(w / 12); q++)
+        if (((x + y * 3 + q * 7) % 5) < 2) s += '<rect x="' + (x + 5 + q * 11) + '" y="' + y + '" width="5" height="6" fill="' + p.acento + '" opacity=".75"/>';
+    }
+    return s;
+  },
+  medusas: p => {
+    let s = '<path d="M0 138Q100 128 200 136T400 130V170H0Z" fill="' + hex(p.fundo, -.25) + '"/>';
+    for (const [x, y, r] of [[44,70,22],[120,40,16],[200,84,26],[286,48,18],[352,78,24]]) {
+      s += '<path d="M' + (x - r) + ' ' + y + 'a' + r + ' ' + r + ' 0 0 1 ' + (2 * r) + ' 0Z" fill="' + p.acento + '" opacity=".42"/>';
+      for (let t = 0; t < 4; t++) s += '<path d="M' + (x - r * .7 + t * r * .47) + ' ' + y + 'q' + (t % 2 ? 6 : -6) + ' ' + (r * .8) + ' 0 ' + (r * 1.6) + '" fill="none" stroke="' + p.acento + '" stroke-width="2.4" stroke-linecap="round" opacity=".4"/>';
+      s += '<circle cx="' + x + '" cy="' + (y - r * .35) + '" r="' + (r * .22) + '" fill="#fff" opacity=".35"/>';
+    }
+    return s + '<g fill="' + p.vida + '" opacity=".55"><ellipse cx="60" cy="134" rx="18" ry="9"/><ellipse cx="250" cy="136" rx="22" ry="10"/><ellipse cx="370" cy="134" rx="16" ry="8"/></g>';
+  },
+  gruta: p => {
+    let s = '<path d="M0 128Q80 118 160 126T400 122V170H0Z" fill="' + hex(p.fundo, -.3) + '"/>';
+    s += '<path d="M0 0H400V14Q340 34 300 16T200 26T110 12T50 30T0 16Z" fill="' + hex(p.fundo, -.35) + '"/>';
+    for (const [x, h] of [[40,40],[130,52],[220,36],[310,48],[372,32]]) s += '<path d="M' + (x - 9) + ' 18L' + x + ' ' + (18 + h) + 'L' + (x + 9) + ' 18Z" fill="' + hex(p.fundo, -.2) + '"/>';
+    for (const [x, h] of [[70,52],[150,70],[240,48],[330,64]]) {
+      s += '<path d="M' + (x - 13) + ' 124L' + x + ' ' + (124 - h) + 'L' + (x + 13) + ' 124Z" fill="' + p.acento + '" opacity=".6"/>';
+      s += '<path d="M' + x + ' ' + (124 - h) + 'L' + (x + 13) + ' 124L' + (x + 2) + ' 124Z" fill="#fff" opacity=".28"/>';
+    }
+    return s + '<g fill="' + p.acento + '" opacity=".25"><circle cx="150" cy="80" r="26"/><circle cx="330" cy="86" r="22"/></g>';
+  },
+  neon: p => {
+    let s = '<path d="M0 134Q100 124 200 132T400 128V170H0Z" fill="' + hex(p.fundo, -.3) + '"/>';
+    [[36,56],[96,84],[160,46],[228,92],[300,62],[362,76]].forEach(([x, h], k) => {
+      const cor = k % 2 ? p.acento : '#FF4FD8', tr = 'M' + x + ' 130V' + (130 - h) + 'q0-14 12-14M' + x + ' ' + (130 - h * .55) + 'q-14 0-16-12';
+      s += '<path d="' + tr + '" fill="none" stroke="' + cor + '" stroke-width="7" stroke-linecap="round" opacity=".28"/>';
+      s += '<path d="' + tr + '" fill="none" stroke="' + cor + '" stroke-width="2.6" stroke-linecap="round" opacity=".95"/>';
+    });
+    return s;
+  },
+  chamines: p => {
+    let s = '<path d="M0 130Q70 120 150 128T400 124V170H0Z" fill="' + hex(p.fundo, -.3) + '"/>';
+    for (const [x, h, w] of [[70,46,16],[190,70,20],[304,52,17]]) {
+      s += '<path d="M' + (x - w) + ' 128L' + (x - w * .45) + ' ' + (128 - h) + 'L' + (x + w * .45) + ' ' + (128 - h) + 'L' + (x + w) + ' 128Z" fill="' + hex(p.fundo, -.12) + '"/>';
+      s += '<ellipse cx="' + x + '" cy="' + (128 - h) + '" rx="' + (w * .5) + '" ry="3.4" fill="' + p.acento + '" opacity=".6"/>';
+      for (let k = 0; k < 3; k++) s += '<circle cx="' + (x + (k % 2 ? 6 : -6)) + '" cy="' + (128 - h - 12 - k * 15) + '" r="' + (7 + k * 3) + '" fill="' + p.acento + '" opacity="' + (.34 - k * .06) + '"/>';
+    }
+    return s;
+  },
+  aurora: p => {
+    let s = '<path d="M0 0H400V30Q300 54 200 34T0 46Z" fill="' + p.acento + '" opacity=".16"/>';
+    s += '<path d="M0 18Q100 44 200 20T400 36V50Q300 70 200 44T0 62Z" fill="#B07CFF" opacity=".12"/>';
+    s += '<path d="M0 132Q100 122 200 130T400 126V170H0Z" fill="' + hex(p.fundo, -.25) + '"/>';
+    for (const [x, h] of [[50,40],[130,66],[216,48],[300,72],[366,44]])
+      s += '<path d="M' + (x - 14) + ' 128L' + (x - 4) + ' ' + (128 - h) + 'L' + (x + 12) + ' ' + (128 - h * .7) + 'L' + (x + 16) + ' 128Z" fill="' + p.gelo + '" opacity=".55"/>';
+    return s;
+  },
   duna: p =>
     '<path d="M0 116Q70 96 140 110T280 104T400 100V170H0Z" fill="' + p.areia + '"/>' +
     '<path d="M0 136Q90 120 180 132T360 126T400 128V170H0Z" fill="' + hex(p.areia, -.12) + '"/>' +
@@ -162,7 +236,11 @@ const PROPS = {
 /* retrato do mestre, desenhado na hora com a cor dele */
 function desenhaMestre(idx) {
   const M = MESTRES[idx % MESTRES.length], c = M.cor, c2 = M.cor2;
-  const olhos = M.forma === 'enguia'
+  const olhos = M.forma === 'leviata'
+    ? '<circle cx="70" cy="26" r="6.5" fill="#FF3D5A"/><circle cx="84" cy="24" r="6.5" fill="#FF3D5A"/><circle cx="72" cy="23.5" r="2.4" fill="#fff"/><circle cx="86" cy="21.5" r="2.4" fill="#fff"/>'
+    : M.forma === 'tubarao'
+    ? '<circle cx="12" cy="38" r="5.5" fill="#0A0D1A"/><circle cx="44" cy="38" r="5.5" fill="#0A0D1A"/><circle cx="13.5" cy="36" r="2" fill="#fff"/><circle cx="45.5" cy="36" r="2" fill="#fff"/>'
+    : M.forma === 'enguia'
     ? '<circle cx="62" cy="26" r="6.5" fill="#0A0D1A"/><circle cx="77" cy="24" r="6.5" fill="#0A0D1A"/><circle cx="64" cy="23.5" r="2.4" fill="#fff"/><circle cx="79" cy="21.5" r="2.4" fill="#fff"/>'
     : '<circle cx="38" cy="44" r="8" fill="#0A0D1A"/><circle cx="62" cy="44" r="8" fill="#0A0D1A"/>' +
       '<circle cx="40.5" cy="41" r="2.8" fill="#fff"/><circle cx="64.5" cy="41" r="2.8" fill="#fff"/>';
@@ -180,6 +258,23 @@ function desenhaMestre(idx) {
       '<path d="M22 44C12 40 8 30 12 20c8 2 14 10 14 20M78 44c10-4 14-14 10-24-8 2-14 10-14 20" fill="' + c + '"/>' +
       '<path d="M26 70l-12 14M38 76l-8 18M62 76l8 18M74 70l12 14" fill="none" stroke="' + c + '" stroke-width="6" stroke-linecap="round"/>' +
       '<path d="M34 62q16 8 32 0" fill="none" stroke="' + c2 + '" stroke-width="4" stroke-linecap="round"/>',
+    pescador: '<path d="M14 56c0-22 18-34 38-34s34 14 34 32-16 30-36 30S14 76 14 56Z" fill="' + c2 + '"/>' +
+      '<path d="M50 22C46 10 34 6 26 12" fill="none" stroke="' + c + '" stroke-width="3.5"/><circle cx="25" cy="13" r="6" fill="#FFF36B"/><circle cx="25" cy="13" r="11" fill="#FFF36B" opacity=".25"/>' +
+      '<path d="M22 64q30 22 60 0" fill="#0A0D1A"/><path d="M28 66l4 7 4-6 4 8 4-8 4 8 4-8 4 7 4-6 4 6" fill="none" stroke="#fff" stroke-width="2.5" stroke-linejoin="round"/>',
+    polvo: '<ellipse cx="50" cy="38" rx="28" ry="24" fill="' + c + '"/>' +
+      '<path d="M26 54q-14 14-18 34M34 58q-6 18-14 32M42 60q0 18-6 32M50 60v32M58 60q0 18 6 32M66 58q6 18 14 32M74 54q14 14 18 34" fill="none" stroke="' + c + '" stroke-width="7" stroke-linecap="round"/>' +
+      '<circle cx="40" cy="26" r="3" fill="' + c2 + '" opacity=".5"/><circle cx="60" cy="24" r="4" fill="' + c2 + '" opacity=".5"/>',
+    orca: '<path d="M8 58c8-20 34-30 58-24l14-14 2 18c10 6 12 16 6 24-16 10-50 12-80-4Z" fill="#26324A" stroke="' + c + '" stroke-width="3" stroke-linejoin="round"/>' +
+      '<path d="M22 66c14 8 38 8 56 0-14 2-38 2-56 0Z" fill="' + c + '"/><ellipse cx="58" cy="44" rx="8" ry="4" fill="' + c + '"/>',
+    tubarao: '<path d="M14 58c14-14 40-20 60-14l18-8-6 16 6 14-18-6c-20 8-46 4-60-2Z" fill="' + c + '"/>' +
+      '<path d="M8 36h40M8 36l-2 10M48 36l2 10" stroke="' + c2 + '" stroke-width="9" stroke-linecap="round"/>' +
+      '<path d="M40 44l8-16 8 16" fill="' + c2 + '"/><path d="M30 64q14 8 30 2" fill="none" stroke="#0A0D1A" stroke-width="3.5" stroke-linecap="round"/>' +
+      '<path d="M34 66l2 4M42 68l1 4M50 67l1 4" stroke="#fff" stroke-width="2"/>',
+    leviata: '<path d="M10 92C26 86 18 70 34 64S58 56 50 42 58 18 74 16s22 12 16 26-20 16-30 14" fill="none" stroke="' + c2 + '" stroke-width="22" stroke-linecap="round"/>' +
+      '<path d="M10 92C26 86 18 70 34 64S58 56 50 42 58 18 74 16s22 12 16 26-20 16-30 14" fill="none" stroke="' + c + '" stroke-width="15" stroke-linecap="round"/>' +
+      '<path d="M66 12l-4-10 10 6M84 12l6-9 0 11M30 60l-10-6M46 40l-12-2" stroke="#FFD35C" stroke-width="4.5" stroke-linecap="round" fill="none"/>' +
+      '<path d="M66 36q10 8 22 0" fill="none" stroke="#0A0D1A" stroke-width="4" stroke-linecap="round"/><path d="M70 38l1 4M76 39l1 4M82 38l1 4" stroke="#fff" stroke-width="2"/>' +
+      '<circle cx="20" cy="30" r="3" fill="#FFD35C"/><circle cx="88" cy="70" r="3.5" fill="#FFD35C"/><circle cx="12" cy="56" r="2.5" fill="#FFD35C"/>',
     serpente: '<path d="M86 88c-16 2-26-8-26-22 0-12 8-18 8-28 0-12-10-20-22-20S24 26 24 38c0 10 6 14 6 22" fill="none" stroke="' + c + '" stroke-width="15" stroke-linecap="round"/>' +
       '<path d="M46 18c-14 0-24 10-24 22 0 8 6 14 14 16 10 2 18-4 18-14 0-8-4-12-8-14Z" fill="' + c + '"/>' +
       '<path d="M34 50q10 10 22 2" fill="none" stroke="' + c2 + '" stroke-width="5" stroke-linecap="round"/>'

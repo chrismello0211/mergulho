@@ -1494,7 +1494,7 @@ body.leve .peca.esp-peixe .capa{animation:peixe-nada 1.4s ease-in-out infinite !
    MERGULHO · combinar 3 da beira da praia até 4.000 metros
    ═══════════════════════════════════════════════════════════════ */
 
-const VERSAO_JOGO = '2026.12.10';
+const VERSAO_JOGO = '2026.12.11';
 const W = 7, H = 8, TIPOS = 6;
 const NADA = 0, LH = 1, LV = 2, BOMBA = 3, ARCO = 4, ONDA = 5, ONDAV = 6, CARDUME = 7, PEIXE = 8;
 /* fases com o quadrado ligado: 4 peças iguais em 2x2 viram um peixe-guia */
@@ -1524,7 +1524,15 @@ const REGRAS_REGIAO = {
   'Boca do Vulcão': { id: 'cinza',  ic: '🌋', nome: 'Chuva de cinzas',  texto: 'A cada 6 jogadas, uma peça vira entulho de cinza. Estoure do lado pra tirar.' },
   'Ruínas':         { id: 'tesouro',ic: '🏺', nome: 'Tesouro antigo',   texto: 'Três moedas escondidas no chão de cada fase. Estoure em cima pra pegar.' },
   'Sargaço':        { id: 'cardume',ic: '🐟', nome: 'Cardume do sargaço', texto: 'Toda fase começa com um especial de cardume pronto.' },
-  'Fossa':          { id: 'abismo', ic: '🌑', nome: 'Pressão do abismo', texto: 'Especiais valem o dobro de pontos aqui embaixo.' }
+  'Fossa':          { id: 'abismo', ic: '🌑', nome: 'Pressão do abismo', texto: 'Especiais valem o dobro de pontos aqui embaixo.' },
+  'Floresta de Kelp':     { id: 'emaranhado', ic: '🌿', nome: 'Emaranhado de algas', texto: 'Uma peça começa presa nas algas e, a cada 8 jogadas, outra se enrosca. Estoure do lado pra soltar.' },
+  'Cemitério de Baleias': { id: 'canto',      ic: '🐋', nome: 'Canto de baleia',     texto: 'A cada 6 jogadas o canto ecoa e uma peça vira especial de cardume.' },
+  'Cidade Submersa':      { id: 'janelas',    ic: '🏙️', nome: 'Luzes da cidade',     texto: 'A cor que vale o dobro muda a cada 3 jogadas. Fique de olho no painel.' },
+  'Jardim de Medusas':    { id: 'ferrao',     ic: '🪼', nome: 'Ferrão de medusa',    texto: 'A cada 6 jogadas uma peça é paralisada, e na vez seguinte uma vira entulho. Estoure do lado pra livrar.' },
+  'Gruta de Cristal':     { id: 'cristais',   ic: '💎', nome: 'Eco de cristal',      texto: 'Jogada que estoura 5 peças ou mais devolve 1 jogada (até 3 por fase).' },
+  'Recife de Neon':       { id: 'neon',       ic: '🌈', nome: 'Reta final neon',     texto: 'Nas últimas 5 jogadas, tudo vale o dobro de pontos.' },
+  'Fonte Termal':         { id: 'geiser',     ic: '♨️', nome: 'Gêiser',              texto: 'A cada 7 jogadas o gêiser transforma uma peça em bolha especial.' },
+  'Mar de Aurora':        { id: 'aurora',     ic: '🌌', nome: 'Aurora',              texto: 'Cascata de 3 ou mais rende 2 moedas.' }
 };
 const regraDa = i => { if (i < 30 || (i + 1) % 100 === 0) return null; const a = ambiente(i); return (a && a.reg && REGRAS_REGIAO[a.reg.nome]) || null; };
 
@@ -1544,6 +1552,9 @@ const EVENTOS = {
 };
 const eventoHoje = () => { const d = new Date(), dia = d.getDay(); if (dia !== 0 && dia !== 6) return null;
   const semana = Math.floor((Date.now() / 864e5 + 3) / 7); return ['moedas', 'peixe', 'dobro'][semana % 3]; };
+/* teto de pontuação por fase: 4x a meta de 3 estrelas. Jogada boa passa
+   de 3x raramente; 30x só com bug, e uma fase assim não pode decidir o ranking */
+const tetoDaFase = i => { try { const m = fase(+i).marcas; return m && m[2] ? m[2] * 4 : Infinity; } catch (e) { return Infinity; } };
 const condicaoDa = i => { if (i < 30 || (i + 1) % 100 === 0) return null; const h = ((i + 17) * 2654435761 >>> 0) % 100; return h < 22 ? 'brinde' : h < 40 ? 'corvez' : h < 55 ? 'moedas' : null; };
 
 const $ = s => document.querySelector(s);
@@ -1638,7 +1649,40 @@ const REGIOES = [
   { nome:'Fossa', trato:'brilho', texto:'A água some rápido por aqui.',
     agua:['#93DAEA','#2E8BAC','#144670','#1A1250','#0B0620','#030109'], moldura:'#A98CD8', acento:'#B07CFF',
     bandas:['Borda','Talude','Degrau','Meia-água','Fundo da fossa'],
-    chao:['pedra','esponjas','tubulacao','longe','fumarola'], bloq:['areia','craca','rede','cinza','breu'] }
+    chao:['pedra','esponjas','tubulacao','longe','fumarola'], bloq:['areia','craca','rede','cinza','breu'] },
+  /* ── a segunda volta: o mar continua depois da Fossa ── */
+  { nome:'Floresta de Kelp', trato:'folha', texto:'Algas altas, luz que cai em feixes dourados.',
+    agua:['#E8F0A8','#B2C95A','#5E9A3E','#1E5A44','#0E2A2C','#041012'], moldura:'#C8B060', acento:'#F4D35E',
+    bandas:['Borda da floresta','Clareira dourada','Túnel de algas','Mata fechada','Coração escuro'],
+    chao:['floresta','floresta','floresta','longe','floresta'], bloq:['alga','alga','raiz','lodo','breu'] },
+  { nome:'Cemitério de Baleias', trato:'mineral', texto:'Costelas gigantes de bichos que nadaram aqui há séculos.',
+    agua:['#D8E6EC','#9BB4C4','#5F7E9C','#2B3F66','#121A38','#050816'], moldura:'#CBBF9F', acento:'#EAE2C6',
+    bandas:['Praia de ossos','Costelas','Corredor de coluna','Eco distante','Crânio'],
+    chao:['ossos','ossos','ossos','longe','ossos'], bloq:['areia','craca','coralmorto','lodo','breu'] },
+  { nome:'Cidade Submersa', trato:'patina', texto:'Avenidas inteiras onde agora só passa peixe.',
+    agua:['#C9ECE4','#6FC4C0','#2F8AA0','#27306A','#120F38','#04030E'], moldura:'#B8C4D8', acento:'#FFE08A',
+    bandas:['Portão','Avenida','Praça afundada','Bairro apagado','Subsolo'],
+    chao:['cidade','cidade','cidade','longe','cidade'], bloq:['areia','limo','rede','lodo','breu'] },
+  { nome:'Jardim de Medusas', trato:'brilho', texto:'Luz rosa e cortinas que ondulam sozinhas.',
+    agua:['#F0D8F4','#C58BE0','#7C54C0','#3A2C86','#1A1148','#07031A'], moldura:'#E2B8F0', acento:'#FF8FD8',
+    bandas:['Véu rosa','Cortina','Bosque de ferrão','Luz fantasma','Útero do mar'],
+    chao:['medusas','medusas','medusas','longe','medusas'], bloq:['gelo','limo','rede','cinza','breu'] },
+  { nome:'Gruta de Cristal', trato:'mineral', texto:'Um salão de pedra azul que brilha por dentro.',
+    agua:['#C4F4F0','#5CD0D8','#2A8CB8','#1E3A80','#10114A','#04041A'], moldura:'#9CD8E8', acento:'#7CFFF0',
+    bandas:['Boca da gruta','Salão claro','Galeria de cristais','Câmara azul','Geodo'],
+    chao:['gruta','gruta','gruta','longe','gruta'], bloq:['gelo','coralmorto','craca','lodo','breu'] },
+  { nome:'Recife de Neon', trato:'brilho', texto:'Coral que acende em rosa e verde no escuro.',
+    agua:['#A0F0E0','#2ED8C0','#0F8AA0','#152A70','#0A0B34','#030314'], moldura:'#FF8FE0', acento:'#5CFFB8',
+    bandas:['Néon raso','Avenida de luz','Túnel colorido','Apagão','Brasa fria'],
+    chao:['neon','neon','neon','longe','neon'], bloq:['alga','coralmorto','rede','lodo','breu'] },
+  { nome:'Fonte Termal', trato:'brasa', texto:'Chaminés de pedra soltando água quente do fundo.',
+    agua:['#F4E8B0','#E8B060','#B86A3C','#5A2A40','#240C26','#0C0210'], moldura:'#E0A070', acento:'#FFB347',
+    bandas:['Poça morna','Chaminé baixa','Névoa de enxofre','Garganta','Coração de fogo'],
+    chao:['chamines','chamines','chamines','longe','chamines'], bloq:['areiapreta','cinza','craca','cinza','breu'] },
+  { nome:'Mar de Aurora', trato:'geada', texto:'Gelo, silêncio e luz verde dançando no alto.',
+    agua:['#D8F8F0','#78E0C8','#3A9CC0','#2A3A9A','#1A1060','#06031E'], moldura:'#B8F0E0', acento:'#7CFFC8',
+    bandas:['Campo de gelo','Cortina verde','Luz do norte','Noite longa','Silêncio'],
+    chao:['aurora','aurora','aurora','longe','aurora'], bloq:['gelo','gelo','rede','lodo','breu'] }
 ];
 
 /* de que lugar é esta fase, e com que cara */
@@ -1652,7 +1696,7 @@ function ambiente(i) {
   const giro = Math.floor(volta / REGIOES.length);
   return { banda: banda, reg: reg, nome: reg.bandas[banda], de: b.de, ate: b.ate, bloq: bl,
            texto: reg.texto + ' ' + b.texto, dica: bl.dica, chao: reg.chao[banda],
-           tom: giro === 0 ? '' : 'hue-rotate(' + (((giro * 29) % 61) - 30) + 'deg) saturate(' + (giro % 2 ? 1.12 : .9) + ')' };
+           tom: giro === 0 ? '' : 'hue-rotate(' + (((giro * 53) % 140) - 70) + 'deg) saturate(' + (giro % 2 ? 1.12 : .9) + ')' };
 }
 
 /* ── as faixas de profundidade: elas mandam na luz e nas peças ──
@@ -1775,11 +1819,11 @@ function faseBruta(i) {
     obj = { tipo:'bau', n: n };
   } else if (tipo === 'presos') {
     const n = 3 + Math.floor(r() * 2 + dif * 2);
-    mov = Math.max(22, Math.round(19 + n * 4.2 - dif * 2));
+    mov = Math.max(22, Math.round(5 + n * 3.4 - dif * 2));
     obj = { tipo:'presos', n: n, rede: 1 };
   } else if (tipo === 'bolhas') {
     const n = 4 + Math.floor(r() * 2 + dif * 3);
-    mov = Math.max(22, Math.round(19 + n * 3.6 - dif * 2));
+    mov = Math.max(24, Math.round(9 + n * 2.6 - dif * 2));
     obj = { tipo:'bolhas', n: n, sobe: 3, juntas: 3 };
   } else if (tipo === 'corrente') {
     const pd = PADROES_GER[Math.floor(r() * PADROES_GER.length)];
@@ -1793,12 +1837,12 @@ function faseBruta(i) {
   } else if (tipo === 'lixo') {
     /* lixo no fundo: não combina, sai com estouro colado ou especial */
     const n = 5 + Math.floor(r() * 3 + dif * 4), dura = dif > .7 && r() < .5 ? 2 : 1;
-    mov = Math.max(20, Math.round(15 + n * 2.4 * dura - dif * 2));
+    mov = Math.max(24, Math.round(7 + n * 1.6 * dura - dif * 2));
     obj = { tipo:'lixo', n: n, dura: dura };
   } else if (tipo === 'coral') {
     /* coral morto volta a ter cor quando você estoura em cima ou do lado */
     const n = 12 + Math.floor(r() * 5 + dif * 6);
-    mov = Math.max(20, Math.round(14 + n * 1.25 - dif * 2));
+    mov = Math.max(22, Math.round(2 + n * 0.95 - dif * 2));
     obj = { tipo:'coral', n: n };
   } else if (tipo === 'ninho') {
     /* ninhos presos na borda de cima: de 1 a 3, conforme a profundidade */
@@ -2694,6 +2738,80 @@ function rgba(c, a) {
 }
 
 const PROPS = {
+  floresta: p => {
+    let s = '<path d="M0 132Q100 122 200 130T400 126V170H0Z" fill="' + hex(p.fundo, -.25) + '"/>';
+    for (let i = 0; i < 11; i++) {
+      const x = 10 + i * 38, alt = 70 + ((i * 37) % 50), d = (i % 2 ? 1 : -1) * (6 + (i * 5) % 9);
+      s += '<path d="M' + x + ' 130q' + d + ' -' + (alt / 3) + ' 0 -' + (alt * 2 / 3) + 'q' + (-d) + ' -' + (alt / 3) + ' ' + (d / 2) + ' -' + (alt / 3) + '" fill="none" stroke="' + p.vida + '" stroke-width="' + (5 + (i % 3)) + '" stroke-linecap="round" opacity="' + (.45 + (i % 3) * .1) + '"/>';
+      s += '<ellipse cx="' + (x + d) + '" cy="' + (130 - alt * .55) + '" rx="9" ry="4" fill="' + p.acento + '" opacity=".35" transform="rotate(' + (d * 3) + ' ' + (x + d) + ' ' + (130 - alt * .55) + ')"/>';
+    }
+    return s;
+  },
+  ossos: p => {
+    let s = '<path d="M0 134Q90 124 180 132T400 128V170H0Z" fill="' + hex(p.fundo, -.25) + '"/>';
+    for (let i = 0; i < 5; i++) {
+      const x = 70 + i * 38;
+      s += '<path d="M' + x + ' 132Q' + (x + 6) + ' ' + (62 - i * 3) + ' ' + (x + 42) + ' 44" fill="none" stroke="' + p.pedra + '" stroke-width="7" stroke-linecap="round" opacity=".62"/>';
+    }
+    s += '<path d="M60 134L270 134" stroke="' + p.pedra + '" stroke-width="9" stroke-linecap="round" opacity=".55"/><g fill="' + p.pedra + '" opacity=".5">';
+    for (let k = 0; k < 6; k++) s += '<ellipse cx="' + (300 + k * 16) + '" cy="' + (128 - (k % 2) * 3) + '" rx="8" ry="6"/>';
+    return s + '</g><path d="M330 126q18-40 48-36q10 12-6 36Z" fill="' + p.pedra + '" opacity=".45"/>';
+  },
+  cidade: p => {
+    let s = '<path d="M0 138Q100 130 200 136T400 132V170H0Z" fill="' + hex(p.fundo, -.3) + '"/>';
+    const pr = [[10,60,34],[50,90,28],[84,48,40],[130,104,30],[166,70,36],[210,96,32],[248,56,38],[292,84,30],[328,66,36],[368,50,28]];
+    for (const [x, h, w] of pr) {
+      s += '<rect x="' + x + '" y="' + (134 - h) + '" width="' + w + '" height="' + h + '" fill="' + hex(p.fundo, -.18) + '"/>';
+      for (let y = 134 - h + 8; y < 126; y += 14) for (let q = 0; q < Math.floor(w / 12); q++)
+        if (((x + y * 3 + q * 7) % 5) < 2) s += '<rect x="' + (x + 5 + q * 11) + '" y="' + y + '" width="5" height="6" fill="' + p.acento + '" opacity=".75"/>';
+    }
+    return s;
+  },
+  medusas: p => {
+    let s = '<path d="M0 138Q100 128 200 136T400 130V170H0Z" fill="' + hex(p.fundo, -.25) + '"/>';
+    for (const [x, y, r] of [[44,70,22],[120,40,16],[200,84,26],[286,48,18],[352,78,24]]) {
+      s += '<path d="M' + (x - r) + ' ' + y + 'a' + r + ' ' + r + ' 0 0 1 ' + (2 * r) + ' 0Z" fill="' + p.acento + '" opacity=".42"/>';
+      for (let t = 0; t < 4; t++) s += '<path d="M' + (x - r * .7 + t * r * .47) + ' ' + y + 'q' + (t % 2 ? 6 : -6) + ' ' + (r * .8) + ' 0 ' + (r * 1.6) + '" fill="none" stroke="' + p.acento + '" stroke-width="2.4" stroke-linecap="round" opacity=".4"/>';
+      s += '<circle cx="' + x + '" cy="' + (y - r * .35) + '" r="' + (r * .22) + '" fill="#fff" opacity=".35"/>';
+    }
+    return s + '<g fill="' + p.vida + '" opacity=".55"><ellipse cx="60" cy="134" rx="18" ry="9"/><ellipse cx="250" cy="136" rx="22" ry="10"/><ellipse cx="370" cy="134" rx="16" ry="8"/></g>';
+  },
+  gruta: p => {
+    let s = '<path d="M0 128Q80 118 160 126T400 122V170H0Z" fill="' + hex(p.fundo, -.3) + '"/>';
+    s += '<path d="M0 0H400V14Q340 34 300 16T200 26T110 12T50 30T0 16Z" fill="' + hex(p.fundo, -.35) + '"/>';
+    for (const [x, h] of [[40,40],[130,52],[220,36],[310,48],[372,32]]) s += '<path d="M' + (x - 9) + ' 18L' + x + ' ' + (18 + h) + 'L' + (x + 9) + ' 18Z" fill="' + hex(p.fundo, -.2) + '"/>';
+    for (const [x, h] of [[70,52],[150,70],[240,48],[330,64]]) {
+      s += '<path d="M' + (x - 13) + ' 124L' + x + ' ' + (124 - h) + 'L' + (x + 13) + ' 124Z" fill="' + p.acento + '" opacity=".6"/>';
+      s += '<path d="M' + x + ' ' + (124 - h) + 'L' + (x + 13) + ' 124L' + (x + 2) + ' 124Z" fill="#fff" opacity=".28"/>';
+    }
+    return s + '<g fill="' + p.acento + '" opacity=".25"><circle cx="150" cy="80" r="26"/><circle cx="330" cy="86" r="22"/></g>';
+  },
+  neon: p => {
+    let s = '<path d="M0 134Q100 124 200 132T400 128V170H0Z" fill="' + hex(p.fundo, -.3) + '"/>';
+    [[36,56],[96,84],[160,46],[228,92],[300,62],[362,76]].forEach(([x, h], k) => {
+      const cor = k % 2 ? p.acento : '#FF4FD8', tr = 'M' + x + ' 130V' + (130 - h) + 'q0-14 12-14M' + x + ' ' + (130 - h * .55) + 'q-14 0-16-12';
+      s += '<path d="' + tr + '" fill="none" stroke="' + cor + '" stroke-width="7" stroke-linecap="round" opacity=".28"/>';
+      s += '<path d="' + tr + '" fill="none" stroke="' + cor + '" stroke-width="2.6" stroke-linecap="round" opacity=".95"/>';
+    });
+    return s;
+  },
+  chamines: p => {
+    let s = '<path d="M0 130Q70 120 150 128T400 124V170H0Z" fill="' + hex(p.fundo, -.3) + '"/>';
+    for (const [x, h, w] of [[70,46,16],[190,70,20],[304,52,17]]) {
+      s += '<path d="M' + (x - w) + ' 128L' + (x - w * .45) + ' ' + (128 - h) + 'L' + (x + w * .45) + ' ' + (128 - h) + 'L' + (x + w) + ' 128Z" fill="' + hex(p.fundo, -.12) + '"/>';
+      s += '<ellipse cx="' + x + '" cy="' + (128 - h) + '" rx="' + (w * .5) + '" ry="3.4" fill="' + p.acento + '" opacity=".6"/>';
+      for (let k = 0; k < 3; k++) s += '<circle cx="' + (x + (k % 2 ? 6 : -6)) + '" cy="' + (128 - h - 12 - k * 15) + '" r="' + (7 + k * 3) + '" fill="' + p.acento + '" opacity="' + (.34 - k * .06) + '"/>';
+    }
+    return s;
+  },
+  aurora: p => {
+    let s = '<path d="M0 0H400V30Q300 54 200 34T0 46Z" fill="' + p.acento + '" opacity=".16"/>';
+    s += '<path d="M0 18Q100 44 200 20T400 36V50Q300 70 200 44T0 62Z" fill="#B07CFF" opacity=".12"/>';
+    s += '<path d="M0 132Q100 122 200 130T400 126V170H0Z" fill="' + hex(p.fundo, -.25) + '"/>';
+    for (const [x, h] of [[50,40],[130,66],[216,48],[300,72],[366,44]])
+      s += '<path d="M' + (x - 14) + ' 128L' + (x - 4) + ' ' + (128 - h) + 'L' + (x + 12) + ' ' + (128 - h * .7) + 'L' + (x + 16) + ' 128Z" fill="' + p.gelo + '" opacity=".55"/>';
+    return s;
+  },
   duna: p =>
     '<path d="M0 116Q70 96 140 110T280 104T400 100V170H0Z" fill="' + p.areia + '"/>' +
     '<path d="M0 136Q90 120 180 132T360 126T400 128V170H0Z" fill="' + hex(p.areia, -.12) + '"/>' +
@@ -3769,6 +3887,8 @@ async function limpar(conj, novos) {
 
   let ganho = 0, temEsp = false;
   if (J.tempoModo && vivas.length >= 5 && J.cascata === 1) { J.tempoRestante = (J.tempoRestante || 0) + 1; pintaRelogio(); }
+  if (J.regra === 'cristais' && vivas.length >= 5 && J.cascata === 1 && (J.devolvidas || 0) < 3) { J.devolvidas = (J.devolvidas || 0) + 1; J.mov++; atualizaHud(); faixaTexto('💎 +1 jogada', 1500); }
+  if (J.regra === 'aurora' && J.cascata === 3) { prog.moedas += 2; salvaProg(); if (typeof pintaMoedas === 'function') pintaMoedas(); faixaTexto('🌌 +2 moedas', 1400); }
   let sr = 0, sc = 0;
   for (const k of vivas) {
     const r = linha(k), c = coluna(k), p = grid[r][c];
@@ -3776,7 +3896,7 @@ async function limpar(conj, novos) {
     if (p.sp) temEsp = true;
     J.coletado[p.t]++;
     ganho += 60 * Math.min(J.cascata, 10) * (J.soltoSozinho && J.cascata === 1 ? .5 : 1) * (J.corVez != null && p && p.t === J.corVez ? 2 : 1)
-      * (J.regra === 'eco' && J.cascata > 1 ? 1.5 : 1) * ((J.regra === 'abismo' || J.evento === 'dobro') && p && p.sp ? 2 : 1);
+      * (J.regra === 'eco' && J.cascata > 1 ? 1.5 : 1) * ((J.regra === 'abismo' || J.evento === 'dobro') && p && p.sp ? 2 : 1) * (J.regra === 'neon' && J.mov <= 5 ? 2 : 1);
     if (J.moedasFundo && J.moedasFundo[r][c]) {
       J.moedasFundo[r][c] = 0; J.moedasPegas = (J.moedasPegas || 0) + 1;
       prog.moedas += 5; salvaProg(); if (typeof pintaMoedas === 'function') pintaMoedas();
@@ -4368,19 +4488,35 @@ function pintaAvisoCresce() {
   if (J.alvoCresce) celulasBox.children[J.alvoCresce[0] * W + J.alvoCresce[1]].classList.add('vai-crescer');
 }
 /* regra da região que age durante a fase: o gelo congela, a cinza vira entulho */
+const PERIODICAS = { gelo: 5, cinza: 6, emaranhado: 8, canto: 6, ferrao: 6, geiser: 7, janelas: 3 };
 function passoRegiao() {
-  if (!J || J.fim || (J.regra !== 'gelo' && J.regra !== 'cinza')) return;
+  if (!J || J.fim || !PERIODICAS[J.regra]) return;
   J.jogadasRegiao = (J.jogadasRegiao || 0) + 1;
-  if (J.jogadasRegiao % (J.regra === 'gelo' ? 5 : 6) !== 0) return;
+  if (J.jogadasRegiao % PERIODICAS[J.regra] !== 0) return;
+  if (J.regra === 'janelas') {   /* a cor que vale o dobro muda de tempos em tempos */
+    J.corVez = ((J.corVez == null ? 0 : J.corVez) + 1 + (J.fase % 3)) % 6;
+    if (typeof pintaExtra === 'function') pintaExtra();
+    Som.liga(); Som.pop(2); faixaTexto('🏙️ A cor da vez mudou', 1600);
+    return;
+  }
   const l = [];
   for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) { const q = grid[r][c]; if (q && !q.sp && !q.bau && !q.gaiola && !q.lixo && !q.bolha) l.push(q); }
   if (!l.length) return;
   const q = l[sorteia(l.length)];
-  if (J.regra === 'gelo') q.gaiola = 1; else q.lixo = 1;
+  let msg = '';
+  if (J.regra === 'gelo') { q.gaiola = 1; msg = '❄️ Uma peça congelou'; }
+  else if (J.regra === 'emaranhado') { q.gaiola = 1; msg = '🌿 Uma peça se enroscou nas algas'; }
+  else if (J.regra === 'cinza') { q.lixo = 1; msg = '🌋 Caiu cinza: uma peça virou entulho'; }
+  else if (J.regra === 'ferrao') {
+    J.ferroes = (J.ferroes || 0) + 1;
+    if (J.ferroes % 2) { q.gaiola = 1; msg = '🪼 Uma peça foi paralisada'; } else { q.lixo = 1; msg = '🪼 Uma peça virou entulho'; }
+  }
+  else if (J.regra === 'canto') { q.sp = CARDUME; msg = '🐋 O canto da baleia criou um especial'; }
+  else if (J.regra === 'geiser') { q.sp = BOMBA; msg = '♨️ O gêiser criou uma bolha especial'; }
   atualizaEl(q);
   const el = els.get(q.id); if (el) { el.classList.remove('nasce'); void el.offsetWidth; el.classList.add('nasce'); }
   Som.liga(); Som.cresce();
-  faixaTexto(J.regra === 'gelo' ? '❄️ Uma peça congelou' : '🌋 Caiu cinza: uma peça virou entulho', 1800);
+  faixaTexto(msg, 1800);
 }
 
 /* ═══ PÉROLAS, LIXO E CORAL ══════════════════════════════════════ */
@@ -4775,6 +4911,8 @@ function preparaEspeciaisDaFase() {
   if (J.evento === 'peixe') QUADRADO_ATIVO = true;
   const pecasLivres = () => { const l = []; for (let r = 1; r < H; r++) for (let c = 0; c < W; c++) { const q = grid[r] && grid[r][c]; if (q && !q.sp && !q.bau && !q.gaiola && !q.lixo && !q.bolha) l.push(q); } return l; };
   if (J.regra === 'raizes') { const l = pecasLivres(); for (let k = 0; k < 2 && l.length; k++) l.splice(sorteia(l.length), 1)[0].gaiola = 1; }
+  if (J.regra === 'emaranhado') { const l = pecasLivres(); if (l.length) l.splice(sorteia(l.length), 1)[0].gaiola = 1; }
+  if (J.regra === 'janelas' && J.corVez == null) J.corVez = (J.fase * 5 + 1) % 6;
   if (J.regra === 'cardume') { const l = pecasLivres(); if (l.length) l[sorteia(l.length)].sp = CARDUME; }
   if (f.enigma) { const l = pecasLivres(); [LH, LV, BOMBA, ARCO].forEach(sp => { if (l.length) l.splice(sorteia(l.length), 1)[0].sp = sp; }); }
   if (J.regra === 'tesouro' || J.evento === 'moedas') {
@@ -4912,7 +5050,8 @@ function pintaExtra() {
   const f = faseAtual(), o = document.getElementById('objetivo');
   if (!o) return;
   const vc = o.querySelector('.cond-linha'); if (vc) vc.remove();
-  if (J.cond) o.insertAdjacentHTML('beforeend', '<div class="cond-linha"><div class="cond-tag">' + CONDICOES[J.cond].ic + ' ' + CONDICOES[J.cond].nome +
+  const cdTag = J.cond ? CONDICOES[J.cond] : (J.regra === 'janelas' ? { ic: '🏙️', nome: 'Cor da vez' } : null);
+  if (cdTag) o.insertAdjacentHTML('beforeend', '<div class="cond-linha"><div class="cond-tag">' + cdTag.ic + ' ' + cdTag.nome +
     (J.corVez != null ? ' <svg class="ic" viewBox="0 0 100 100"><use href="#s' + J.corVez + '"/></svg>' : '') +
     (J.moedasFundo ? ' · ' + J.moedasPegas + '/4' : '') + '</div></div>');
   const velho = o.querySelector('.extra-obj'); if (velho) velho.remove();
@@ -5121,7 +5260,8 @@ async function bonusDoFolego() {
   const teto = f.marcas[2];
   const falta = Math.max(0, teto - J.pontos);
   if (!falta) return 0;
-  const porJogada = Math.max(250, Math.round(teto / Math.max(1, f.mov)));
+  /* cada jogada que sobra vale 60% do ritmo de uma 3ª estrela: compensa a pressa, mas não entrega a estrela */
+  const porJogada = Math.max(200, Math.round(teto / Math.max(1, f.mov) * 0.6));
   const bonus = Math.min(falta, sobra * porJogada);
   faixaTexto('Resolveu com ' + sobra + ' jogadas de sobra!', 2200);
   Som.liga(); Som.especial();
@@ -5679,28 +5819,15 @@ async function recebeVidas() {
    com o botão de mandar ali mesmo, e o ícone do app ganha o número */
 /* o que mudou nesta versão: aparece uma vez para cada pessoa */
 const NOVIDADES = [
-  ['❤', 'Sair no meio da fase agora gasta vida', 'O jogo avisa antes, e dá pra desistir de sair.'],
-  ['👆', 'Toque no objetivo', 'As casas que faltam acendem por dois segundos. Ótimo quando está tudo da mesma cor.'],
-  ['🦑', 'Cada mestre com seu golpe', 'A lula cospe tinta, a enguia dá choque e prende peças, o caranguejo joga areia grossa e a serpente cospe lixo. Todos mais fortes e se curando a cada golpe.'],
-  ['🌊', 'Fases mais apertadas', 'Menos jogadas nas fases normais, difíceis e lendárias.'],
-  ['🎁', 'Mandar vida tem limite', 'Até 5 por dia, pra vida continuar valendo.'],
-  ['📖', 'Álbum: série 2 e mais desafio', 'Chegaram 24 figurinhas novas do abismo e do Brasil. E agora figurinha é sorte e mérito: 30% de chance nas fases Difíceis com 3 estrelas, 60% nas Lendárias.'],
-  ['🐙', 'Três mestres novos', 'Peixe-pescador na 700, Polvo-colossal na 800 e Orca-sombria na 900, cada um com golpe próprio. Agora só a 500 repete mestre.'],
-  ['🗺️', 'Cada região com sua regra', 'Mangue com raízes, Mar Polar que congela, Vulcão que cospe cinza, Ruínas com tesouro, e mais. Vale em todas as fases da região.'],
-  ['🧩', 'Enigmas', 'Fases curtas, com especiais prontos e poucas jogadas: a ordem certa faz toda a diferença.'],
-  ['🎉', 'Eventos de fim de semana', 'Todo sábado e domingo uma regra especial vale pra todas as fases, e muda a cada semana.'],
-  ['🦈', 'Dois mestres novos', 'Na fase 600, o Tubarão-martelo e sua investida. Na 1000, o Leviatã, que usa os golpes de todos os mestres.'],
-  ['📖', 'Álbum do fundo do mar', 'Fases Difíceis e Lendárias com 3 estrelas pela primeira vez rendem uma figurinha com uma curiosidade real. Os mestres dão as lendárias. Completar vale 2.000 moedas.'],
-  ['⏱', 'Contra a Maré', 'Fases com relógio no lugar das jogadas: jogue rápido, e jogada grande devolve tempo.'],
-  ['🎲', 'Condições do mar', 'Muitas fases agora vêm com uma regra extra: especiais de presente, cor que vale o dobro ou moedas escondidas no fundo.'],
-  ['🐟', 'Peixe-guia', 'Em algumas fases, 4 peças iguais em quadrado viram um peixe que nada direto até o que o objetivo pede.'],
-  ['⚡', 'Enguia-elétrica redesenhada', 'O mestre da fase 200 ganhou cara de bicho de verdade.']
+  ['🗺️', 'Oito regiões novas', 'Depois da Fossa o mar continua: Floresta de Kelp, Cemitério de Baleias, Cidade Submersa, Jardim de Medusas, Gruta de Cristal, Recife de Neon, Fonte Termal e Mar de Aurora, cada uma com cenário e regra próprios.'],
+  ['⚖️', 'Fases mais equilibradas', 'Fases de lixo, coral, bicho preso e bolhas pediam jogadas demais: agora pedem o que de fato precisam. O bônus das jogadas que sobram ficou mais justo.'],
+  ['🏆', 'Ranking mais justo', 'Cada fase tem um teto de pontos no ranking, pra nenhuma pontuação fora do normal decidir a disputa.']
 ];
 /* A lista de novidades tem um nome de lote. O cartão só abre sozinho
    quando o lote muda, e não a cada versão: correção de bug não é
    novidade. Quem viu o cartão antigo (marcado pela versão) já viu
    este primeiro lote. Pra publicar novidade nova: troque o lote e a lista. */
-const NOVIDADES_LOTE = 'lote-6', NOVIDADES_DATA = '3 de outubro';
+const NOVIDADES_LOTE = 'lote-7', NOVIDADES_DATA = '12 de outubro';
 function viuEsteLote() {
   const v = prog.viuNovidades || '';
   return v === NOVIDADES_LOTE || (NOVIDADES_LOTE === 'lote-1' && /^20\d\d\./.test(v));
@@ -5746,6 +5873,19 @@ function cartaoNovidades() {
     '<div class="novidades">' + NOVIDADES.map(([ic, t1, t2]) => '<div class="novidade"><span class="ic-nov">' + ic + '</span><div><b>' + t1 + '</b><small>' + t2 + '</small></div></div>').join('') + '</div>' +
     '<p class="novidades-data">Atualização de ' + NOVIDADES_DATA + '</p>' +
     '<div class="bts"><button class="bt" data-ac="fecha">Bora mergulhar</button></div>', true);
+}
+/* pontuações já salvas acima do teto (as do bug das fases de relógio) voltam ao teto,
+   no aparelho e no ranking da fase; o total do ranking nunca passa do teto */
+function aparaPontuacoes() {
+  const mexidas = [];
+  for (const k in (prog.melhores || {})) {
+    const teto = tetoDaFase(k);
+    if (prog.melhores[k] > teto) { prog.melhores[k] = teto; mexidas.push([k, teto]); }
+  }
+  if (!mexidas.length) return 0;
+  salvaProg();
+  if (Ranking.ligado && Conta.sessao) mexidas.forEach(([k, teto]) => Ranking.manda('/mergulho/fases/' + k + '/' + Conta.sessao.uid, { nome: Ranking.nome(), pontos: teto }));
+  return mexidas.length;
 }
 async function avisaPedidos() {
   if (!Ranking.ligado || !prog.cardume) return;
@@ -6428,13 +6568,14 @@ const Ranking = {
   async subeFicha() {
     if (!this.ligado) return;
     let soma = 0;
-    for (const k in (prog.melhores || {})) soma += prog.melhores[k] || 0;
+    for (const k in (prog.melhores || {})) soma += Math.min(prog.melhores[k] || 0, tetoDaFase(k));
     return this.manda('/mergulho/placar/' + Conta.sessao.uid,
       { nome: this.nome(), max: prog.max, estrelas: totalEstrelas(), pontos: soma,
         mestres: mestresDerrotados(), cardume: prog.cardume || '', quando: Date.now() });
   },
   async pontuaFase(i, pontos) {
     if (!this.ligado) return;
+    pontos = Math.min(pontos, tetoDaFase(i));
     const antes = prog.melhores && prog.melhores[i] || 0;
     if (pontos <= antes) return;
     prog.melhores = prog.melhores || {};
@@ -6716,7 +6857,7 @@ function tela(id) {
   if (id === 'tela-jogo') Musica.liga('jogo', mundoAtual);
   else { document.body.classList.remove('aperto'); Musica.liga('menu', mundoAtual); setTimeout(talvezAtualizar, 400); }
   if (id === 'tela-inicio') { requestAnimationFrame(() => { pintaSemanaHome(); pintaBotaoNovidades(); encaixaInicio(); }); setTimeout(pintaPodio, 300); setTimeout(async () => {
-    if (!window.__fichaSubiu && Ranking.ligado) { window.__fichaSubiu = true; Ranking.subeFicha(); }   /* corrige o ranking já ao abrir */
+    if (!window.__fichaSubiu && Ranking.ligado) { window.__fichaSubiu = true; aparaPontuacoes(); Ranking.subeFicha(); }   /* corrige o ranking já ao abrir */
     if (mostraNovidades()) return; if (avisaResgate(resgataLendarias())) return; await recebeVidas(); avisaPedidos(); }, 1500); }
   /* a faixa de baixo do celular acompanha a cor da tela */
   document.body.style.backgroundColor = id === 'tela-jogo'

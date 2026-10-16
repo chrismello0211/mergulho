@@ -333,13 +333,17 @@ async function limpar(conj, novos) {
   if (!vivas.length && !(novos && novos.length)) return false;
 
   let ganho = 0, temEsp = false;
+  if (J.tempoModo && vivas.length >= 5 && J.cascata === 1) { J.tempoRestante = (J.tempoRestante || 0) + 1; pintaRelogio(); }
+  if (J.regra === 'cristais' && vivas.length >= 5 && J.cascata === 1 && (J.devolvidas || 0) < 3) { J.devolvidas = (J.devolvidas || 0) + 1; J.mov++; atualizaHud(); faixaTexto('💎 +1 jogada', 1500); }
+  if (J.regra === 'aurora' && J.cascata === 3) { prog.moedas += 2; salvaProg(); if (typeof pintaMoedas === 'function') pintaMoedas(); faixaTexto('🌌 +2 moedas', 1400); }
   let sr = 0, sc = 0;
   for (const k of vivas) {
     const r = linha(k), c = coluna(k), p = grid[r][c];
     if (!p) continue;                     /* já saiu nesta mesma explosão (lixo colado) */
     if (p.sp) temEsp = true;
     J.coletado[p.t]++;
-    ganho += 60 * Math.min(J.cascata, 10) * (J.soltoSozinho && J.cascata === 1 ? .5 : 1) * (J.corVez != null && p && p.t === J.corVez ? 2 : 1);
+    ganho += 60 * Math.min(J.cascata, 10) * (J.soltoSozinho && J.cascata === 1 ? .5 : 1) * (J.corVez != null && p && p.t === J.corVez ? 2 : 1)
+      * (J.regra === 'eco' && J.cascata > 1 ? 1.5 : 1) * ((J.regra === 'abismo' || J.evento === 'dobro') && p && p.sp ? 2 : 1) * (J.regra === 'neon' && J.mov <= 5 ? 2 : 1);
     if (J.moedasFundo && J.moedasFundo[r][c]) {
       J.moedasFundo[r][c] = 0; J.moedasPegas = (J.moedasPegas || 0) + 1;
       prog.moedas += 5; salvaProg(); if (typeof pintaMoedas === 'function') pintaMoedas();
@@ -487,7 +491,7 @@ async function limpar(conj, novos) {
     if (el) { el.classList.add('nasce'); setTimeout(() => el.classList.remove('nasce'), 320); }
     Som.especial();
   }
-  await espera(peso >= 2 ? 170 : 90);
+  await espera(peso >= 2 ? 110 : 40);
   gravidade();
   sincroniza('cai');
   Som.cai(Math.min(J.cascata, 6));
@@ -569,14 +573,29 @@ function aoPressionar(e) {
   const cel = celulaDe(e.clientX, e.clientY);
   if (!cel) return;
   if (poderAtivo) { usaPoderNaCelula(cel); return; }
-  arrasto = { x: e.clientX, y: e.clientY, cel: cel, usado: false };
+  const pz = grid[cel.r] && grid[cel.r][cel.c], elz = pz ? els.get(pz.id) : null;
+  arrasto = { x: e.clientX, y: e.clientY, cel: cel, usado: false, el: elz, base: elz ? elz.style.transform : '' };
   mesa.setPointerCapture && mesa.setPointerCapture(e.pointerId);
+}
+/* a peça desliza junto com o dedo antes da troca, e volta se você desistir */
+function soltaArrastada(volta) {
+  if (!arrasto || !arrasto.el) return;
+  arrasto.el.style.transition = '';
+  if (volta) arrasto.el.style.transform = arrasto.base;
 }
 function aoMover(e) {
   if (!arrasto || arrasto.usado || J.ocupado) return;
   const dx = e.clientX - arrasto.x, dy = e.clientY - arrasto.y;
-  const lim = CEL * 0.42;
-  if (Math.abs(dx) < lim && Math.abs(dy) < lim) return;
+  const lim = CEL * 0.32;
+  if (Math.abs(dx) < lim && Math.abs(dy) < lim) {
+    if (arrasto.el && (Math.abs(dx) > 2 || Math.abs(dy) > 2)) {
+      const hor = Math.abs(dx) > Math.abs(dy), d = hor ? dx : dy, m = Math.max(-CEL * .3, Math.min(CEL * .3, d));
+      arrasto.el.style.transition = 'none';
+      arrasto.el.style.transform = arrasto.base + ' translate(' + (hor ? m : 0) + 'px,' + (hor ? 0 : m) + 'px)';
+    }
+    return;
+  }
+  soltaArrastada(false);
   let alvo;
   if (Math.abs(dx) > Math.abs(dy)) alvo = { r: arrasto.cel.r, c: arrasto.cel.c + (dx > 0 ? 1 : -1) };
   else alvo = { r: arrasto.cel.r + (dy > 0 ? 1 : -1), c: arrasto.cel.c };
@@ -585,6 +604,7 @@ function aoMover(e) {
   arrasto = null;
 }
 function aoSoltar(e) {
+  if (arrasto && !arrasto.usado) soltaArrastada(true);
   if (!arrasto || arrasto.usado) { arrasto = null; return; }
   const cel = arrasto.cel; arrasto = null;
   if (J.ocupado || J.fim) return;
@@ -633,7 +653,7 @@ async function tentaTrocaInterna(a, b) {
   grid[a.r][a.c] = pb; grid[b.r][b.c] = pa;
   posiciona(ea, b.r, b.c); posiciona(eb, a.r, a.c);
   Som.liga(); Som.troca();
-  await espera(190);
+  await espera(150);
 
   const especial = (pa.sp === ARCO || pb.sp === ARCO) || (pa.sp && pb.sp);
   const virouCombo = temCorridaEm(a.r, a.c) || temCorridaEm(b.r, b.c) ||
@@ -676,6 +696,7 @@ async function tentaTrocaInterna(a, b) {
   garanteBolhas();
   garantePresos();
   passoNinho();
+  passoRegiao();
   if (J.mudouCasas) pintaCasasEspeciais();
   await passoMestre();
   salvaPartida();
@@ -718,7 +739,7 @@ function salvaPartida() {
       pr: J.presosFeitos || 0, bo: J.bolhasFeitas || 0, bfg: J.bolhasFugiram || 0,
       nin: J.ninhos || null, ninf: J.ninhosFeitos || 0,
       per: J.perolas || null, pef: J.perolasFeitas || 0, cor: J.coral || null, cof: J.coralFeito || 0, lxf: J.lixoFeito || 0,
-      ot: faseAtual().obj.tipo, cnd: J.cond || null, cvz: J.corVez, mfd: J.moedasFundo || null, mpg: J.moedasPegas || 0,
+      ot: faseAtual().obj.tipo, rg: J.regra || null, ev: J.evento || null, jr: J.jogadasRegiao || 0, tmp: J.tempoModo ? J.tempoRestante : null, cnd: J.cond || null, cvz: J.corVez, mfd: J.moedasFundo || null, mpg: J.moedasPegas || 0,
       dn: J.dano || 0, cm: J.contaMestre || 0, cb: J.contaBolha || 0, bpa: J.bauParado || 0,
       g: grid.map(l => l.map(p => p ? (p.bau ? 'b' : p.t + '.' + p.sp + '.' + (p.gaiola || 0) + '.' + (p.bolha ? 1 : 0) + '.' + (p.lixo || 0)) : ''))
     }));
@@ -797,12 +818,19 @@ async function passoMestre() {
   if (vida <= 0) return false;
   const fase3 = vida < f.obj.vida * .35, fase2 = vida < f.obj.vida * .65;
   const quantas = fase3 ? 7 : fase2 ? 5 : 3;
-  const forma = MESTRES[f.obj.mestre].forma;
+  let forma = MESTRES[f.obj.mestre].forma;
+  if (forma === 'leviata') { J.golpesLev = (J.golpesLev || 0) + 1; forma = ['lula', 'enguia', 'caranguejo', 'serpente'][(J.golpesLev - 1) % 4]; }
+  /* os novos mestres combinam golpes conhecidos de um jeito próprio */
+  const PERFIL = { pescador: ['enguia', 0, 2, 2], polvo: ['enguia', 0, 4, 1], orca: ['caranguejo', 1, 0, 0] };
+  let golpeExtra = 0, prendeQuantas = null, tintaFixa = null;
+  if (PERFIL[forma]) { const pf = PERFIL[forma]; golpeExtra = pf[1]; prendeQuantas = pf[2] || null; tintaFixa = pf[3] || null; forma = pf[0]; }
+  const ehTubarao = forma === 'tubarao';
+  if (ehTubarao) forma = 'serpente';   /* espalha lixo como a serpente, mas leva mais jogadas */
   const pecasSoltas = () => { const l = []; for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) { const q = grid[r][c]; if (q && !q.sp && !q.bau && !q.gaiola && !q.lixo) l.push(q); } return l; };
   if (forma === 'enguia' || forma === 'serpente') {
     /* enguia prende peças em rede elétrica; serpente transforma peças em lixo */
     const l = pecasSoltas();
-    for (let k = 0; k < Math.min(quantas, l.length); k++) {
+    for (let k = 0; k < Math.min(prendeQuantas || quantas, l.length); k++) {
       const q = l.splice(sorteia(l.length), 1)[0];
       if (forma === 'enguia') q.gaiola = 1; else q.lixo = 1;
       atualizaEl(q);
@@ -810,7 +838,7 @@ async function passoMestre() {
   }
   const livres = [];
   for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) if (papel[r][c] === 0 && temCasa(r, c)) livres.push([r, c]);
-  const tintaQuantas = forma === 'lula' ? quantas : forma === 'caranguejo' ? Math.ceil(quantas * .7) : 1;
+  const tintaQuantas = tintaFixa != null ? tintaFixa : forma === 'lula' ? quantas : forma === 'caranguejo' ? Math.ceil(quantas * .7) : 1;
   for (let k = 0; k < tintaQuantas && livres.length; k++) {
     const idx = sorteia(livres.length), [r, c] = livres.splice(idx, 1)[0];
     papel[r][c] = forma === 'caranguejo' ? 2 : 1;   /* areia do caranguejo vem em duas camadas */
@@ -819,13 +847,13 @@ async function passoMestre() {
     setTimeout(() => casa.classList.remove('cresceu'), 520);
   }
   pintaPapel();
-  J.mov = Math.max(0, J.mov - (fase3 ? 2 : 1));
+  J.mov = Math.max(0, J.mov - (fase3 ? 2 : 1) - (ehTubarao ? 1 : 0) - golpeExtra);
   /* a cada golpe ele se recupera um pouco: não dá pra só esperar */
-  const cura = fase3 ? 7 : fase2 ? 5 : 3;
+  const cura = (fase3 ? 7 : fase2 ? 5 : 3) + (MESTRES[f.obj.mestre].epico && fase3 ? 3 : 0);
   J.dano = Math.max(0, (J.dano || 0) - cura);
   Som.liga(); Som.nao(); vibra(TREMIDA.forte);
   tremeTela();
-  const acao = { lula: 'cospe tinta', enguia: 'dá choque e prende peças', caranguejo: 'joga areia grossa', serpente: 'cospe lixo' }[forma] || 'ataca';
+  const acao = ehTubarao ? 'dá uma investida' : ({ lula: 'cospe tinta', enguia: 'dá choque e prende peças', caranguejo: 'joga areia grossa', serpente: 'cospe lixo' }[forma] || 'ataca');
   faixaTexto((fase3 ? 'Furioso! ' : '') + 'O mestre ' + acao + ' e se cura ' + cura, 2200);
   const ret = document.querySelector('.retrato-mestre');
   if (ret) { ret.classList.remove('ataca'); void ret.offsetWidth; ret.classList.add('ataca'); }
@@ -906,6 +934,38 @@ function pintaAvisoCresce() {
   celulasBox.querySelectorAll('.vai-crescer').forEach(e => e.classList.remove('vai-crescer'));
   if (J.alvoCresce) celulasBox.children[J.alvoCresce[0] * W + J.alvoCresce[1]].classList.add('vai-crescer');
 }
+/* regra da região que age durante a fase: o gelo congela, a cinza vira entulho */
+const PERIODICAS = { gelo: 5, cinza: 6, emaranhado: 8, canto: 6, ferrao: 6, geiser: 7, janelas: 3 };
+function passoRegiao() {
+  if (!J || J.fim || !PERIODICAS[J.regra]) return;
+  J.jogadasRegiao = (J.jogadasRegiao || 0) + 1;
+  if (J.jogadasRegiao % PERIODICAS[J.regra] !== 0) return;
+  if (J.regra === 'janelas') {   /* a cor que vale o dobro muda de tempos em tempos */
+    J.corVez = ((J.corVez == null ? 0 : J.corVez) + 1 + (J.fase % 3)) % 6;
+    if (typeof pintaExtra === 'function') pintaExtra();
+    Som.liga(); Som.pop(2); faixaTexto('🏙️ A cor da vez mudou', 1600);
+    return;
+  }
+  const l = [];
+  for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) { const q = grid[r][c]; if (q && !q.sp && !q.bau && !q.gaiola && !q.lixo && !q.bolha) l.push(q); }
+  if (!l.length) return;
+  const q = l[sorteia(l.length)];
+  let msg = '';
+  if (J.regra === 'gelo') { q.gaiola = 1; msg = '❄️ Uma peça congelou'; }
+  else if (J.regra === 'emaranhado') { q.gaiola = 1; msg = '🌿 Uma peça se enroscou nas algas'; }
+  else if (J.regra === 'cinza') { q.lixo = 1; msg = '🌋 Caiu cinza: uma peça virou entulho'; }
+  else if (J.regra === 'ferrao') {
+    J.ferroes = (J.ferroes || 0) + 1;
+    if (J.ferroes % 2) { q.gaiola = 1; msg = '🪼 Uma peça foi paralisada'; } else { q.lixo = 1; msg = '🪼 Uma peça virou entulho'; }
+  }
+  else if (J.regra === 'canto') { q.sp = CARDUME; msg = '🐋 O canto da baleia criou um especial'; }
+  else if (J.regra === 'geiser') { q.sp = BOMBA; msg = '♨️ O gêiser criou uma bolha especial'; }
+  atualizaEl(q);
+  const el = els.get(q.id); if (el) { el.classList.remove('nasce'); void el.offsetWidth; el.classList.add('nasce'); }
+  Som.liga(); Som.cresce();
+  faixaTexto(msg, 1800);
+}
+
 /* ═══ PÉROLAS, LIXO E CORAL ══════════════════════════════════════ */
 /* ostra abre e coral acende no mesmo instante do estouro */
 let casasAgendadas = false;
