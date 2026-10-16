@@ -67,6 +67,7 @@ function quebraPapel(r, c) {
 function corpoDaPeca(p) {
   let s = '';
   if (p.bau) return '<svg viewBox="0 0 100 100"><use href="#i-bau"/></svg>';
+  if (p.esponja) return '<svg viewBox="0 0 100 100"><use href="#i-esponja"/></svg>';
   if (p.lixo) return '<svg viewBox="0 0 100 100"><use href="#i-lixo' + (p.id % 3) + '"/></svg>';
   if (p.sp === ARCO) s = '<svg viewBox="0 0 100 100"><use href="#s-arco"/></svg>';
   else {
@@ -82,6 +83,7 @@ function corpoDaPeca(p) {
   return s;
 }
 function classeEsp(p) {
+  if (p.esponja) return 'esponja';
   if (p.bau) return 'e-bau';
   if (p.lixo) return 'lixo' + (p.lixo >= 2 ? ' lixo2' : '');
   if (p.gaiola) return 'preso' + (p.gaiola >= 2 ? ' preso2' : '');
@@ -376,7 +378,7 @@ async function limpar(conj, novos) {
       q.lixo--;
       if (q.lixo <= 0) tiraLixo(y, x, q); else atualizaEl(q);
     }
-    if (p && p.lixo) { p.lixo = 0; J.lixoFeito = (J.lixoFeito || 0) + 1; J.pontos += 200; }   /* especial acertou o lixo em cheio */
+    if (p && p.lixo) { p.lixo = 0; if (p.esponja) { p.esponja = 0; J.esponjasFeitas = (J.esponjasFeitas || 0) + 1; J.esponjaTirada = (J.esponjaTirada || 0) + 1; } else J.lixoFeito = (J.lixoFeito || 0) + 1; J.pontos += 200; }   /* especial acertou o lixo em cheio */
     /* estourar colado no ninho machuca ele */
     if (J.ninhos) for (const n of J.ninhos) {
       if (n.vida <= 0 || Math.abs(n.r - r) + Math.abs(n.c - c) !== 1) continue;
@@ -642,10 +644,15 @@ async function tentaTrocaInterna(a, b) {
   J.soltoSozinho = false;
   J.limpouMancha = false;
   J.limpouAlga = false;
+  J.esponjaTirada = 0;
   if (J.ocupado || J.fim) return;
   limpaMarca();
   const pa = grid[a.r][a.c], pb = grid[b.r][b.c];
   if (!pa || !pb) return;
+  if (pa.esponja || pb.esponja) {          /* esponja é sólida: não troca de lugar */
+    for (const pz of [pa, pb]) { const ez = els.get(pz.id); if (ez) { ez.classList.add('nao'); setTimeout(() => ez.classList.remove('nao'), 360); } }
+    Som.nao(); return;
+  }
   J.ocupado = true;
   reiniciaDica();
 
@@ -697,6 +704,7 @@ async function tentaTrocaInterna(a, b) {
   garantePresos();
   passoNinho();
   passoRegiao();
+  passoEsponja();
   if (J.mudouCasas) pintaCasasEspeciais();
   await passoMestre();
   salvaPartida();
@@ -741,7 +749,7 @@ function salvaPartida() {
       per: J.perolas || null, pef: J.perolasFeitas || 0, cor: J.coral || null, cof: J.coralFeito || 0, lxf: J.lixoFeito || 0,
       ot: faseAtual().obj.tipo, rg: J.regra || null, ev: J.evento || null, jr: J.jogadasRegiao || 0, tmp: J.tempoModo ? J.tempoRestante : null, cnd: J.cond || null, cvz: J.corVez, mfd: J.moedasFundo || null, mpg: J.moedasPegas || 0,
       dn: J.dano || 0, cm: J.contaMestre || 0, cb: J.contaBolha || 0, bpa: J.bauParado || 0,
-      g: grid.map(l => l.map(p => p ? (p.bau ? 'b' : p.t + '.' + p.sp + '.' + (p.gaiola || 0) + '.' + (p.bolha ? 1 : 0) + '.' + (p.lixo || 0)) : ''))
+      g: grid.map(l => l.map(p => p ? (p.bau ? 'b' : p.t + '.' + p.sp + '.' + (p.gaiola || 0) + '.' + (p.bolha ? 1 : 0) + '.' + (p.lixo || 0) + '.' + (p.esponja ? 1 : 0)) : ''))
     }));
   } catch (e) { /* sem espaço: só não guarda */ }
 }
@@ -935,6 +943,49 @@ function pintaAvisoCresce() {
   if (J.alvoCresce) celulasBox.children[J.alvoCresce[0] * W + J.alvoCresce[1]].classList.add('vai-crescer');
 }
 /* regra da região que age durante a fase: o gelo congela, a cinza vira entulho */
+/* ═══ ESPONJA DO FUNDO ═══════════════════════════════════════════
+   Peça sólida: não combina e não troca de lugar. Numa jogada em que
+   você não tirou nenhuma esponja, ela se espalha para uma peça
+   encostada nela. Tirou alguma (colada, ou com especial): fica quieta.
+   Nunca passa de 30% do tabuleiro, pra sempre sobrar jogada.        */
+function contaEsponja() { let n = 0; for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) if (grid[r][c] && grid[r][c].esponja) n++; return n; }
+function passoEsponja() {
+  if (!J) return;
+  const fe = faseAtual();
+  const tirou = J.esponjaTirada || 0; J.esponjaTirada = 0;
+  if (J.fim || fe.obj.tipo !== 'esponja') return;
+  const falta = Math.max(0, fe.obj.n - (J.esponjasFeitas || 0));
+  if (!falta) return;                                     /* meta batida: nada mais cresce */
+  if (contaEsponja() === 0) {                             /* acabaram no tabuleiro mas ainda falta: brota mais */
+    const livres = [];
+    for (let r = 2; r < H; r++) for (let c = 0; c < W; c++) { const q = grid[r][c]; if (q && !q.sp && !q.bau && !q.gaiola && !q.bolha && !q.lixo) livres.push(q); }
+    for (let k = 0; k < Math.min(2, falta) && livres.length; k++) {
+      const q = livres.splice(sorteia(livres.length), 1)[0];
+      q.lixo = 1; q.esponja = true; atualizaEl(q);
+      const el = els.get(q.id); if (el) { el.classList.remove('nasce'); void el.offsetWidth; el.classList.add('nasce'); }
+    }
+    Som.liga(); Som.cresce(); faixaTexto('🧽 Brotou esponja nova', 1800);
+    return;
+  }
+  if (tirou > 0) return;
+  const cand = []; let total = 0, casas = 0;
+  for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) {
+    if (temCasa(r, c)) casas++;
+    const p = grid[r][c]; if (!p || !p.esponja) continue;
+    total++;
+    for (const [dr, dc] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) {
+      const y = r + dr, x = c + dc, q = (y >= 0 && y < H && x >= 0 && x < W) ? grid[y][x] : null;
+      if (q && !q.esponja && !q.lixo && !q.sp && !q.bau && !q.gaiola && !q.bolha && cand.indexOf(q) < 0) cand.push(q);
+    }
+  }
+  if (!cand.length || total >= Math.ceil(casas * .3)) return;
+  const q = cand[sorteia(cand.length)];
+  q.lixo = 1; q.esponja = 1; atualizaEl(q);
+  const el = els.get(q.id); if (el) { el.classList.remove('nasce'); void el.offsetWidth; el.classList.add('nasce'); }
+  Som.liga(); Som.cresce();
+  J.avisosEsponja = (J.avisosEsponja || 0) + 1;
+  if (J.avisosEsponja <= 2) faixaTexto('🧽 A esponja se espalhou! Estoure uma colada nela', 2200);
+}
 const PERIODICAS = { gelo: 5, cinza: 6, emaranhado: 8, canto: 6, ferrao: 6, geiser: 7, janelas: 3 };
 function passoRegiao() {
   if (!J || J.fim || !PERIODICAS[J.regra]) return;
@@ -1032,7 +1083,8 @@ function voaPerola(r, c) {
   Som.liga(); Som.pop(7);
 }
 function tiraLixo(y, x, q) {
-  J.lixoFeito = (J.lixoFeito || 0) + 1; J.pontos += 200;
+  if (q.esponja) { J.esponjasFeitas = (J.esponjasFeitas || 0) + 1; J.esponjaTirada = (J.esponjaTirada || 0) + 1; J.pontos += 200; }
+  else { J.lixoFeito = (J.lixoFeito || 0) + 1; J.pontos += 200; }
   const el = els.get(q.id);
   if (el) { el.classList.add('some'); setTimeout(() => { el.remove(); els.delete(q.id); }, 380); }
   grid[y][x] = null;

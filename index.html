@@ -792,6 +792,13 @@ body.em-segundo-plano *,body.em-segundo-plano *::before,body.em-segundo-plano *:
 #faixa-evento b{font-family:var(--display);overflow:hidden;text-overflow:ellipsis}
 #faixa-evento span{font-size:11px;font-weight:800;padding:1px 7px;border-radius:999px;background:rgba(255,255,255,.25)}
 
+/* ── esponja do fundo e chegada na região ────────────────────── */
+.peca.esponja .corpo{animation:esponja-respira 2.6s ease-in-out infinite}
+@keyframes esponja-respira{0%,100%{transform:scale(1) rotate(-1deg)}50%{transform:scale(1.06) rotate(1.5deg)}}
+.regiao-cena{position:relative;height:108px;margin:-6px 0 8px;border-radius:18px;overflow:hidden;box-shadow:inset 0 0 0 2px rgba(255,255,255,.35)}
+.regiao-cena svg{position:absolute;inset:0;width:100%;height:100%}
+.regiao-cena span{position:absolute;left:10px;top:7px;font-family:var(--display);font-size:13px;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.65)}
+
 /* ── contra a maré ───────────────────────────────────────────── */
 .cartao p.pre-tempo{margin-top:8px;padding:8px 10px;border-radius:12px;background:rgba(255,106,61,.16);font-size:12.5px;text-align:left}
 body.relogio-urgente #movimentos{animation:relogio-pulsa .5s ease-in-out infinite}
@@ -1302,6 +1309,13 @@ body.leve .peca.esp-peixe .capa{animation:peixe-nada 1.4s ease-in-out infinite !
     <path d="M50 60V38M32 52L24 34M68 44L80 30" fill="none" stroke="#FFB0C9" stroke-width="3.5" stroke-linecap="round"/>
     <ellipse cx="50" cy="90" rx="22" ry="5" fill="#C94A76" opacity=".6"/>
   </symbol>
+  <symbol id="i-esponja" viewBox="0 0 100 100">
+    <g fill="#E6A234"><ellipse cx="50" cy="56" rx="36" ry="28"/><circle cx="30" cy="40" r="17"/><circle cx="66" cy="36" r="16"/><circle cx="76" cy="64" r="14"/><circle cx="26" cy="68" r="13"/></g>
+    <path d="M24 44c6-12 22-18 34-12" fill="none" stroke="#FFD887" stroke-width="5" stroke-linecap="round" opacity=".85"/>
+    <g fill="#A8611A" opacity=".9"><ellipse cx="40" cy="52" rx="6.5" ry="4.8"/><ellipse cx="62" cy="44" rx="5.5" ry="4.2"/><ellipse cx="54" cy="68" rx="7.5" ry="5.2"/><ellipse cx="74" cy="58" rx="4.6" ry="3.8"/><ellipse cx="30" cy="62" rx="4.2" ry="3.4"/><ellipse cx="50" cy="34" rx="3.8" ry="3"/></g>
+    <g fill="#6B3A0C" opacity=".55"><ellipse cx="40" cy="53" rx="3.2" ry="2.4"/><ellipse cx="54" cy="69" rx="3.8" ry="2.6"/><ellipse cx="62" cy="45" rx="2.7" ry="2.1"/></g>
+    <path d="M22 70c8 12 26 16 40 12" fill="none" stroke="#C47A22" stroke-width="3.5" stroke-linecap="round" opacity=".65"/>
+  </symbol>
   <symbol id="i-lixo0" viewBox="0 0 100 100">
     <path d="M42 14h16v12l6 10v48a6 6 0 0 1-6 6H42a6 6 0 0 1-6-6V36l6-10Z" fill="#7FD1C4" opacity=".92"/>
     <path d="M42 14h16v8H42Z" fill="#3E8C80"/><path d="M40 46h20v18H40Z" fill="#F3FBFF" opacity=".85"/>
@@ -1494,7 +1508,7 @@ body.leve .peca.esp-peixe .capa{animation:peixe-nada 1.4s ease-in-out infinite !
    MERGULHO · combinar 3 da beira da praia até 4.000 metros
    ═══════════════════════════════════════════════════════════════ */
 
-const VERSAO_JOGO = '2026.12.11';
+const VERSAO_JOGO = '2026.12.12';
 const W = 7, H = 8, TIPOS = 6;
 const NADA = 0, LH = 1, LV = 2, BOMBA = 3, ARCO = 4, ONDA = 5, ONDAV = 6, CARDUME = 7, PEIXE = 8;
 /* fases com o quadrado ligado: 4 peças iguais em 2x2 viram um peixe-guia */
@@ -1509,9 +1523,10 @@ const CONDICOES = {
 /* Contra a Maré: fase com relógio em vez de jogadas. Sorteio próprio
    (não mexe nas fases existentes), em boa parte das fases de pontuar
    e de juntar peças, que são as que combinam com pressa.            */
-const tempoDa = i => { if (i < 39 || (i + 1) % 100 === 0) return 0; const f = fase(i);
+const tempoDe = (f, i) => { if (i < 39 || (i + 1) % 100 === 0 || f.enigma) return 0;
   if (f.obj.tipo !== 'pontos' && f.obj.tipo !== 'coletar') return 0;
-  return ((i + 5) * 2246822519 >>> 0) % 100 < 45 ? Math.max(40, Math.round(f.mov * 3.2 / 5) * 5) : 0; };
+  return ((i + 5) * 2246822519 >>> 0) % 100 < 45 ? Math.max(35, Math.round(f.mov * 2.4 / 5) * 5) : 0; };
+const tempoDa = i => tempoDe(fase(i), i);
 /* ═══ IDENTIDADE DAS REGIÕES ══════════════════════════════════════
    Cada região tem uma regra que vale em todas as fases dela. Descer
    passa a ser viagem: o mangue prende, o gelo congela, o vulcão
@@ -1555,6 +1570,8 @@ const eventoHoje = () => { const d = new Date(), dia = d.getDay(); if (dia !== 0
 /* teto de pontuação por fase: 4x a meta de 3 estrelas. Jogada boa passa
    de 3x raramente; 30x só com bug, e uma fase assim não pode decidir o ranking */
 const tetoDaFase = i => { try { const m = fase(+i).marcas; return m && m[2] ? m[2] * 4 : Infinity; } catch (e) { return Infinity; } };
+/* teto de jogadas numa fase de relógio: ninguém precisa de mais que isso pra tocar rápido */
+const capTempo = i => Math.max(30, Math.round(fase(i).mov * 2.6));
 const condicaoDa = i => { if (i < 30 || (i + 1) % 100 === 0) return null; const h = ((i + 17) * 2654435761 >>> 0) % 100; return h < 22 ? 'brinde' : h < 40 ? 'corvez' : h < 55 ? 'moedas' : null; };
 
 const $ = s => document.querySelector(s);
@@ -1798,6 +1815,11 @@ function faseBruta(i) {
   let tipo = r() < .30 ? base.obj.tipo : menu[Math.floor(r() * menu.length)];
   /* duas fases seguidas com o mesmo objetivo cansa: sorteia de novo */
   for (let t = 0; t < 4 && tipo === antes; t++) tipo = menu[Math.floor(r() * menu.length)];
+  /* a esponja entra por sorteio próprio: as outras fases continuam exatamente como eram */
+  if (i >= 40 && antes !== 'esponja') {
+    let h = Math.imul(i + 12345, 2654435761) >>> 0; h ^= h >>> 15; h = Math.imul(h, 2246822519) >>> 0; h ^= h >>> 13;
+    if ((h >>> 0) % 100 < 11) tipo = 'esponja';
+  }
   let mov, obj;
   if (tipo === 'pontos') {
     mov = Math.max(18, Math.round(base.mov - dif * 2 + r() * 3));
@@ -1834,6 +1856,11 @@ function faseBruta(i) {
     const n = 4 + Math.floor(r() * 3 + dif * 3);
     mov = Math.max(20, Math.round(15 + n * 3 - dif * 2));
     obj = { tipo:'perolas', n: n };
+  } else if (tipo === 'esponja') {
+    /* esponja do fundo: peça sólida que se espalha quando você não tira nenhuma colada nela */
+    const n = 6 + Math.floor(r() * 3 + dif * 3);          /* cota: quantas esponjas secar */
+    mov = Math.max(22, Math.round(14 + n * 1.9 - dif * 2));
+    obj = { tipo:'esponja', n: n, ini: 3 };
   } else if (tipo === 'lixo') {
     /* lixo no fundo: não combina, sai com estouro colado ou especial */
     const n = 5 + Math.floor(r() * 3 + dif * 4), dura = dif > .7 && r() < .5 ? 2 : 1;
@@ -1885,7 +1912,7 @@ function faseBruta(i) {
      ninho a mais pesa, e a profundidade soma um pouco.               */
   const tpc = obj.corrente ? 'corrente' : obj.mancha ? 'mancha' : obj.tipo;
   const PESO = { pontos: 0, coletar: 0, papel: 1, bau: 1, especiais: 1, perolas: 1, coral: 1, lixo: 1.5,
-                 presos: 2, bolhas: 2, corrente: 2, mancha: 3, ninho: 3 };
+                 presos: 2, bolhas: 2, corrente: 2, mancha: 3, ninho: 3, esponja: 1.8 };
   let peso = (PESO[tpc] || 0) + dif * 1.6;
   if (tpc === 'ninho') peso += (obj.ninhos.length - 1) * 1.8;
   if (obj.tipo === 'lixo' && obj.dura > 1) peso += 1.2;
@@ -1925,6 +1952,12 @@ function fase(i) {
     f.enigmaFeito = true; f.enigma = true;
     f.mov = Math.max(6, Math.round(f.mov * .38));
     f.marcas = f.marcas.map(m => Math.round(m * .5 / 100) * 100);
+  }
+  /* fase de relógio: dá pra fazer bem mais jogadas que o normal, então a meta sobe junto */
+  if (i >= BASE.length && !f.tempoFeito && tempoDe(f, i) > 0) {
+    f.tempoFeito = true;
+    if (f.obj.tipo === 'pontos') f.marcas = f.marcas.map(m => Math.round(m * 1.3 / 100) * 100);
+    else f.obj.itens = f.obj.itens.map(([c, n]) => [c, Math.round(n * 1.3)]);
   }
   return f;
 }
@@ -3620,6 +3653,7 @@ function quebraPapel(r, c) {
 function corpoDaPeca(p) {
   let s = '';
   if (p.bau) return '<svg viewBox="0 0 100 100"><use href="#i-bau"/></svg>';
+  if (p.esponja) return '<svg viewBox="0 0 100 100"><use href="#i-esponja"/></svg>';
   if (p.lixo) return '<svg viewBox="0 0 100 100"><use href="#i-lixo' + (p.id % 3) + '"/></svg>';
   if (p.sp === ARCO) s = '<svg viewBox="0 0 100 100"><use href="#s-arco"/></svg>';
   else {
@@ -3635,6 +3669,7 @@ function corpoDaPeca(p) {
   return s;
 }
 function classeEsp(p) {
+  if (p.esponja) return 'esponja';
   if (p.bau) return 'e-bau';
   if (p.lixo) return 'lixo' + (p.lixo >= 2 ? ' lixo2' : '');
   if (p.gaiola) return 'preso' + (p.gaiola >= 2 ? ' preso2' : '');
@@ -3929,7 +3964,7 @@ async function limpar(conj, novos) {
       q.lixo--;
       if (q.lixo <= 0) tiraLixo(y, x, q); else atualizaEl(q);
     }
-    if (p && p.lixo) { p.lixo = 0; J.lixoFeito = (J.lixoFeito || 0) + 1; J.pontos += 200; }   /* especial acertou o lixo em cheio */
+    if (p && p.lixo) { p.lixo = 0; if (p.esponja) { p.esponja = 0; J.esponjasFeitas = (J.esponjasFeitas || 0) + 1; J.esponjaTirada = (J.esponjaTirada || 0) + 1; } else J.lixoFeito = (J.lixoFeito || 0) + 1; J.pontos += 200; }   /* especial acertou o lixo em cheio */
     /* estourar colado no ninho machuca ele */
     if (J.ninhos) for (const n of J.ninhos) {
       if (n.vida <= 0 || Math.abs(n.r - r) + Math.abs(n.c - c) !== 1) continue;
@@ -4195,10 +4230,15 @@ async function tentaTrocaInterna(a, b) {
   J.soltoSozinho = false;
   J.limpouMancha = false;
   J.limpouAlga = false;
+  J.esponjaTirada = 0;
   if (J.ocupado || J.fim) return;
   limpaMarca();
   const pa = grid[a.r][a.c], pb = grid[b.r][b.c];
   if (!pa || !pb) return;
+  if (pa.esponja || pb.esponja) {          /* esponja é sólida: não troca de lugar */
+    for (const pz of [pa, pb]) { const ez = els.get(pz.id); if (ez) { ez.classList.add('nao'); setTimeout(() => ez.classList.remove('nao'), 360); } }
+    Som.nao(); return;
+  }
   J.ocupado = true;
   reiniciaDica();
 
@@ -4250,6 +4290,7 @@ async function tentaTrocaInterna(a, b) {
   garantePresos();
   passoNinho();
   passoRegiao();
+  passoEsponja();
   if (J.mudouCasas) pintaCasasEspeciais();
   await passoMestre();
   salvaPartida();
@@ -4294,7 +4335,7 @@ function salvaPartida() {
       per: J.perolas || null, pef: J.perolasFeitas || 0, cor: J.coral || null, cof: J.coralFeito || 0, lxf: J.lixoFeito || 0,
       ot: faseAtual().obj.tipo, rg: J.regra || null, ev: J.evento || null, jr: J.jogadasRegiao || 0, tmp: J.tempoModo ? J.tempoRestante : null, cnd: J.cond || null, cvz: J.corVez, mfd: J.moedasFundo || null, mpg: J.moedasPegas || 0,
       dn: J.dano || 0, cm: J.contaMestre || 0, cb: J.contaBolha || 0, bpa: J.bauParado || 0,
-      g: grid.map(l => l.map(p => p ? (p.bau ? 'b' : p.t + '.' + p.sp + '.' + (p.gaiola || 0) + '.' + (p.bolha ? 1 : 0) + '.' + (p.lixo || 0)) : ''))
+      g: grid.map(l => l.map(p => p ? (p.bau ? 'b' : p.t + '.' + p.sp + '.' + (p.gaiola || 0) + '.' + (p.bolha ? 1 : 0) + '.' + (p.lixo || 0) + '.' + (p.esponja ? 1 : 0)) : ''))
     }));
   } catch (e) { /* sem espaço: só não guarda */ }
 }
@@ -4488,6 +4529,49 @@ function pintaAvisoCresce() {
   if (J.alvoCresce) celulasBox.children[J.alvoCresce[0] * W + J.alvoCresce[1]].classList.add('vai-crescer');
 }
 /* regra da região que age durante a fase: o gelo congela, a cinza vira entulho */
+/* ═══ ESPONJA DO FUNDO ═══════════════════════════════════════════
+   Peça sólida: não combina e não troca de lugar. Numa jogada em que
+   você não tirou nenhuma esponja, ela se espalha para uma peça
+   encostada nela. Tirou alguma (colada, ou com especial): fica quieta.
+   Nunca passa de 30% do tabuleiro, pra sempre sobrar jogada.        */
+function contaEsponja() { let n = 0; for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) if (grid[r][c] && grid[r][c].esponja) n++; return n; }
+function passoEsponja() {
+  if (!J) return;
+  const fe = faseAtual();
+  const tirou = J.esponjaTirada || 0; J.esponjaTirada = 0;
+  if (J.fim || fe.obj.tipo !== 'esponja') return;
+  const falta = Math.max(0, fe.obj.n - (J.esponjasFeitas || 0));
+  if (!falta) return;                                     /* meta batida: nada mais cresce */
+  if (contaEsponja() === 0) {                             /* acabaram no tabuleiro mas ainda falta: brota mais */
+    const livres = [];
+    for (let r = 2; r < H; r++) for (let c = 0; c < W; c++) { const q = grid[r][c]; if (q && !q.sp && !q.bau && !q.gaiola && !q.bolha && !q.lixo) livres.push(q); }
+    for (let k = 0; k < Math.min(2, falta) && livres.length; k++) {
+      const q = livres.splice(sorteia(livres.length), 1)[0];
+      q.lixo = 1; q.esponja = true; atualizaEl(q);
+      const el = els.get(q.id); if (el) { el.classList.remove('nasce'); void el.offsetWidth; el.classList.add('nasce'); }
+    }
+    Som.liga(); Som.cresce(); faixaTexto('🧽 Brotou esponja nova', 1800);
+    return;
+  }
+  if (tirou > 0) return;
+  const cand = []; let total = 0, casas = 0;
+  for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) {
+    if (temCasa(r, c)) casas++;
+    const p = grid[r][c]; if (!p || !p.esponja) continue;
+    total++;
+    for (const [dr, dc] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) {
+      const y = r + dr, x = c + dc, q = (y >= 0 && y < H && x >= 0 && x < W) ? grid[y][x] : null;
+      if (q && !q.esponja && !q.lixo && !q.sp && !q.bau && !q.gaiola && !q.bolha && cand.indexOf(q) < 0) cand.push(q);
+    }
+  }
+  if (!cand.length || total >= Math.ceil(casas * .3)) return;
+  const q = cand[sorteia(cand.length)];
+  q.lixo = 1; q.esponja = 1; atualizaEl(q);
+  const el = els.get(q.id); if (el) { el.classList.remove('nasce'); void el.offsetWidth; el.classList.add('nasce'); }
+  Som.liga(); Som.cresce();
+  J.avisosEsponja = (J.avisosEsponja || 0) + 1;
+  if (J.avisosEsponja <= 2) faixaTexto('🧽 A esponja se espalhou! Estoure uma colada nela', 2200);
+}
 const PERIODICAS = { gelo: 5, cinza: 6, emaranhado: 8, canto: 6, ferrao: 6, geiser: 7, janelas: 3 };
 function passoRegiao() {
   if (!J || J.fim || !PERIODICAS[J.regra]) return;
@@ -4585,7 +4669,8 @@ function voaPerola(r, c) {
   Som.liga(); Som.pop(7);
 }
 function tiraLixo(y, x, q) {
-  J.lixoFeito = (J.lixoFeito || 0) + 1; J.pontos += 200;
+  if (q.esponja) { J.esponjasFeitas = (J.esponjasFeitas || 0) + 1; J.esponjaTirada = (J.esponjaTirada || 0) + 1; J.pontos += 200; }
+  else { J.lixoFeito = (J.lixoFeito || 0) + 1; J.pontos += 200; }
   const el = els.get(q.id);
   if (el) { el.classList.add('some'); setTimeout(() => { el.remove(); els.delete(q.id); }, 380); }
   grid[y][x] = null;
@@ -4978,6 +5063,15 @@ function preparaEspeciaisDaFase() {
       q.lixo = f.obj.dura || 1; postos++;
     }
   }
+  if (f.obj.tipo === 'esponja') {
+    let postos = 0; const usadas = [];
+    for (const [r, c] of sorteiaCasas(80, (r) => r >= 2)) {
+      const q = grid[r][c];
+      if (postos >= (f.obj.ini || 3) || !q || q.bau || q.sp || q.lixo) continue;
+      if (usadas.some(([ur, uc]) => Math.abs(ur - r) + Math.abs(uc - c) < 3)) continue;   /* começam afastadas */
+      q.lixo = 1; q.esponja = true; usadas.push([r, c]); postos++;
+    }
+  }
   if (f.obj.tipo === 'ninho') {
     J.ninhos = f.obj.ninhos.map(c => ({ r: TOPO[c] - 1, c: c, vida: f.obj.vida || 3 }));
     J.ninhosFeitos = 0;
@@ -5012,6 +5106,7 @@ function faltaPrincipal() {
   if (f.obj.tipo === 'perolas') { let n = 0; if (J.perolas) for (const l of J.perolas) for (const v of l) if (v > 0) n++; return n; }
   if (f.obj.tipo === 'coral') { let n = 0; if (J.coral) for (const l of J.coral) for (const v of l) if (v === 1) n++; return n; }
   if (f.obj.tipo === 'lixo') return Math.max(0, f.obj.n - (J.lixoFeito || 0));
+  if (f.obj.tipo === 'esponja') return Math.max(0, f.obj.n - (J.esponjasFeitas || 0));
   if (f.obj.tipo === 'presos') return Math.max(0, f.obj.n - (J.presosFeitos || 0));
   if (f.obj.tipo === 'bolhas') return Math.max(0, f.obj.n - (J.bolhasFeitas || 0));
   if (f.obj.tipo === 'pontos') return Math.max(0, f.marcas[0] - J.pontos);
@@ -5109,10 +5204,10 @@ function atualizaHud() {
     const falta = Math.max(0, f.obj.n - (J.criados || 0));
     o.innerHTML = '<div><div class="rotulo">Criar especiais</div></div><div class="alvos">' +
       '<div class="alvo' + (falta ? '' : ' feito') + '"><svg class="ic" viewBox="0 0 100 100"><use href="#i-faisca"/></svg><b>' + (falta || '✓') + '</b></div></div>';
-  } else if (f.obj.tipo === 'perolas' || f.obj.tipo === 'coral' || f.obj.tipo === 'lixo') {
+  } else if (f.obj.tipo === 'perolas' || f.obj.tipo === 'coral' || f.obj.tipo === 'lixo' || f.obj.tipo === 'esponja') {
     const n = faltaPrincipal();
-    const rot = { perolas: 'Colher as pérolas', coral: 'Recuperar o coral', lixo: 'Limpar o lixo do fundo' }[f.obj.tipo];
-    const ic = { perolas: '#i-perola', coral: '#i-coral', lixo: '#i-lixo0' }[f.obj.tipo];
+    const rot = { perolas: 'Colher as pérolas', coral: 'Recuperar o coral', lixo: 'Limpar o lixo do fundo', esponja: 'Secar a esponja' }[f.obj.tipo];
+    const ic = { perolas: '#i-perola', coral: '#i-coral', lixo: '#i-lixo0', esponja: '#i-esponja' }[f.obj.tipo];
     o.innerHTML = '<div><div class="rotulo">' + rot + '</div></div><div class="alvos"><div class="alvo' + (n ? '' : ' feito') + '">' +
       '<svg class="ic" viewBox="0 0 100 100"><use href="' + ic + '"/></svg><b>' + (n || '✓') + '</b></div></div>';
   } else if (f.obj.tipo === 'ninho') {
@@ -5177,6 +5272,7 @@ function animaPontos() {
 /* ═══ FIM DE FASE ═══════════════════════════════════════════════ */
 async function confere() {
   if (J.fim) return;
+  if (J.tempoEsgotou) J.mov = 0;
   if (J.desafio) { if (J.mov <= 0) { J.fim = true; apagaDica(); clearTimeout(dicaTimer); fimDesafio(); } return; }
   const porPontos = faseAtual().obj.tipo === 'pontos';
   const fecha = f => { J.fim = true; apagaDica(); clearTimeout(dicaTimer); return f(); };
@@ -5277,6 +5373,7 @@ async function bonusDoFolego() {
 async function venceu() {
   const eraMestre = faseAtual().obj.tipo === 'chefe';
   const estrelasAntes = (prog.estrelas && prog.estrelas[J.fase]) || 0;   /* antes de gravar as novas */
+  J.pontos = Math.min(J.pontos, tetoDaFase(J.fase));                       /* nenhuma partida passa do teto da fase */
   J.folegoBonus = null;
   await bonusDoFolego();
   tiraBotaoEncerrar();
@@ -5392,6 +5489,7 @@ async function perdeu() {
   else if (f.obj.tipo === 'perolas') { const n = faltaPrincipal(); falta = n === 1 ? 'Faltou colher uma pérola.' : 'Faltaram ' + n + ' pérolas.'; }
   else if (f.obj.tipo === 'coral') { const n = faltaPrincipal(); falta = n === 1 ? 'Faltou um pedaço de coral.' : 'Faltaram ' + n + ' pedaços de coral.'; }
   else if (f.obj.tipo === 'lixo') { const n = faltaPrincipal(); falta = n === 1 ? 'Sobrou um lixo no fundo.' : 'Sobraram ' + n + ' lixos no fundo.'; }
+  else if (f.obj.tipo === 'esponja') { const n = faltaPrincipal(); falta = n === 1 ? 'Faltou secar uma esponja.' : 'Faltou secar ' + n + ' esponjas.'; }
   else if (f.obj.tipo === 'ninho') { const nv = ninhosVivos(), al = casasCobertas(papel);
     falta = 'Faltaram ' + (nv ? nv + (nv === 1 ? ' ninho' : ' ninhos') + (al ? ' e ' : '') : '') + (al ? al + (al === 1 ? ' alga' : ' algas') : '') + '.'; }
   else if (f.obj.tipo === 'presos') { const n = faltaObjetivo(); falta = n === 1 ? 'Faltou libertar um bicho.' : 'Faltaram ' + n + ' bichos presos.'; }
@@ -5579,6 +5677,7 @@ function colheitaDaFase() {
   const add = (ic, n, txt) => { if (n > 0) itens.push('<span><svg viewBox="0 0 100 100"><use href="' + ic + '"/></svg>' + n + ' ' + txt + '</span>'); };
   if (o.tipo === 'perolas') add('#i-perola', J.perolasFeitas || 0, (J.perolasFeitas === 1 ? 'pérola' : 'pérolas'));
   if (o.tipo === 'lixo') add('#i-lixo0', J.lixoFeito || 0, 'lixo' + (J.lixoFeito === 1 ? '' : 's') + ' fora do mar');
+  if (o.tipo === 'esponja') add('#i-esponja', J.esponjasFeitas || 0, 'esponja' + ((J.esponjasFeitas || 0) === 1 ? ' seca' : 's secas'));
   if (o.tipo === 'coral') add('#i-coral', J.coralFeito || 0, 'de coral de volta');
   if (o.tipo === 'ninho') add('#i-ninho', J.ninhosFeitos || 0, (J.ninhosFeitos === 1 ? 'ninho derrubado' : 'ninhos derrubados'));
   if (o.tipo === 'presos') add('#i-gaiola', J.presosFeitos || 0, 'bicho' + (J.presosFeitos === 1 ? '' : 's') + ' solto' + (J.presosFeitos === 1 ? '' : 's'));
@@ -5819,15 +5918,15 @@ async function recebeVidas() {
    com o botão de mandar ali mesmo, e o ícone do app ganha o número */
 /* o que mudou nesta versão: aparece uma vez para cada pessoa */
 const NOVIDADES = [
-  ['🗺️', 'Oito regiões novas', 'Depois da Fossa o mar continua: Floresta de Kelp, Cemitério de Baleias, Cidade Submersa, Jardim de Medusas, Gruta de Cristal, Recife de Neon, Fonte Termal e Mar de Aurora, cada uma com cenário e regra próprios.'],
-  ['⚖️', 'Fases mais equilibradas', 'Fases de lixo, coral, bicho preso e bolhas pediam jogadas demais: agora pedem o que de fato precisam. O bônus das jogadas que sobram ficou mais justo.'],
-  ['🏆', 'Ranking mais justo', 'Cada fase tem um teto de pontos no ranking, pra nenhuma pontuação fora do normal decidir a disputa.']
+  ['🧽', 'Esponja do fundo', 'Uma esponja sólida que cresce: se você não estoura uma combinação colada nela, ela se espalha. Seque a quantidade pedida antes das jogadas acabarem.'],
+  ['⏱', 'Contra a Maré mais justo', 'O relógio agora corre durante as animações, e o tempo ficou mais curto. Tocar rápido sem pensar não rende mais jogadas de graça.'],
+  ['🗺️', 'Chegada nas regiões', 'Ao entrar numa região nova, o cenário aparece inteiro no aviso, com a regra dela.']
 ];
 /* A lista de novidades tem um nome de lote. O cartão só abre sozinho
    quando o lote muda, e não a cada versão: correção de bug não é
    novidade. Quem viu o cartão antigo (marcado pela versão) já viu
    este primeiro lote. Pra publicar novidade nova: troque o lote e a lista. */
-const NOVIDADES_LOTE = 'lote-7', NOVIDADES_DATA = '12 de outubro';
+const NOVIDADES_LOTE = 'lote-8', NOVIDADES_DATA = '16 de outubro';
 function viuEsteLote() {
   const v = prog.viuNovidades || '';
   return v === NOVIDADES_LOTE || (NOVIDADES_LOTE === 'lote-1' && /^20\d\d\./.test(v));
@@ -5974,7 +6073,7 @@ function continuaPorMoedas() {
   J.segundaChance = true; J.derrota = false;
   fechaCartao();
   J.fim = false; J.ocupado = false; J.mov += 5; J.movExtra = (J.movExtra || 0) + 5;
-  if (J.tempoModo) { J.mov = 999; J.tempoRestante = (J.tempoRestante || 0) + 15; iniciaRelogio(); faixaTexto('+15 segundos', 1800); }
+  if (J.tempoModo) { J.tempoEsgotou = false; J.mov = Math.max(0, J.mov) + Math.ceil(faseAtual().mov * .5); J.tempoRestante = (J.tempoRestante || 0) + 15; iniciaRelogio(); faixaTexto('+15 segundos', 1800); }
   atualizaHud(); reiniciaDica(); Som.liga(); Som.pop(5); faixaTexto(J.tempoModo ? '+15 segundos' : '+5 jogadas');
 }
 
@@ -5984,7 +6083,7 @@ function usaFolegoNoCartao() {
   J.segundaChance = true; J.derrota = false;
   fechaCartao();
   J.fim = false; J.ocupado = false; J.mov += 5; J.movExtra = (J.movExtra || 0) + 5;
-  if (J.tempoModo) { J.mov = 999; J.tempoRestante = (J.tempoRestante || 0) + 15; iniciaRelogio(); }
+  if (J.tempoModo) { J.tempoEsgotou = false; J.mov = Math.max(0, J.mov) + Math.ceil(faseAtual().mov * .5); J.tempoRestante = (J.tempoRestante || 0) + 15; iniciaRelogio(); }
   atualizaHud(); reiniciaDica();
   Som.liga(); Som.pop(5);
   faixaTexto(J.tempoModo ? '+15 segundos' : '+5 jogadas');
@@ -7050,7 +7149,7 @@ function retomaPartida(d) {
   /* fase de relógio retomada: religa o relógio. Antes ficava com as 999
      jogadas internas visíveis, e a pessoa jogava sem limite */
   if (tempoDa(d.f) > 0) {
-    J.tempoModo = true; J.mov = 999;
+    J.tempoModo = true; J.mov = Math.max(1, Math.min(J.mov, capTempo(d.f)));
     if (J.tempoRestante == null) J.tempoRestante = tempoDa(d.f);
     setTimeout(() => { iniciaRelogio(); pintaRelogio(); }, 400);
   } else if (J.mov > fase(d.f).mov + 20) J.mov = fase(d.f).mov;   /* trava de segurança: nunca mais jogadas que o possível */
@@ -7065,6 +7164,7 @@ function retomaPartida(d) {
     if (+pd[2]) p.gaiola = +pd[2];          /* bicho preso volta preso */
     if (+pd[3]) p.bolha = true;             /* e a bolha volta subindo */
     if (+pd[4]) p.lixo = +pd[4];            /* e o lixo volta sujo */
+    if (+pd[5]) p.esponja = true;           /* e a esponja continua esponja */
     return p;
   }));
   pontosNaTela = 0;
@@ -7169,7 +7269,7 @@ function resumoObjetivo(f) {
     : o.tipo === 'especiais' ? 'Criar ' + o.n + ' especiais' : o.tipo === 'presos' ? 'Libertar ' + o.n + ' bichos presos'
     : o.tipo === 'bolhas' ? 'Estourar ' + o.n + ' bolhas de ar' : o.tipo === 'chefe' ? 'Derrotar o mestre'
     : o.tipo === 'perolas' ? 'Colher ' + o.n + ' pérolas' : o.tipo === 'coral' ? 'Recuperar ' + o.n + ' pedaços de coral'
-    : o.tipo === 'lixo' ? 'Tirar ' + o.n + ' lixos do fundo' : o.tipo === 'ninho' ? 'Destruir ' + o.ninhos.length + (o.ninhos.length === 1 ? ' ninho' : ' ninhos') + ' e as algas'
+    : o.tipo === 'esponja' ? 'Secar ' + o.n + ' esponjas que crescem' : o.tipo === 'lixo' ? 'Tirar ' + o.n + ' lixos do fundo' : o.tipo === 'ninho' ? 'Destruir ' + o.ninhos.length + (o.ninhos.length === 1 ? ' ninho' : ' ninhos') + ' e as algas'
     : o.mancha ? 'Conter a maré vermelha' : o.corrente ? 'Quebrar a corrente' : 'Limpar o fundo';
   return base + ex;
 }
@@ -7193,7 +7293,7 @@ function mostraPreFase() {
     (f.enigma ? '<p class="pre-enigma">🧩 <b>Enigma</b> · só ' + f.mov + ' jogadas, com especiais já prontos no tabuleiro. Pense antes de mexer.</p>' : '') +
     (regraDa(J.fase) && regraDa(J.fase).id !== 'calma' ? '<p class="pre-regiao">' + regraDa(J.fase).ic + ' <b>' + regraDa(J.fase).nome + '</b> · ' + regraDa(J.fase).texto + '</p>' : '') +
     (eventoHoje() ? '<p class="pre-evento">' + EVENTOS[eventoHoje()].ic + ' <b>' + EVENTOS[eventoHoje()].nome + '</b> · ' + EVENTOS[eventoHoje()].texto + '</p>' : '') +
-    (tempoDa(J.fase) ? '<p class="pre-tempo">⏱ <b>Contra a Maré</b> · sem limite de jogadas: você tem ' + tempoDa(J.fase) + ' segundos. Jogada de 5 peças ou mais devolve tempo.</p>' : '') +
+    (tempoDa(J.fase) ? '<p class="pre-tempo">⏱ <b>Contra a Maré</b> · o relógio manda: você tem ' + tempoDa(J.fase) + ' segundos, e ele corre o tempo todo. Jogada de 5 peças ou mais devolve 1 segundo.</p>' : '') +
     (condicaoDa(J.fase) ? '<p class="pre-cond">' + CONDICOES[condicaoDa(J.fase)].ic + ' <b>' + CONDICOES[condicaoDa(J.fase)].nome + '</b> · ' + CONDICOES[condicaoDa(J.fase)].texto + '</p>' : '') +
     (f.quadrado ? '<p class="pre-quadrado">🐟 Nesta fase, 4 peças iguais em quadrado viram um peixe-guia</p>' : '') +
     '<div class="pre-estrelas"><span>★ ' + nf(f.marcas[0]) + '</span><span>★★ ' + nf(f.marcas[1]) + '</span><span>★★★ ' + nf(f.marcas[2]) + '</span></div>' +
@@ -7207,12 +7307,17 @@ function iniciaRelogio() {
   clearInterval(relogio);
   relogio = setInterval(() => {
     if (!J || !J.tempoModo || J.fim) { clearInterval(relogio); document.body.classList.remove('relogio-urgente'); return; }
-    /* para com cartão aberto, com o jogo em segundo plano e durante a cascata */
-    if (document.hidden || document.getElementById('veu').classList.contains('aberto') || J.ocupado) return;
+    /* O relógio corre o tempo todo, inclusive nas animações da jogada. Antes ele parava enquanto
+       as peças caíam, e quem tocava rápido (ou com automatizador) quase não gastava tempo.
+       Só para com cartão aberto ou com o jogo minimizado. */
+    if (document.hidden || document.getElementById('veu').classList.contains('aberto')) return;
     J.tempoRestante = Math.max(0, (J.tempoRestante || 0) - 1);
     pintaRelogio();
     if (J.tempoRestante <= 10 && J.tempoRestante > 0) { Som.liga(); Som.pop(1); }
-    if (J.tempoRestante <= 0) { clearInterval(relogio); J.mov = 0; confere(); }
+    if (J.tempoRestante <= 0) {
+      clearInterval(relogio); J.tempoEsgotou = true;
+      if (!J.ocupado) { J.mov = 0; confere(); }      /* no meio de uma jogada, o fim da jogada confere */
+    }
   }, 1000);
 }
 function pintaRelogio() {
@@ -7243,7 +7348,7 @@ function comecaFase() {
   const f = faseAtual();
   if (!J.desafio) vigiaTabuleiro(J.fase, 0);
   J.tempoModo = !J.desafio && tempoDa(J.fase) > 0;
-  if (J.tempoModo) { if (J.tempoRestante == null) J.tempoRestante = tempoDa(J.fase); J.mov = 999; iniciaRelogio(); setTimeout(pintaRelogio, 30); }
+  if (J.tempoModo) { if (J.tempoRestante == null) J.tempoRestante = tempoDa(J.fase); J.mov = capTempo(J.fase); J.tempoEsgotou = false; iniciaRelogio(); setTimeout(pintaRelogio, 30); }
   else { clearInterval(relogio); document.body.classList.remove('relogio-urgente'); }
   if (!J.viuPre && !J.desafio) { J.viuPre = true; return mostraPreFase(); }
   J.faltaInicial = Math.max(1, faltaObjetivo() || 1);
@@ -7267,13 +7372,15 @@ function comecaFase() {
     'O coral cinza está morto. Toda peça estourada em cima dele ou bem do lado devolve a cor daquele pedaço. Recupere o recife inteiro.'); }
   if (!prog.vistos.lixo2 && f.obj.tipo === 'lixo') { prog.vistos.lixo2 = true; salvaProg(); return mostraAviso('Lixo no fundo', '#i-lixo0',
     'Garrafas, latas e sacolas não combinam com nada. Estoure peças coladas nelas para tirar do mar; especial que acerta em cheio também leva. Os mais sujos aguentam dois estouros.'); }
+  if (!prog.vistos.esponja && f.obj.tipo === 'esponja') { prog.vistos.esponja = true; salvaProg(); return mostraAviso('Esponja do fundo', '#i-esponja',
+    'Uma esponja sólida cresce no tabuleiro: ela não combina e não troca de lugar. Toda jogada em que você não tira nenhuma, ela se espalha para uma peça colada nela. Estoure uma combinação encostada nela, ou use um especial, pra secar. Seque a quantidade pedida antes das jogadas acabarem. Se as esponjas do tabuleiro acabarem, brota mais.'); }
   const rg = regraDa(J.fase);
   if (rg && rg.id !== 'calma' && !prog.vistos['regiao-' + rg.id]) { prog.vistos['regiao-' + rg.id] = true; salvaProg();
-    return mostraAviso(ambiente(J.fase).reg.nome, null, rg.ic + ' ' + rg.nome + '. ' + rg.texto + ' A regra vale em todas as fases desta região.'); }
+    return cartaoRegiao(J.fase, rg); }
   if (!prog.vistos.enigma && f.enigma) { prog.vistos.enigma = true; salvaProg(); return mostraAviso('Enigma', null,
     'Esta fase é um enigma: poucas jogadas e especiais já prontos no tabuleiro. A ordem em que você usa cada um faz toda a diferença. Olhe com calma antes de mexer.'); }
   if (!prog.vistos.tempo && tempoDa(J.fase)) { prog.vistos.tempo = true; salvaProg(); return mostraAviso('Contra a Maré', '#i-bolha-ar',
-    'Nesta fase não existe limite de jogadas: existe um relógio. Jogue rápido, sem medo. Toda jogada que estoura 5 peças ou mais devolve um segundo. Com cartão aberto ou o jogo minimizado, o relógio para.'); }
+    'Nesta fase quem manda é o relógio, e ele corre o tempo todo, até durante as animações. Jogue rápido, mas com cabeça. Toda jogada que estoura 5 peças ou mais devolve um segundo. Com cartão aberto ou o jogo minimizado, o relógio para.'); }
   if (!prog.vistos.quadrado && f.quadrado) { prog.vistos.quadrado = true; salvaProg(); return mostraAviso('Peixe-guia', '#sp-peixe',
     'Juntar quatro peças iguais em quadrado cria um peixe-guia. Quando ele dispara, nada direto até três casas que o objetivo pede: cobertura, coral, ostra, lixo ou bicho preso. Ele só aparece em algumas fases, avisadas antes de começar.'); }
   if (!prog.vistos.ninho2 && f.obj.tipo === 'ninho') { prog.vistos.ninho2 = true; salvaProg(); return mostraAviso('Ninho de algas', '#i-ninho',
@@ -7303,6 +7410,15 @@ function comecaFase() {
 /* cartão que apresenta cada mecânica: arte grande no topo, a frase
    principal em destaque e o resto em passos curtos e numerados    */
 const AVISO_ICONE = { 'Maré vermelha': '#i-mancha', 'A corrente': '#i-corrente', 'A alga volta a crescer': '#i-ninho' };
+/* chegada numa região: o cenário aparece grande no cartão, com a luz daquela profundidade */
+function cartaoRegiao(i, rg) {
+  const amb = ambiente(i), ag = amb.reg.agua, b = amb.banda;
+  const arte = '<svg viewBox="0 0 400 170" preserveAspectRatio="xMidYMax slice" aria-hidden="true">' + (PROPS[amb.chao] || PROPS.pedra)(paletaChao(amb)) + '</svg>';
+  cartao('<div class="regiao-cena" style="background:linear-gradient(180deg,' + ag[b] + ',' + ag[Math.min(b + 1, 5)] + ')">' + arte + '<span>' + amb.reg.nome + '</span></div>' +
+    '<p class="aviso-novo">nova região</p><h3>' + rg.ic + ' ' + rg.nome + '</h3>' +
+    '<p class="aviso-lead">' + amb.reg.texto + '</p><p>' + rg.texto + '</p><p class="album-dica">A regra vale em todas as fases desta região.</p>' +
+    '<div class="bts"><button class="bt" data-ac="comeca">Entendi, bora</button></div>');
+}
 function mostraAviso(titulo, icone, texto) {
   const ic = icone || AVISO_ICONE[titulo] || '#i-estrela';
   const frases = String(texto).replace(/([.!?])\s+/g, '$1|').split('|').map(s => s.trim()).filter(Boolean);

@@ -784,6 +784,13 @@ body.em-segundo-plano *,body.em-segundo-plano *::before,body.em-segundo-plano *:
 #faixa-evento b{font-family:var(--display);overflow:hidden;text-overflow:ellipsis}
 #faixa-evento span{font-size:11px;font-weight:800;padding:1px 7px;border-radius:999px;background:rgba(255,255,255,.25)}
 
+/* ── esponja do fundo e chegada na região ────────────────────── */
+.peca.esponja .corpo{animation:esponja-respira 2.6s ease-in-out infinite}
+@keyframes esponja-respira{0%,100%{transform:scale(1) rotate(-1deg)}50%{transform:scale(1.06) rotate(1.5deg)}}
+.regiao-cena{position:relative;height:108px;margin:-6px 0 8px;border-radius:18px;overflow:hidden;box-shadow:inset 0 0 0 2px rgba(255,255,255,.35)}
+.regiao-cena svg{position:absolute;inset:0;width:100%;height:100%}
+.regiao-cena span{position:absolute;left:10px;top:7px;font-family:var(--display);font-size:13px;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.65)}
+
 /* ── contra a maré ───────────────────────────────────────────── */
 .cartao p.pre-tempo{margin-top:8px;padding:8px 10px;border-radius:12px;background:rgba(255,106,61,.16);font-size:12.5px;text-align:left}
 body.relogio-urgente #movimentos{animation:relogio-pulsa .5s ease-in-out infinite}

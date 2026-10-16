@@ -9,18 +9,18 @@ JOGA = """async()=>{
   const f=faseAtual(), tp=f.obj.tipo, oferta=f.mov; J.mov=oferta*2; const inicio=J.mov; let tentativas=0, gastas=0;
   const alvos=()=>{const l=[];for(let r=0;r<H;r++)for(let c=0;c<W;c++){const p=grid[r][c];
     if(tp==='lixo'&&p&&p.lixo)l.push([r,c]); if(tp==='presos'&&p&&p.gaiola)l.push([r,c]); if(tp==='bolhas'&&p&&p.bolha)l.push([r,c]);
-    if(tp==='coral'&&J.coral&&J.coral[r][c]===1)l.push([r,c]); if(tp==='perolas'&&J.perolas&&J.perolas[r][c]>0)l.push([r,c]);}return l;};
+    if(tp==='esponja'&&p&&p.esponja)l.push([r,c]); if(tp==='coral'&&J.coral&&J.coral[r][c]===1)l.push([r,c]); if(tp==='perolas'&&J.perolas&&J.perolas[r][c]>0)l.push([r,c]);}return l;};
   const livre=async()=>{for(let k=0;k<300&&J.ocupado;k++)await new Promise(r=>setTimeout(r,10));};
   while(!J.fim&&J.mov>0&&tentativas<400){
     tentativas++; await livre();
     const A=alvos();let melhor=null,nota=1e9,tam=0;
     for(let r=0;r<H;r++)for(let c=0;c<W;c++)for(const [dr,dc] of [[0,1],[1,0]]){
-      const r2=r+dr,c2=c+dc;if(r2>=H||c2>=W)continue;const a=grid[r][c],b=grid[r2][c2];if(!a||!b||a.bau||b.bau)continue;
+      const r2=r+dr,c2=c+dc;if(r2>=H||c2>=W)continue;const a=grid[r][c],b=grid[r2][c2];if(!a||!b||a.bau||b.bau||a.esponja||b.esponja)continue;
       if(!criaCombo(r,c,r2,c2))continue;
       grid[r][c]=b;grid[r2][c2]=a;const runs=acharCorridas();const cells=new Set();
       for(const co of runs)for(let k=0;k<co.len;k++)cells.add(co.dir==='h'?co.r*W+(co.c+k):(co.r+k)*W+co.c);
       grid[r][c]=a;grid[r2][c2]=b;
-      let d=99;for(const k of cells){const y=Math.floor(k/W),x=k%W;for(const [ay,ax] of A)d=Math.min(d,Math.max(Math.abs(y-ay),Math.abs(x-ax)));}
+      let d=99;for(const k of cells){const y=Math.floor(k/W),x=k%W;for(const [ay,ax] of A)d=Math.min(d,tp==='esponja'?Math.abs(y-ay)+Math.abs(x-ax):Math.max(Math.abs(y-ay),Math.abs(x-ax)));}
       if(d<nota||(d===nota&&cells.size>tam)){nota=d;tam=cells.size;melhor=[r,c,r2,c2];}
     }
     if(!melhor)break;

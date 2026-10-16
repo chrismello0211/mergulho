@@ -2,7 +2,7 @@
    MERGULHO · combinar 3 da beira da praia até 4.000 metros
    ═══════════════════════════════════════════════════════════════ */
 
-const VERSAO_JOGO = '2026.12.11';
+const VERSAO_JOGO = '2026.12.12';
 const W = 7, H = 8, TIPOS = 6;
 const NADA = 0, LH = 1, LV = 2, BOMBA = 3, ARCO = 4, ONDA = 5, ONDAV = 6, CARDUME = 7, PEIXE = 8;
 /* fases com o quadrado ligado: 4 peças iguais em 2x2 viram um peixe-guia */
@@ -17,9 +17,10 @@ const CONDICOES = {
 /* Contra a Maré: fase com relógio em vez de jogadas. Sorteio próprio
    (não mexe nas fases existentes), em boa parte das fases de pontuar
    e de juntar peças, que são as que combinam com pressa.            */
-const tempoDa = i => { if (i < 39 || (i + 1) % 100 === 0) return 0; const f = fase(i);
+const tempoDe = (f, i) => { if (i < 39 || (i + 1) % 100 === 0 || f.enigma) return 0;
   if (f.obj.tipo !== 'pontos' && f.obj.tipo !== 'coletar') return 0;
-  return ((i + 5) * 2246822519 >>> 0) % 100 < 45 ? Math.max(40, Math.round(f.mov * 3.2 / 5) * 5) : 0; };
+  return ((i + 5) * 2246822519 >>> 0) % 100 < 45 ? Math.max(35, Math.round(f.mov * 2.4 / 5) * 5) : 0; };
+const tempoDa = i => tempoDe(fase(i), i);
 /* ═══ IDENTIDADE DAS REGIÕES ══════════════════════════════════════
    Cada região tem uma regra que vale em todas as fases dela. Descer
    passa a ser viagem: o mangue prende, o gelo congela, o vulcão
@@ -63,6 +64,8 @@ const eventoHoje = () => { const d = new Date(), dia = d.getDay(); if (dia !== 0
 /* teto de pontuação por fase: 4x a meta de 3 estrelas. Jogada boa passa
    de 3x raramente; 30x só com bug, e uma fase assim não pode decidir o ranking */
 const tetoDaFase = i => { try { const m = fase(+i).marcas; return m && m[2] ? m[2] * 4 : Infinity; } catch (e) { return Infinity; } };
+/* teto de jogadas numa fase de relógio: ninguém precisa de mais que isso pra tocar rápido */
+const capTempo = i => Math.max(30, Math.round(fase(i).mov * 2.6));
 const condicaoDa = i => { if (i < 30 || (i + 1) % 100 === 0) return null; const h = ((i + 17) * 2654435761 >>> 0) % 100; return h < 22 ? 'brinde' : h < 40 ? 'corvez' : h < 55 ? 'moedas' : null; };
 
 const $ = s => document.querySelector(s);
@@ -306,6 +309,11 @@ function faseBruta(i) {
   let tipo = r() < .30 ? base.obj.tipo : menu[Math.floor(r() * menu.length)];
   /* duas fases seguidas com o mesmo objetivo cansa: sorteia de novo */
   for (let t = 0; t < 4 && tipo === antes; t++) tipo = menu[Math.floor(r() * menu.length)];
+  /* a esponja entra por sorteio próprio: as outras fases continuam exatamente como eram */
+  if (i >= 40 && antes !== 'esponja') {
+    let h = Math.imul(i + 12345, 2654435761) >>> 0; h ^= h >>> 15; h = Math.imul(h, 2246822519) >>> 0; h ^= h >>> 13;
+    if ((h >>> 0) % 100 < 11) tipo = 'esponja';
+  }
   let mov, obj;
   if (tipo === 'pontos') {
     mov = Math.max(18, Math.round(base.mov - dif * 2 + r() * 3));
@@ -342,6 +350,11 @@ function faseBruta(i) {
     const n = 4 + Math.floor(r() * 3 + dif * 3);
     mov = Math.max(20, Math.round(15 + n * 3 - dif * 2));
     obj = { tipo:'perolas', n: n };
+  } else if (tipo === 'esponja') {
+    /* esponja do fundo: peça sólida que se espalha quando você não tira nenhuma colada nela */
+    const n = 6 + Math.floor(r() * 3 + dif * 3);          /* cota: quantas esponjas secar */
+    mov = Math.max(22, Math.round(14 + n * 1.9 - dif * 2));
+    obj = { tipo:'esponja', n: n, ini: 3 };
   } else if (tipo === 'lixo') {
     /* lixo no fundo: não combina, sai com estouro colado ou especial */
     const n = 5 + Math.floor(r() * 3 + dif * 4), dura = dif > .7 && r() < .5 ? 2 : 1;
@@ -393,7 +406,7 @@ function faseBruta(i) {
      ninho a mais pesa, e a profundidade soma um pouco.               */
   const tpc = obj.corrente ? 'corrente' : obj.mancha ? 'mancha' : obj.tipo;
   const PESO = { pontos: 0, coletar: 0, papel: 1, bau: 1, especiais: 1, perolas: 1, coral: 1, lixo: 1.5,
-                 presos: 2, bolhas: 2, corrente: 2, mancha: 3, ninho: 3 };
+                 presos: 2, bolhas: 2, corrente: 2, mancha: 3, ninho: 3, esponja: 1.8 };
   let peso = (PESO[tpc] || 0) + dif * 1.6;
   if (tpc === 'ninho') peso += (obj.ninhos.length - 1) * 1.8;
   if (obj.tipo === 'lixo' && obj.dura > 1) peso += 1.2;
@@ -433,6 +446,12 @@ function fase(i) {
     f.enigmaFeito = true; f.enigma = true;
     f.mov = Math.max(6, Math.round(f.mov * .38));
     f.marcas = f.marcas.map(m => Math.round(m * .5 / 100) * 100);
+  }
+  /* fase de relógio: dá pra fazer bem mais jogadas que o normal, então a meta sobe junto */
+  if (i >= BASE.length && !f.tempoFeito && tempoDe(f, i) > 0) {
+    f.tempoFeito = true;
+    if (f.obj.tipo === 'pontos') f.marcas = f.marcas.map(m => Math.round(m * 1.3 / 100) * 100);
+    else f.obj.itens = f.obj.itens.map(([c, n]) => [c, Math.round(n * 1.3)]);
   }
   return f;
 }
