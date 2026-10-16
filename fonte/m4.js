@@ -20,6 +20,8 @@ function gastaJogada() {
 function preparaEspeciaisDaFase() {
   const f = faseAtual();
   QUADRADO_ATIVO = !!f.quadrado && !J.desafio;   /* toda fase passa por aqui ao começar */
+  J.ressaca = (!J.desafio && f.ressaca) || 0; J.ressacaIn = J.ressaca; J.ressacaDir = (J.fase % 2) ? 1 : -1; J.ressacaUltima = -1; J.ressacaLinha = -1;
+  if (J.ressaca) escolheLinhaRessaca();
   J.cond = J.desafio ? null : condicaoDa(J.fase); J.corVez = null; J.moedasFundo = null; J.moedasPegas = 0;
   if (J.cond === 'brinde') {
     let n = 0;
@@ -186,9 +188,12 @@ function pintaExtra() {
   if (!o) return;
   const vc = o.querySelector('.cond-linha'); if (vc) vc.remove();
   const cdTag = J.cond ? CONDICOES[J.cond] : (J.regra === 'janelas' ? { ic: '🏙️', nome: 'Cor da vez' } : null);
-  if (cdTag) o.insertAdjacentHTML('beforeend', '<div class="cond-linha"><div class="cond-tag">' + cdTag.ic + ' ' + cdTag.nome +
+  const tags = [];
+  if (cdTag) tags.push('<div class="cond-tag">' + cdTag.ic + ' ' + cdTag.nome +
     (J.corVez != null ? ' <svg class="ic" viewBox="0 0 100 100"><use href="#s' + J.corVez + '"/></svg>' : '') +
-    (J.moedasFundo ? ' · ' + J.moedasPegas + '/4' : '') + '</div></div>');
+    (J.moedasFundo ? ' · ' + J.moedasPegas + '/4' : '') + '</div>');
+  if (J.ressaca) tags.push('<div class="cond-tag ressaca-tag' + (J.ressacaIn <= 1 ? ' ja' : '') + '">🌊 Ressaca em ' + J.ressacaIn + '</div>');
+  if (tags.length) o.insertAdjacentHTML('beforeend', '<div class="cond-linha">' + tags.join('') + '</div>');
   const velho = o.querySelector('.extra-obj'); if (velho) velho.remove();
   if (!f.obj.extra) return;
   const n = faltaExtra();
@@ -958,15 +963,14 @@ async function recebeVidas() {
    com o botão de mandar ali mesmo, e o ícone do app ganha o número */
 /* o que mudou nesta versão: aparece uma vez para cada pessoa */
 const NOVIDADES = [
-  ['🧽', 'Esponja do fundo', 'Uma esponja sólida que cresce: se você não estoura uma combinação colada nela, ela se espalha. Seque a quantidade pedida antes das jogadas acabarem.'],
-  ['⏱', 'Contra a Maré mais justo', 'O relógio agora corre durante as animações, e o tempo ficou mais curto. Tocar rápido sem pensar não rende mais jogadas de graça.'],
-  ['🗺️', 'Chegada nas regiões', 'Ao entrar numa região nova, o cenário aparece inteiro no aviso, com a regra dela.']
+  ['🌊', 'Ressaca', 'Em algumas fases, a cada poucas jogadas uma fileira inteira desliza uma casa. A fileira marcada avisa qual é a próxima, e o painel conta quanto falta. Dá pra planejar, e a maré às vezes junta peças por você.'],
+  ['🔧', 'Brecha fechada', 'Disparar um especial tocando nele agora também conta pra ninhos, regras de região e esponja. Antes era jogada de graça.']
 ];
 /* A lista de novidades tem um nome de lote. O cartão só abre sozinho
    quando o lote muda, e não a cada versão: correção de bug não é
    novidade. Quem viu o cartão antigo (marcado pela versão) já viu
    este primeiro lote. Pra publicar novidade nova: troque o lote e a lista. */
-const NOVIDADES_LOTE = 'lote-8', NOVIDADES_DATA = '16 de outubro';
+const NOVIDADES_LOTE = 'lote-9', NOVIDADES_DATA = '16 de outubro';
 function viuEsteLote() {
   const v = prog.viuNovidades || '';
   return v === NOVIDADES_LOTE || (NOVIDADES_LOTE === 'lote-1' && /^20\d\d\./.test(v));
@@ -2180,7 +2184,7 @@ function retomaPartida(d) {
         presosFeitos: d.pr || 0, bolhasFeitas: d.bo || 0, bolhasFugiram: d.bfg || 0,
         ninhos: d.nin || null, ninhosFeitos: d.ninf || 0,
         perolas: d.per || null, perolasFeitas: d.pef || 0, coral: d.cor || null, coralFeito: d.cof || 0, lixoFeito: d.lxf || 0,
-        tempoRestante: d.tmp != null ? d.tmp : null, regra: d.rg || null, evento: d.ev || null, jogadasRegiao: d.jr || 0, cond: d.cnd || null, corVez: d.cvz != null ? d.cvz : null, moedasFundo: d.mfd || null, moedasPegas: d.mpg || 0,
+        tempoRestante: d.tmp != null ? d.tmp : null, regra: d.rg || null, evento: d.ev || null, jogadasRegiao: d.jr || 0, ressaca: d.rs || 0, ressacaIn: d.ri != null ? d.ri : null, ressacaLinha: d.rl != null ? d.rl : -1, ressacaDir: d.rd || 1, ressacaUltima: -1, cond: d.cnd || null, corVez: d.cvz != null ? d.cvz : null, moedasFundo: d.mfd || null, moedasPegas: d.mpg || 0,
         dano: d.dn || 0, contaMestre: d.cm || 0, contaBolha: d.cb || 0, bauParado: d.bpa || 0 };
   TOPO = (d.topo || f.forma || Array(W).fill(0)).slice();
   QUADRADO_ATIVO = !!f.quadrado;
@@ -2193,6 +2197,7 @@ function retomaPartida(d) {
     if (J.tempoRestante == null) J.tempoRestante = tempoDa(d.f);
     setTimeout(() => { iniciaRelogio(); pintaRelogio(); }, 400);
   } else if (J.mov > fase(d.f).mov + 20) J.mov = fase(d.f).mov;   /* trava de segurança: nunca mais jogadas que o possível */
+  if (J.ressaca) setTimeout(() => { if (!linhaDaRessacaOk(J.ressacaLinha)) escolheLinhaRessaca(); else pintaRessaca(); atualizaHud(); }, 450);
   papel = d.papel;
   uid = 0;
   grid = d.g.map(l => l.map(cod => {
@@ -2330,6 +2335,7 @@ function mostraPreFase() {
     '<div class="pre-linhas"><div class="pre-obj"><small>objetivo</small><b>' + resumoObjetivo(f) + '</b>' + iconesObjetivo(f) + '</div>' +
     '<div><small>' + (tempoDa(J.fase) ? 'segundos' : 'jogadas') + '</small><b class="pre-grande">' + (tempoDa(J.fase) || f.mov) + '</b></div></div>' +
     (['D', 'L'].indexOf(k) >= 0 && (prog.estrelas[J.fase] || 0) < 3 && f.obj.tipo !== 'chefe' ? '<p class="pre-fig">📖 3 estrelas aqui podem render uma figurinha pro álbum (' + (k === 'L' ? '60%' : '30%') + ' de chance)</p>' : '') +
+    (f.ressaca ? '<p class="pre-ressaca">🌊 <b>Ressaca</b> · a cada ' + f.ressaca + ' jogadas uma fileira desliza uma casa. A fileira marcada mostra qual é a próxima.</p>' : '') +
     (f.enigma ? '<p class="pre-enigma">🧩 <b>Enigma</b> · só ' + f.mov + ' jogadas, com especiais já prontos no tabuleiro. Pense antes de mexer.</p>' : '') +
     (regraDa(J.fase) && regraDa(J.fase).id !== 'calma' ? '<p class="pre-regiao">' + regraDa(J.fase).ic + ' <b>' + regraDa(J.fase).nome + '</b> · ' + regraDa(J.fase).texto + '</p>' : '') +
     (eventoHoje() ? '<p class="pre-evento">' + EVENTOS[eventoHoje()].ic + ' <b>' + EVENTOS[eventoHoje()].nome + '</b> · ' + EVENTOS[eventoHoje()].texto + '</p>' : '') +
@@ -2386,6 +2392,7 @@ function vigiaTabuleiro(fase, tentativa) {
 }
 function comecaFase() {
   const f = faseAtual();
+  if (J.ressaca) { if (!linhaDaRessacaOk(J.ressacaLinha)) escolheLinhaRessaca(); else pintaRessaca(); }   /* a fileira marcada já aparece desde o primeiro toque */
   if (!J.desafio) vigiaTabuleiro(J.fase, 0);
   J.tempoModo = !J.desafio && tempoDa(J.fase) > 0;
   if (J.tempoModo) { if (J.tempoRestante == null) J.tempoRestante = tempoDa(J.fase); J.mov = capTempo(J.fase); J.tempoEsgotou = false; iniciaRelogio(); setTimeout(pintaRelogio, 30); }
@@ -2414,6 +2421,8 @@ function comecaFase() {
     'Garrafas, latas e sacolas não combinam com nada. Estoure peças coladas nelas para tirar do mar; especial que acerta em cheio também leva. Os mais sujos aguentam dois estouros.'); }
   if (!prog.vistos.esponja && f.obj.tipo === 'esponja') { prog.vistos.esponja = true; salvaProg(); return mostraAviso('Esponja do fundo', '#i-esponja',
     'Uma esponja sólida cresce no tabuleiro: ela não combina e não troca de lugar. Toda jogada em que você não tira nenhuma, ela se espalha para uma peça colada nela. Estoure uma combinação encostada nela, ou use um especial, pra secar. Seque a quantidade pedida antes das jogadas acabarem. Se as esponjas do tabuleiro acabarem, brota mais.'); }
+  if (!prog.vistos.ressaca && f.ressaca) { prog.vistos.ressaca = true; salvaProg(); return mostraAviso('Ressaca', '#i-ressaca',
+    'Nesta fase, a cada ' + f.ressaca + ' jogadas a maré puxa uma fileira inteira uma casa pro lado, e a peça da ponta volta pelo outro lado. A fileira marcada mostra qual é a próxima, e o painel conta quanto falta. Dá pra usar a ressaca a seu favor: ela pode juntar peças que você não conseguia juntar.'); }
   const rg = regraDa(J.fase);
   if (rg && rg.id !== 'calma' && !prog.vistos['regiao-' + rg.id]) { prog.vistos['regiao-' + rg.id] = true; salvaProg();
     return cartaoRegiao(J.fase, rg); }

@@ -246,7 +246,7 @@ body:not(.em-jogo) #cena{display:none}
 .hud-linha{display:flex;align-items:center}
 .hud-linha > * + *{margin-left:10px}
 .objetivo{flex:1;min-width:0;display:flex;align-items:center;gap:10px;min-height:50px;flex-wrap:wrap;row-gap:4px}
-.cond-linha{flex-basis:100%;display:flex}
+.cond-linha{flex-basis:100%;display:flex;flex-wrap:wrap;gap:6px}
 .objetivo .rotulo{font-size:12px;font-weight:800;color:rgba(243,251,255,.66);line-height:1.2}
 .objetivo .rotulo.feito{color:var(--biolum)}
 .objetivo .valor{font-family:var(--display);font-weight:800;font-size:18px;line-height:1.15}
@@ -792,6 +792,18 @@ body.em-segundo-plano *,body.em-segundo-plano *::before,body.em-segundo-plano *:
 #faixa-evento b{font-family:var(--display);overflow:hidden;text-overflow:ellipsis}
 #faixa-evento span{font-size:11px;font-weight:800;padding:1px 7px;border-radius:999px;background:rgba(255,255,255,.25)}
 
+/* ── ressaca: a fileira marcada, com a correnteza correndo no sentido em que vai deslizar ── */
+.casa.ressaca::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+  background:linear-gradient(90deg,rgba(90,200,255,0),rgba(90,200,255,.3),rgba(90,200,255,0)),repeating-linear-gradient(90deg,transparent 0 10px,rgba(255,255,255,.24) 10px 14px);
+  background-size:100% 100%,28px 100%;box-shadow:inset 0 0 0 2px rgba(120,220,255,.6);animation:ressaca-corre 1.1s linear infinite}
+.casa.ressaca-e::before{animation-direction:reverse}
+.casa.ressaca-ja::before{box-shadow:inset 0 0 0 2.5px #FFE14D;background-color:rgba(255,225,77,.14)}
+@keyframes ressaca-corre{to{background-position:0 0,28px 0}}
+body.leve .casa.ressaca::before{animation:none}
+.cond-tag.ressaca-tag{background:rgba(90,200,255,.22);color:#CFF3FF}
+.cond-tag.ressaca-tag.ja{background:rgba(255,225,77,.26);color:#FFF1A6;animation:pisca-alvo .8s ease-in-out infinite}
+.cartao p.pre-ressaca{margin-top:8px;padding:8px 10px;border-radius:12px;background:rgba(90,200,255,.16);font-size:12.5px;text-align:left}
+
 /* ── esponja do fundo e chegada na região ────────────────────── */
 .peca.esponja .corpo{animation:esponja-respira 2.6s ease-in-out infinite}
 @keyframes esponja-respira{0%,100%{transform:scale(1) rotate(-1deg)}50%{transform:scale(1.06) rotate(1.5deg)}}
@@ -1309,6 +1321,11 @@ body.leve .peca.esp-peixe .capa{animation:peixe-nada 1.4s ease-in-out infinite !
     <path d="M50 60V38M32 52L24 34M68 44L80 30" fill="none" stroke="#FFB0C9" stroke-width="3.5" stroke-linecap="round"/>
     <ellipse cx="50" cy="90" rx="22" ry="5" fill="#C94A76" opacity=".6"/>
   </symbol>
+  <symbol id="i-ressaca" viewBox="0 0 100 100">
+    <path d="M8 36q10-14 21 0t21 0 21 0 21 0" fill="none" stroke="#6FD3FF" stroke-width="7" stroke-linecap="round"/>
+    <path d="M8 56q10-14 21 0t21 0 21 0 21 0" fill="none" stroke="#9BE6FF" stroke-width="7" stroke-linecap="round" opacity=".8"/>
+    <path d="M10 80h66" stroke="#FFE14D" stroke-width="7" stroke-linecap="round"/><path d="M66 66l18 14-18 14" fill="none" stroke="#FFE14D" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+  </symbol>
   <symbol id="i-esponja" viewBox="0 0 100 100">
     <g fill="#E6A234"><ellipse cx="50" cy="56" rx="36" ry="28"/><circle cx="30" cy="40" r="17"/><circle cx="66" cy="36" r="16"/><circle cx="76" cy="64" r="14"/><circle cx="26" cy="68" r="13"/></g>
     <path d="M24 44c6-12 22-18 34-12" fill="none" stroke="#FFD887" stroke-width="5" stroke-linecap="round" opacity=".85"/>
@@ -1508,7 +1525,7 @@ body.leve .peca.esp-peixe .capa{animation:peixe-nada 1.4s ease-in-out infinite !
    MERGULHO · combinar 3 da beira da praia até 4.000 metros
    ═══════════════════════════════════════════════════════════════ */
 
-const VERSAO_JOGO = '2026.12.12';
+const VERSAO_JOGO = '2026.12.13';
 const W = 7, H = 8, TIPOS = 6;
 const NADA = 0, LH = 1, LV = 2, BOMBA = 3, ARCO = 4, ONDA = 5, ONDAV = 6, CARDUME = 7, PEIXE = 8;
 /* fases com o quadrado ligado: 4 peças iguais em 2x2 viram um peixe-guia */
@@ -1958,6 +1975,16 @@ function fase(i) {
     f.tempoFeito = true;
     if (f.obj.tipo === 'pontos') f.marcas = f.marcas.map(m => Math.round(m * 1.3 / 100) * 100);
     else f.obj.itens = f.obj.itens.map(([c, n]) => [c, Math.round(n * 1.3)]);
+  }
+  /* ressaca: em algumas fases, a cada 4 ou 5 jogadas uma fileira inteira desliza uma casa.
+     Só onde as peças ficam soltas (nada preso, sólido ou de chão que se mexa). */
+  if (i >= BASE.length && f.ressaca === undefined) {
+    f.ressaca = 0;
+    if (i >= 48 && (i + 1) % 100 !== 0 && !f.enigma && tempoDe(f, i) === 0 && !f.obj.corrente && !f.obj.mancha && !f.obj.cresce &&
+        ['pontos', 'coletar', 'especiais', 'papel'].indexOf(f.obj.tipo) >= 0) {
+      let h = Math.imul(i + 777, 2654435761) >>> 0; h ^= h >>> 15; h = Math.imul(h, 2246822519) >>> 0; h ^= h >>> 13; h >>>= 0;
+      if (h % 100 < 28) f.ressaca = 4 + (h >>> 8) % 2;
+    }
   }
   return f;
 }
@@ -4293,6 +4320,7 @@ async function tentaTrocaInterna(a, b) {
   passoEsponja();
   if (J.mudouCasas) pintaCasasEspeciais();
   await passoMestre();
+  await passoRessaca();
   salvaPartida();
   J.ocupado = false;
   await confere();
@@ -4314,7 +4342,11 @@ async function disparaEspecial(cel) {
   await passoBolha();
   garanteBolhas();
   garantePresos();
+  passoNinho();                     /* disparar especial também é jogada: antes escapava de ninho, região e esponja */
+  passoRegiao();
+  passoEsponja();
   await passoMestre();
+  await passoRessaca();
   salvaPartida();
   J.ocupado = false;
   await confere();
@@ -4333,7 +4365,7 @@ function salvaPartida() {
       pr: J.presosFeitos || 0, bo: J.bolhasFeitas || 0, bfg: J.bolhasFugiram || 0,
       nin: J.ninhos || null, ninf: J.ninhosFeitos || 0,
       per: J.perolas || null, pef: J.perolasFeitas || 0, cor: J.coral || null, cof: J.coralFeito || 0, lxf: J.lixoFeito || 0,
-      ot: faseAtual().obj.tipo, rg: J.regra || null, ev: J.evento || null, jr: J.jogadasRegiao || 0, tmp: J.tempoModo ? J.tempoRestante : null, cnd: J.cond || null, cvz: J.corVez, mfd: J.moedasFundo || null, mpg: J.moedasPegas || 0,
+      ot: faseAtual().obj.tipo, rg: J.regra || null, ev: J.evento || null, jr: J.jogadasRegiao || 0, rs: J.ressaca || 0, ri: J.ressacaIn, rl: J.ressacaLinha, rd: J.ressacaDir, tmp: J.tempoModo ? J.tempoRestante : null, cnd: J.cond || null, cvz: J.corVez, mfd: J.moedasFundo || null, mpg: J.moedasPegas || 0,
       dn: J.dano || 0, cm: J.contaMestre || 0, cb: J.contaBolha || 0, bpa: J.bauParado || 0,
       g: grid.map(l => l.map(p => p ? (p.bau ? 'b' : p.t + '.' + p.sp + '.' + (p.gaiola || 0) + '.' + (p.bolha ? 1 : 0) + '.' + (p.lixo || 0) + '.' + (p.esponja ? 1 : 0)) : ''))
     }));
@@ -4529,6 +4561,82 @@ function pintaAvisoCresce() {
   if (J.alvoCresce) celulasBox.children[J.alvoCresce[0] * W + J.alvoCresce[1]].classList.add('vai-crescer');
 }
 /* regra da região que age durante a fase: o gelo congela, a cinza vira entulho */
+/* ═══ RESSACA ═════════════════════════════════════════════════════
+   Em algumas fases, a cada poucas jogadas uma fileira inteira desliza
+   uma casa, e a peça da ponta volta pelo outro lado. A fileira marcada
+   avisa qual é a próxima e o painel conta quanto falta. Vão junto os
+   especiais; o que é do chão (cobertura, coral, ostra, moeda) fica.
+   Só desliza fileira inteira e sem peça presa ou sólida: dá pra planejar.
+   Qualquer erro aqui desliga a ressaca da fase, nunca trava a partida. */
+function linhaDaRessacaOk(r) {
+  if (r == null || r < 0) return false;
+  for (let c = 0; c < W; c++) {
+    if (!temCasa(r, c)) return false;
+    const p = grid[r][c];
+    if (!p || p.bau || p.gaiola || p.lixo || p.esponja || p.bolha) return false;
+  }
+  return true;
+}
+function pintaRessaca() {
+  if (typeof celulasBox === 'undefined' || !celulasBox) return;
+  celulasBox.querySelectorAll('.casa.ressaca').forEach(d => d.classList.remove('ressaca', 'ressaca-e', 'ressaca-ja'));
+  if (!J || !J.ressaca || J.fim || J.ressacaLinha == null || J.ressacaLinha < 0) return;
+  for (let c = 0; c < W; c++) {
+    const d = celulasBox.children[J.ressacaLinha * W + c];
+    if (!d) continue;
+    d.classList.add('ressaca');
+    if (J.ressacaDir < 0) d.classList.add('ressaca-e');
+    if (J.ressacaIn <= 1) d.classList.add('ressaca-ja');
+  }
+}
+function escolheLinhaRessaca() {
+  const ok = [];
+  for (let r = 0; r < H; r++) if (linhaDaRessacaOk(r) && r !== J.ressacaUltima) ok.push(r);
+  if (!ok.length) for (let r = 0; r < H; r++) if (linhaDaRessacaOk(r)) ok.push(r);
+  J.ressacaLinha = ok.length ? ok[sorteia(ok.length)] : -1;
+  pintaRessaca();
+}
+async function deslizaFileira(r, dir) {
+  const ant = []; for (let c = 0; c < W; c++) ant.push(grid[r][c]);
+  const novo = new Array(W);
+  for (let c = 0; c < W; c++) novo[(c + dir + W) % W] = ant[c];
+  for (let c = 0; c < W; c++) {
+    const p = novo[c]; grid[r][c] = p;
+    const el = els.get(p.id); if (!el) continue;
+    if (Math.abs(ant.indexOf(p) - c) > 1) {            /* a que deu a volta reaparece do outro lado */
+      posiciona(el, r, c, true); el.classList.remove('nasce'); void el.offsetWidth; el.classList.add('nasce');
+    } else posiciona(el, r, c);
+  }
+  Som.liga(); Som.troca();
+  await espera(260);
+}
+async function passoRessaca() {
+  if (!J || !J.ressaca || J.fim || J.desafio) return;
+  try {
+    J.ressacaIn = (J.ressacaIn == null ? J.ressaca : J.ressacaIn) - 1;
+    if (J.ressacaIn > 0) {
+      if (!linhaDaRessacaOk(J.ressacaLinha)) escolheLinhaRessaca(); else pintaRessaca();
+      atualizaHud(); return;
+    }
+    J.ressacaIn = J.ressaca;
+    /* última jogada, ou objetivo já batido: a maré não mexe mais */
+    if (J.mov <= 0 || (faseAtual().obj.tipo !== 'pontos' && objetivoFeito())) { pintaRessaca(); atualizaHud(); return; }
+    if (!linhaDaRessacaOk(J.ressacaLinha)) escolheLinhaRessaca();   /* apareceu peça presa na fileira marcada: troca de fileira */
+    if (J.ressacaLinha < 0) { atualizaHud(); return; }
+    apagaDica(); limpaMarca();
+    const r = J.ressacaLinha; J.ressacaUltima = r;
+    faixaTexto('🌊 Ressaca! A fileira deslizou', 1500);
+    await deslizaFileira(r, J.ressacaDir);
+    J.cascata = 1;
+    await resolver(null, null);                          /* o que a maré juntar, estoura */
+    escolheLinhaRessaca(); atualizaHud();
+  } catch (e) {
+    console.error('erro na ressaca:', e);
+    J.ressaca = 0; pintaRessaca();
+    try { reparaTabuleiro(); } catch (e2) {}
+  }
+}
+
 /* ═══ ESPONJA DO FUNDO ═══════════════════════════════════════════
    Peça sólida: não combina e não troca de lugar. Numa jogada em que
    você não tirou nenhuma esponja, ela se espalha para uma peça
@@ -4980,6 +5088,8 @@ function gastaJogada() {
 function preparaEspeciaisDaFase() {
   const f = faseAtual();
   QUADRADO_ATIVO = !!f.quadrado && !J.desafio;   /* toda fase passa por aqui ao começar */
+  J.ressaca = (!J.desafio && f.ressaca) || 0; J.ressacaIn = J.ressaca; J.ressacaDir = (J.fase % 2) ? 1 : -1; J.ressacaUltima = -1; J.ressacaLinha = -1;
+  if (J.ressaca) escolheLinhaRessaca();
   J.cond = J.desafio ? null : condicaoDa(J.fase); J.corVez = null; J.moedasFundo = null; J.moedasPegas = 0;
   if (J.cond === 'brinde') {
     let n = 0;
@@ -5146,9 +5256,12 @@ function pintaExtra() {
   if (!o) return;
   const vc = o.querySelector('.cond-linha'); if (vc) vc.remove();
   const cdTag = J.cond ? CONDICOES[J.cond] : (J.regra === 'janelas' ? { ic: '🏙️', nome: 'Cor da vez' } : null);
-  if (cdTag) o.insertAdjacentHTML('beforeend', '<div class="cond-linha"><div class="cond-tag">' + cdTag.ic + ' ' + cdTag.nome +
+  const tags = [];
+  if (cdTag) tags.push('<div class="cond-tag">' + cdTag.ic + ' ' + cdTag.nome +
     (J.corVez != null ? ' <svg class="ic" viewBox="0 0 100 100"><use href="#s' + J.corVez + '"/></svg>' : '') +
-    (J.moedasFundo ? ' · ' + J.moedasPegas + '/4' : '') + '</div></div>');
+    (J.moedasFundo ? ' · ' + J.moedasPegas + '/4' : '') + '</div>');
+  if (J.ressaca) tags.push('<div class="cond-tag ressaca-tag' + (J.ressacaIn <= 1 ? ' ja' : '') + '">🌊 Ressaca em ' + J.ressacaIn + '</div>');
+  if (tags.length) o.insertAdjacentHTML('beforeend', '<div class="cond-linha">' + tags.join('') + '</div>');
   const velho = o.querySelector('.extra-obj'); if (velho) velho.remove();
   if (!f.obj.extra) return;
   const n = faltaExtra();
@@ -5918,15 +6031,14 @@ async function recebeVidas() {
    com o botão de mandar ali mesmo, e o ícone do app ganha o número */
 /* o que mudou nesta versão: aparece uma vez para cada pessoa */
 const NOVIDADES = [
-  ['🧽', 'Esponja do fundo', 'Uma esponja sólida que cresce: se você não estoura uma combinação colada nela, ela se espalha. Seque a quantidade pedida antes das jogadas acabarem.'],
-  ['⏱', 'Contra a Maré mais justo', 'O relógio agora corre durante as animações, e o tempo ficou mais curto. Tocar rápido sem pensar não rende mais jogadas de graça.'],
-  ['🗺️', 'Chegada nas regiões', 'Ao entrar numa região nova, o cenário aparece inteiro no aviso, com a regra dela.']
+  ['🌊', 'Ressaca', 'Em algumas fases, a cada poucas jogadas uma fileira inteira desliza uma casa. A fileira marcada avisa qual é a próxima, e o painel conta quanto falta. Dá pra planejar, e a maré às vezes junta peças por você.'],
+  ['🔧', 'Brecha fechada', 'Disparar um especial tocando nele agora também conta pra ninhos, regras de região e esponja. Antes era jogada de graça.']
 ];
 /* A lista de novidades tem um nome de lote. O cartão só abre sozinho
    quando o lote muda, e não a cada versão: correção de bug não é
    novidade. Quem viu o cartão antigo (marcado pela versão) já viu
    este primeiro lote. Pra publicar novidade nova: troque o lote e a lista. */
-const NOVIDADES_LOTE = 'lote-8', NOVIDADES_DATA = '16 de outubro';
+const NOVIDADES_LOTE = 'lote-9', NOVIDADES_DATA = '16 de outubro';
 function viuEsteLote() {
   const v = prog.viuNovidades || '';
   return v === NOVIDADES_LOTE || (NOVIDADES_LOTE === 'lote-1' && /^20\d\d\./.test(v));
@@ -7140,7 +7252,7 @@ function retomaPartida(d) {
         presosFeitos: d.pr || 0, bolhasFeitas: d.bo || 0, bolhasFugiram: d.bfg || 0,
         ninhos: d.nin || null, ninhosFeitos: d.ninf || 0,
         perolas: d.per || null, perolasFeitas: d.pef || 0, coral: d.cor || null, coralFeito: d.cof || 0, lixoFeito: d.lxf || 0,
-        tempoRestante: d.tmp != null ? d.tmp : null, regra: d.rg || null, evento: d.ev || null, jogadasRegiao: d.jr || 0, cond: d.cnd || null, corVez: d.cvz != null ? d.cvz : null, moedasFundo: d.mfd || null, moedasPegas: d.mpg || 0,
+        tempoRestante: d.tmp != null ? d.tmp : null, regra: d.rg || null, evento: d.ev || null, jogadasRegiao: d.jr || 0, ressaca: d.rs || 0, ressacaIn: d.ri != null ? d.ri : null, ressacaLinha: d.rl != null ? d.rl : -1, ressacaDir: d.rd || 1, ressacaUltima: -1, cond: d.cnd || null, corVez: d.cvz != null ? d.cvz : null, moedasFundo: d.mfd || null, moedasPegas: d.mpg || 0,
         dano: d.dn || 0, contaMestre: d.cm || 0, contaBolha: d.cb || 0, bauParado: d.bpa || 0 };
   TOPO = (d.topo || f.forma || Array(W).fill(0)).slice();
   QUADRADO_ATIVO = !!f.quadrado;
@@ -7153,6 +7265,7 @@ function retomaPartida(d) {
     if (J.tempoRestante == null) J.tempoRestante = tempoDa(d.f);
     setTimeout(() => { iniciaRelogio(); pintaRelogio(); }, 400);
   } else if (J.mov > fase(d.f).mov + 20) J.mov = fase(d.f).mov;   /* trava de segurança: nunca mais jogadas que o possível */
+  if (J.ressaca) setTimeout(() => { if (!linhaDaRessacaOk(J.ressacaLinha)) escolheLinhaRessaca(); else pintaRessaca(); atualizaHud(); }, 450);
   papel = d.papel;
   uid = 0;
   grid = d.g.map(l => l.map(cod => {
@@ -7290,6 +7403,7 @@ function mostraPreFase() {
     '<div class="pre-linhas"><div class="pre-obj"><small>objetivo</small><b>' + resumoObjetivo(f) + '</b>' + iconesObjetivo(f) + '</div>' +
     '<div><small>' + (tempoDa(J.fase) ? 'segundos' : 'jogadas') + '</small><b class="pre-grande">' + (tempoDa(J.fase) || f.mov) + '</b></div></div>' +
     (['D', 'L'].indexOf(k) >= 0 && (prog.estrelas[J.fase] || 0) < 3 && f.obj.tipo !== 'chefe' ? '<p class="pre-fig">📖 3 estrelas aqui podem render uma figurinha pro álbum (' + (k === 'L' ? '60%' : '30%') + ' de chance)</p>' : '') +
+    (f.ressaca ? '<p class="pre-ressaca">🌊 <b>Ressaca</b> · a cada ' + f.ressaca + ' jogadas uma fileira desliza uma casa. A fileira marcada mostra qual é a próxima.</p>' : '') +
     (f.enigma ? '<p class="pre-enigma">🧩 <b>Enigma</b> · só ' + f.mov + ' jogadas, com especiais já prontos no tabuleiro. Pense antes de mexer.</p>' : '') +
     (regraDa(J.fase) && regraDa(J.fase).id !== 'calma' ? '<p class="pre-regiao">' + regraDa(J.fase).ic + ' <b>' + regraDa(J.fase).nome + '</b> · ' + regraDa(J.fase).texto + '</p>' : '') +
     (eventoHoje() ? '<p class="pre-evento">' + EVENTOS[eventoHoje()].ic + ' <b>' + EVENTOS[eventoHoje()].nome + '</b> · ' + EVENTOS[eventoHoje()].texto + '</p>' : '') +
@@ -7346,6 +7460,7 @@ function vigiaTabuleiro(fase, tentativa) {
 }
 function comecaFase() {
   const f = faseAtual();
+  if (J.ressaca) { if (!linhaDaRessacaOk(J.ressacaLinha)) escolheLinhaRessaca(); else pintaRessaca(); }   /* a fileira marcada já aparece desde o primeiro toque */
   if (!J.desafio) vigiaTabuleiro(J.fase, 0);
   J.tempoModo = !J.desafio && tempoDa(J.fase) > 0;
   if (J.tempoModo) { if (J.tempoRestante == null) J.tempoRestante = tempoDa(J.fase); J.mov = capTempo(J.fase); J.tempoEsgotou = false; iniciaRelogio(); setTimeout(pintaRelogio, 30); }
@@ -7374,6 +7489,8 @@ function comecaFase() {
     'Garrafas, latas e sacolas não combinam com nada. Estoure peças coladas nelas para tirar do mar; especial que acerta em cheio também leva. Os mais sujos aguentam dois estouros.'); }
   if (!prog.vistos.esponja && f.obj.tipo === 'esponja') { prog.vistos.esponja = true; salvaProg(); return mostraAviso('Esponja do fundo', '#i-esponja',
     'Uma esponja sólida cresce no tabuleiro: ela não combina e não troca de lugar. Toda jogada em que você não tira nenhuma, ela se espalha para uma peça colada nela. Estoure uma combinação encostada nela, ou use um especial, pra secar. Seque a quantidade pedida antes das jogadas acabarem. Se as esponjas do tabuleiro acabarem, brota mais.'); }
+  if (!prog.vistos.ressaca && f.ressaca) { prog.vistos.ressaca = true; salvaProg(); return mostraAviso('Ressaca', '#i-ressaca',
+    'Nesta fase, a cada ' + f.ressaca + ' jogadas a maré puxa uma fileira inteira uma casa pro lado, e a peça da ponta volta pelo outro lado. A fileira marcada mostra qual é a próxima, e o painel conta quanto falta. Dá pra usar a ressaca a seu favor: ela pode juntar peças que você não conseguia juntar.'); }
   const rg = regraDa(J.fase);
   if (rg && rg.id !== 'calma' && !prog.vistos['regiao-' + rg.id]) { prog.vistos['regiao-' + rg.id] = true; salvaProg();
     return cartaoRegiao(J.fase, rg); }

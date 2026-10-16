@@ -707,6 +707,7 @@ async function tentaTrocaInterna(a, b) {
   passoEsponja();
   if (J.mudouCasas) pintaCasasEspeciais();
   await passoMestre();
+  await passoRessaca();
   salvaPartida();
   J.ocupado = false;
   await confere();
@@ -728,7 +729,11 @@ async function disparaEspecial(cel) {
   await passoBolha();
   garanteBolhas();
   garantePresos();
+  passoNinho();                     /* disparar especial também é jogada: antes escapava de ninho, região e esponja */
+  passoRegiao();
+  passoEsponja();
   await passoMestre();
+  await passoRessaca();
   salvaPartida();
   J.ocupado = false;
   await confere();
@@ -747,7 +752,7 @@ function salvaPartida() {
       pr: J.presosFeitos || 0, bo: J.bolhasFeitas || 0, bfg: J.bolhasFugiram || 0,
       nin: J.ninhos || null, ninf: J.ninhosFeitos || 0,
       per: J.perolas || null, pef: J.perolasFeitas || 0, cor: J.coral || null, cof: J.coralFeito || 0, lxf: J.lixoFeito || 0,
-      ot: faseAtual().obj.tipo, rg: J.regra || null, ev: J.evento || null, jr: J.jogadasRegiao || 0, tmp: J.tempoModo ? J.tempoRestante : null, cnd: J.cond || null, cvz: J.corVez, mfd: J.moedasFundo || null, mpg: J.moedasPegas || 0,
+      ot: faseAtual().obj.tipo, rg: J.regra || null, ev: J.evento || null, jr: J.jogadasRegiao || 0, rs: J.ressaca || 0, ri: J.ressacaIn, rl: J.ressacaLinha, rd: J.ressacaDir, tmp: J.tempoModo ? J.tempoRestante : null, cnd: J.cond || null, cvz: J.corVez, mfd: J.moedasFundo || null, mpg: J.moedasPegas || 0,
       dn: J.dano || 0, cm: J.contaMestre || 0, cb: J.contaBolha || 0, bpa: J.bauParado || 0,
       g: grid.map(l => l.map(p => p ? (p.bau ? 'b' : p.t + '.' + p.sp + '.' + (p.gaiola || 0) + '.' + (p.bolha ? 1 : 0) + '.' + (p.lixo || 0) + '.' + (p.esponja ? 1 : 0)) : ''))
     }));
@@ -943,6 +948,82 @@ function pintaAvisoCresce() {
   if (J.alvoCresce) celulasBox.children[J.alvoCresce[0] * W + J.alvoCresce[1]].classList.add('vai-crescer');
 }
 /* regra da região que age durante a fase: o gelo congela, a cinza vira entulho */
+/* ═══ RESSACA ═════════════════════════════════════════════════════
+   Em algumas fases, a cada poucas jogadas uma fileira inteira desliza
+   uma casa, e a peça da ponta volta pelo outro lado. A fileira marcada
+   avisa qual é a próxima e o painel conta quanto falta. Vão junto os
+   especiais; o que é do chão (cobertura, coral, ostra, moeda) fica.
+   Só desliza fileira inteira e sem peça presa ou sólida: dá pra planejar.
+   Qualquer erro aqui desliga a ressaca da fase, nunca trava a partida. */
+function linhaDaRessacaOk(r) {
+  if (r == null || r < 0) return false;
+  for (let c = 0; c < W; c++) {
+    if (!temCasa(r, c)) return false;
+    const p = grid[r][c];
+    if (!p || p.bau || p.gaiola || p.lixo || p.esponja || p.bolha) return false;
+  }
+  return true;
+}
+function pintaRessaca() {
+  if (typeof celulasBox === 'undefined' || !celulasBox) return;
+  celulasBox.querySelectorAll('.casa.ressaca').forEach(d => d.classList.remove('ressaca', 'ressaca-e', 'ressaca-ja'));
+  if (!J || !J.ressaca || J.fim || J.ressacaLinha == null || J.ressacaLinha < 0) return;
+  for (let c = 0; c < W; c++) {
+    const d = celulasBox.children[J.ressacaLinha * W + c];
+    if (!d) continue;
+    d.classList.add('ressaca');
+    if (J.ressacaDir < 0) d.classList.add('ressaca-e');
+    if (J.ressacaIn <= 1) d.classList.add('ressaca-ja');
+  }
+}
+function escolheLinhaRessaca() {
+  const ok = [];
+  for (let r = 0; r < H; r++) if (linhaDaRessacaOk(r) && r !== J.ressacaUltima) ok.push(r);
+  if (!ok.length) for (let r = 0; r < H; r++) if (linhaDaRessacaOk(r)) ok.push(r);
+  J.ressacaLinha = ok.length ? ok[sorteia(ok.length)] : -1;
+  pintaRessaca();
+}
+async function deslizaFileira(r, dir) {
+  const ant = []; for (let c = 0; c < W; c++) ant.push(grid[r][c]);
+  const novo = new Array(W);
+  for (let c = 0; c < W; c++) novo[(c + dir + W) % W] = ant[c];
+  for (let c = 0; c < W; c++) {
+    const p = novo[c]; grid[r][c] = p;
+    const el = els.get(p.id); if (!el) continue;
+    if (Math.abs(ant.indexOf(p) - c) > 1) {            /* a que deu a volta reaparece do outro lado */
+      posiciona(el, r, c, true); el.classList.remove('nasce'); void el.offsetWidth; el.classList.add('nasce');
+    } else posiciona(el, r, c);
+  }
+  Som.liga(); Som.troca();
+  await espera(260);
+}
+async function passoRessaca() {
+  if (!J || !J.ressaca || J.fim || J.desafio) return;
+  try {
+    J.ressacaIn = (J.ressacaIn == null ? J.ressaca : J.ressacaIn) - 1;
+    if (J.ressacaIn > 0) {
+      if (!linhaDaRessacaOk(J.ressacaLinha)) escolheLinhaRessaca(); else pintaRessaca();
+      atualizaHud(); return;
+    }
+    J.ressacaIn = J.ressaca;
+    /* última jogada, ou objetivo já batido: a maré não mexe mais */
+    if (J.mov <= 0 || (faseAtual().obj.tipo !== 'pontos' && objetivoFeito())) { pintaRessaca(); atualizaHud(); return; }
+    if (!linhaDaRessacaOk(J.ressacaLinha)) escolheLinhaRessaca();   /* apareceu peça presa na fileira marcada: troca de fileira */
+    if (J.ressacaLinha < 0) { atualizaHud(); return; }
+    apagaDica(); limpaMarca();
+    const r = J.ressacaLinha; J.ressacaUltima = r;
+    faixaTexto('🌊 Ressaca! A fileira deslizou', 1500);
+    await deslizaFileira(r, J.ressacaDir);
+    J.cascata = 1;
+    await resolver(null, null);                          /* o que a maré juntar, estoura */
+    escolheLinhaRessaca(); atualizaHud();
+  } catch (e) {
+    console.error('erro na ressaca:', e);
+    J.ressaca = 0; pintaRessaca();
+    try { reparaTabuleiro(); } catch (e2) {}
+  }
+}
+
 /* ═══ ESPONJA DO FUNDO ═══════════════════════════════════════════
    Peça sólida: não combina e não troca de lugar. Numa jogada em que
    você não tirou nenhuma esponja, ela se espalha para uma peça

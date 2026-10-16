@@ -238,7 +238,7 @@ body:not(.em-jogo) #cena{display:none}
 .hud-linha{display:flex;align-items:center}
 .hud-linha > * + *{margin-left:10px}
 .objetivo{flex:1;min-width:0;display:flex;align-items:center;gap:10px;min-height:50px;flex-wrap:wrap;row-gap:4px}
-.cond-linha{flex-basis:100%;display:flex}
+.cond-linha{flex-basis:100%;display:flex;flex-wrap:wrap;gap:6px}
 .objetivo .rotulo{font-size:12px;font-weight:800;color:rgba(243,251,255,.66);line-height:1.2}
 .objetivo .rotulo.feito{color:var(--biolum)}
 .objetivo .valor{font-family:var(--display);font-weight:800;font-size:18px;line-height:1.15}
@@ -783,6 +783,18 @@ body.em-segundo-plano *,body.em-segundo-plano *::before,body.em-segundo-plano *:
 @media (max-width:340px){ .linha-extras.tres #faixa-evento b{display:none} }
 #faixa-evento b{font-family:var(--display);overflow:hidden;text-overflow:ellipsis}
 #faixa-evento span{font-size:11px;font-weight:800;padding:1px 7px;border-radius:999px;background:rgba(255,255,255,.25)}
+
+/* ── ressaca: a fileira marcada, com a correnteza correndo no sentido em que vai deslizar ── */
+.casa.ressaca::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+  background:linear-gradient(90deg,rgba(90,200,255,0),rgba(90,200,255,.3),rgba(90,200,255,0)),repeating-linear-gradient(90deg,transparent 0 10px,rgba(255,255,255,.24) 10px 14px);
+  background-size:100% 100%,28px 100%;box-shadow:inset 0 0 0 2px rgba(120,220,255,.6);animation:ressaca-corre 1.1s linear infinite}
+.casa.ressaca-e::before{animation-direction:reverse}
+.casa.ressaca-ja::before{box-shadow:inset 0 0 0 2.5px #FFE14D;background-color:rgba(255,225,77,.14)}
+@keyframes ressaca-corre{to{background-position:0 0,28px 0}}
+body.leve .casa.ressaca::before{animation:none}
+.cond-tag.ressaca-tag{background:rgba(90,200,255,.22);color:#CFF3FF}
+.cond-tag.ressaca-tag.ja{background:rgba(255,225,77,.26);color:#FFF1A6;animation:pisca-alvo .8s ease-in-out infinite}
+.cartao p.pre-ressaca{margin-top:8px;padding:8px 10px;border-radius:12px;background:rgba(90,200,255,.16);font-size:12.5px;text-align:left}
 
 /* ── esponja do fundo e chegada na região ────────────────────── */
 .peca.esponja .corpo{animation:esponja-respira 2.6s ease-in-out infinite}

@@ -2,7 +2,7 @@
    MERGULHO · combinar 3 da beira da praia até 4.000 metros
    ═══════════════════════════════════════════════════════════════ */
 
-const VERSAO_JOGO = '2026.12.12';
+const VERSAO_JOGO = '2026.12.13';
 const W = 7, H = 8, TIPOS = 6;
 const NADA = 0, LH = 1, LV = 2, BOMBA = 3, ARCO = 4, ONDA = 5, ONDAV = 6, CARDUME = 7, PEIXE = 8;
 /* fases com o quadrado ligado: 4 peças iguais em 2x2 viram um peixe-guia */
@@ -452,6 +452,16 @@ function fase(i) {
     f.tempoFeito = true;
     if (f.obj.tipo === 'pontos') f.marcas = f.marcas.map(m => Math.round(m * 1.3 / 100) * 100);
     else f.obj.itens = f.obj.itens.map(([c, n]) => [c, Math.round(n * 1.3)]);
+  }
+  /* ressaca: em algumas fases, a cada 4 ou 5 jogadas uma fileira inteira desliza uma casa.
+     Só onde as peças ficam soltas (nada preso, sólido ou de chão que se mexa). */
+  if (i >= BASE.length && f.ressaca === undefined) {
+    f.ressaca = 0;
+    if (i >= 48 && (i + 1) % 100 !== 0 && !f.enigma && tempoDe(f, i) === 0 && !f.obj.corrente && !f.obj.mancha && !f.obj.cresce &&
+        ['pontos', 'coletar', 'especiais', 'papel'].indexOf(f.obj.tipo) >= 0) {
+      let h = Math.imul(i + 777, 2654435761) >>> 0; h ^= h >>> 15; h = Math.imul(h, 2246822519) >>> 0; h ^= h >>> 13; h >>>= 0;
+      if (h % 100 < 28) f.ressaca = 4 + (h >>> 8) % 2;
+    }
   }
   return f;
 }
