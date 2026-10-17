@@ -2,7 +2,7 @@
    MERGULHO · combinar 3 da beira da praia até 4.000 metros
    ═══════════════════════════════════════════════════════════════ */
 
-const VERSAO_JOGO = '2026.12.13';
+const VERSAO_JOGO = '2026.12.15';
 const W = 7, H = 8, TIPOS = 6;
 const NADA = 0, LH = 1, LV = 2, BOMBA = 3, ARCO = 4, ONDA = 5, ONDAV = 6, CARDUME = 7, PEIXE = 8;
 /* fases com o quadrado ligado: 4 peças iguais em 2x2 viram um peixe-guia */
@@ -461,6 +461,16 @@ function fase(i) {
         ['pontos', 'coletar', 'especiais', 'papel'].indexOf(f.obj.tipo) >= 0) {
       let h = Math.imul(i + 777, 2654435761) >>> 0; h ^= h >>> 15; h = Math.imul(h, 2246822519) >>> 0; h ^= h >>> 13; h >>>= 0;
       if (h % 100 < 28) f.ressaca = 4 + (h >>> 8) % 2;
+    }
+  }
+  /* portal: duas casas ligadas (entrada no fundo de uma coluna, saída no topo de outra, a 3 ou 4 colunas de distância).
+     Mesmos tipos de fase da ressaca, e nunca juntos. Sorteio próprio: o resto das fases não muda. */
+  if (i >= BASE.length && f.portal === undefined) {
+    f.portal = null;
+    if (i >= 52 && !f.ressaca && (i + 1) % 100 !== 0 && !f.enigma && tempoDe(f, i) === 0 && !f.obj.corrente && !f.obj.mancha && !f.obj.cresce &&
+        ['pontos', 'coletar', 'especiais', 'papel'].indexOf(f.obj.tipo) >= 0) {
+      let h = Math.imul(i + 4242, 2654435761) >>> 0; h ^= h >>> 15; h = Math.imul(h, 2246822519) >>> 0; h ^= h >>> 13; h >>>= 0;
+      if (h % 100 < 36) { const a = (h >>> 6) % 7; f.portal = [a, (a + 3 + (h >>> 12) % 2) % 7]; }
     }
   }
   return f;

@@ -95,7 +95,8 @@ function classeEsp(p) {
 function criaEl(p) {
   /* cada peça respira num tempo diferente: o tabuleiro fica vivo sem piscar junto */
   const el = document.createElement('div');
-  el.className = 'peca ' + classeEsp(p);
+  el.className = 'peca ' + classeEsp(p) + (p.chegou ? ' portal-chega' : '');
+  if (p.chegou) { p.chegou = false; setTimeout(() => el.classList.remove('portal-chega'), 560); }   /* depois da chegada volta a respirar */
   el.dataset.id = p.id;
   el.style.setProperty('--atraso', (((p.id * 37) % 34) / 10).toFixed(1) + 's');
   el.innerHTML = '<div class="corpo">' + corpoDaPeca(p) + '</div>';
@@ -576,7 +577,8 @@ function aoPressionar(e) {
   if (!cel) return;
   if (poderAtivo) { usaPoderNaCelula(cel); return; }
   const pz = grid[cel.r] && grid[cel.r][cel.c], elz = pz ? els.get(pz.id) : null;
-  arrasto = { x: e.clientX, y: e.clientY, cel: cel, usado: false, el: elz, base: elz ? elz.style.transform : '' };
+  /* a posição de volta é sempre a absoluta da casa (antes era a última lida, e o desvio somava); esponja é sólida e nem acompanha o dedo */
+  arrasto = { x: e.clientX, y: e.clientY, cel: cel, usado: false, el: (elz && !pz.esponja) ? elz : null, base: 'translate(' + (cel.c * CEL) + 'px,' + (cel.r * CEL) + 'px)' };
   mesa.setPointerCapture && mesa.setPointerCapture(e.pointerId);
 }
 /* a peça desliza junto com o dedo antes da troca, e volta se você desistir */
@@ -602,7 +604,9 @@ function aoMover(e) {
   if (Math.abs(dx) > Math.abs(dy)) alvo = { r: arrasto.cel.r, c: arrasto.cel.c + (dx > 0 ? 1 : -1) };
   else alvo = { r: arrasto.cel.r + (dy > 0 ? 1 : -1), c: arrasto.cel.c };
   arrasto.usado = true;
-  if (dentro(alvo.r, alvo.c)) tentaTroca(arrasto.cel, alvo);
+  const origem = arrasto.cel, elArr = arrasto.el, baseArr = arrasto.base;
+  if (dentro(alvo.r, alvo.c)) Promise.resolve(tentaTroca(origem, alvo)).then(corrigePosicoes);   /* recusada ou não, tudo volta pro lugar */
+  else if (elArr) elArr.style.transform = baseArr;                                                   /* arrastou pra fora do tabuleiro */
   arrasto = null;
 }
 function aoSoltar(e) {
@@ -619,6 +623,24 @@ function aoSoltar(e) {
   if (sel && vizinhas(sel, cel)) { const a = sel; limpaMarca(); tentaTroca(a, cel); return; }
   marca(cel);
 }
+
+/* rede de segurança: toda peça parada tem que estar exatamente na casa dela. Qualquer desvio
+   (toque cancelado, troca recusada, arrasto até a borda) é desfeito sozinho em poucos instantes.
+   Só mexe em peça parada: nunca durante a jogada nem com o dedo na tela. */
+function corrigePosicoes() {
+  if (typeof J === 'undefined' || !J || J.ocupado || (typeof arrasto !== 'undefined' && arrasto) || typeof els === 'undefined' || !els || typeof grid === 'undefined' || !grid) return 0;
+  let n = 0;
+  for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) {
+    const p = grid[r] && grid[r][c]; if (!p) continue;
+    const el = els.get(p.id); if (!el) continue;
+    const t = el.style.transform.match(/translate\(([-\d.]+)px,\s*([-\d.]+)px\)/g) || [];
+    let ok = t.length === 1;
+    if (ok) { const v = /translate\(([-\d.]+)px,\s*([-\d.]+)px\)/.exec(t[0]); ok = Math.abs(+v[1] - c * CEL) < 1 && Math.abs(+v[2] - r * CEL) < 1; }
+    if (!ok) { posiciona(el, r, c); n++; }
+  }
+  return n;
+}
+setInterval(() => { corrigePosicoes(); if (typeof alinhaMarcas === 'function' && typeof J !== 'undefined' && J && !J.ocupado) alinhaMarcas(); }, 1200);   /* anéis e marcas também se realinham sozinhos */
 
 /* se algo quebrar no meio, nenhuma casa pode ficar vazia */
 function reparaTabuleiro() {
@@ -650,7 +672,7 @@ async function tentaTrocaInterna(a, b) {
   const pa = grid[a.r][a.c], pb = grid[b.r][b.c];
   if (!pa || !pb) return;
   if (pa.esponja || pb.esponja) {          /* esponja é sólida: não troca de lugar */
-    for (const pz of [pa, pb]) { const ez = els.get(pz.id); if (ez) { ez.classList.add('nao'); setTimeout(() => ez.classList.remove('nao'), 360); } }
+    for (const [pz, pos] of [[pa, a], [pb, b]]) { const ez = els.get(pz.id); if (ez) { posiciona(ez, pos.r, pos.c); ez.classList.add('nao'); setTimeout(() => ez.classList.remove('nao'), 360); } }
     Som.nao(); return;
   }
   J.ocupado = true;
@@ -752,7 +774,7 @@ function salvaPartida() {
       pr: J.presosFeitos || 0, bo: J.bolhasFeitas || 0, bfg: J.bolhasFugiram || 0,
       nin: J.ninhos || null, ninf: J.ninhosFeitos || 0,
       per: J.perolas || null, pef: J.perolasFeitas || 0, cor: J.coral || null, cof: J.coralFeito || 0, lxf: J.lixoFeito || 0,
-      ot: faseAtual().obj.tipo, rg: J.regra || null, ev: J.evento || null, jr: J.jogadasRegiao || 0, rs: J.ressaca || 0, ri: J.ressacaIn, rl: J.ressacaLinha, rd: J.ressacaDir, tmp: J.tempoModo ? J.tempoRestante : null, cnd: J.cond || null, cvz: J.corVez, mfd: J.moedasFundo || null, mpg: J.moedasPegas || 0,
+      ot: faseAtual().obj.tipo, rg: J.regra || null, ev: J.evento || null, jr: J.jogadasRegiao || 0, rs: J.ressaca || 0, ri: J.ressacaIn, rl: J.ressacaLinha, rd: J.ressacaDir, pt: J.portal || null, tmp: J.tempoModo ? J.tempoRestante : null, cnd: J.cond || null, cvz: J.corVez, mfd: J.moedasFundo || null, mpg: J.moedasPegas || 0,
       dn: J.dano || 0, cm: J.contaMestre || 0, cb: J.contaBolha || 0, bpa: J.bauParado || 0,
       g: grid.map(l => l.map(p => p ? (p.bau ? 'b' : p.t + '.' + p.sp + '.' + (p.gaiola || 0) + '.' + (p.bolha ? 1 : 0) + '.' + (p.lixo || 0) + '.' + (p.esponja ? 1 : 0)) : ''))
     }));
@@ -948,6 +970,45 @@ function pintaAvisoCresce() {
   if (J.alvoCresce) celulasBox.children[J.alvoCresce[0] * W + J.alvoCresce[1]].classList.add('vai-crescer');
 }
 /* regra da região que age durante a fase: o gelo congela, a cinza vira entulho */
+/* ═══ PORTAL ══════════════════════════════════════════════════════
+   Duas casas ligadas: a entrada, no fundo de uma coluna, e a saída, no
+   topo de outra. Toda vez que a coluna da saída ganha peça nova, essa
+   peça nova é a que estava na entrada (ela viaja num piscar), e a
+   entrada ganha uma peça nova no lugar. Só uma viagem por queda. Peça
+   presa, sólida ou baú não viaja. Fica tudo à vista: dá pra planejar
+   qual cor vai chegar. Erro aqui nunca trava a queda.                */
+function aplicaPortal() {
+  try {
+    const a = J.portal[0], b = J.portal[1];
+    const saida = grid[TOPO[b]] && grid[TOPO[b]][b], entra = grid[H - 1][a];
+    if (!saida || !entra || saida.entrando == null) return;
+    if (saida.bau || entra.bau || entra.gaiola || entra.lixo || entra.esponja || entra.bolha) return;
+    viajaPortal(entra, a, b);                       /* o fantasma usa a arte de antes da troca */
+    const el = els.get(entra.id);
+    saida.t = entra.t; saida.sp = entra.sp; saida.entrando = TOPO[b]; saida.chegou = true;
+    entra.t = sorteia(TIPOS); entra.sp = NADA;
+    if (el) { atualizaEl(entra); el.classList.add('portal-troca'); setTimeout(() => el.classList.remove('portal-troca'), 520); }
+    J.portalViagens = (J.portalViagens || 0) + 1;
+  } catch (e) { console.error('erro no portal:', e); J.portal = null; }
+}
+function viajaPortal(p, a, b) {
+  try {
+    respingos(H - 1, a, '#C79CFF', 6); respingos(TOPO[b], b, '#8FE0FF', 6);
+    Som.liga(); Som.troca();
+    if (document.body.classList.contains('leve') || typeof pecasBox === 'undefined' || !pecasBox) return;
+    const g = document.createElement('div');
+    g.className = 'peca portal-fantasma';
+    g.innerHTML = '<div class="corpo">' + corpoDaPeca(p) + '</div>';
+    pecasBox.appendChild(g); posiciona(g, H - 1, a, true);
+    const de = 'translate(' + (a * CEL) + 'px,' + ((H - 1) * CEL) + 'px)', para = 'translate(' + (b * CEL) + 'px,' + (TOPO[b] * CEL) + 'px)';
+    if (typeof g.animate === 'function') {
+      const an = g.animate([{ transform: de + ' scale(1)', opacity: 1 }, { transform: para + ' scale(.55)', opacity: .15 }], { duration: 460, easing: 'cubic-bezier(.5,0,.8,.4)' });
+      an.onfinish = () => g.remove();
+    } else g.remove();
+    setTimeout(() => g.remove(), 900);              /* rede de segurança */
+  } catch (e) {}
+}
+
 /* ═══ RESSACA ═════════════════════════════════════════════════════
    Em algumas fases, a cada poucas jogadas uma fileira inteira desliza
    uma casa, e a peça da ponta volta pelo outro lado. A fileira marcada
@@ -1146,6 +1207,9 @@ function pintaCasasEspeciais() {
     /* cobertura (areia, alga, cinza, rede...): selinho no canto, por cima da peça */
     d.dataset.r = r; d.dataset.c = c;
     caixa.appendChild(d);
+  }
+  if (J.portal) for (const [r, c, k] of [[H - 1, J.portal[0], 'portal-entra'], [TOPO[J.portal[1]], J.portal[1], 'portal-sai']]) {
+    const d = document.createElement('div'); d.className = 'marca-casa ' + k; d.dataset.r = r; d.dataset.c = c; caixa.appendChild(d);
   }
   alinhaMarcas(); requestAnimationFrame(alinhaMarcas); setTimeout(alinhaMarcas, 350); setTimeout(alinhaMarcas, 900);
 }

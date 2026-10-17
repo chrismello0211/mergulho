@@ -373,5 +373,6 @@ function gravidade() {
       grid[r][c] = p; caindo.push(p);
     }
   }
+  if (J && J.portal) aplicaPortal();   /* só age quando a coluna da saída ganhou peça nova */
   return caindo;
 }

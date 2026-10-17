@@ -28,7 +28,7 @@ with sync_playwright() as p:
     b=p.chromium.launch();pg=b.new_page(viewport={'width':393,'height':852},has_touch=True,is_mobile=True)
     erros=[];pg.on('pageerror',lambda e:erros.append(str(e)))
     pg.goto('file:///tmp/ba/rapido_%s.html'%tipo);pg.wait_for_timeout(1200)
-    pg.evaluate("()=>{fechaCartao();filaCartoes.length=0;prog.max=1000;prog.dia=hoje();prog.vidas=5;prog.viuNovidades='lote-9';prog.leve=true;prog.leveEscolhido=true;aplicaLeve();prog.vistos={tempo:1,quadrado:1,enigma:1,bau:1,cresce2:1,presos:1,bolhas:1,corrente:1,mancha2:1,ninho2:1,perolas2:1,coral2:1,lixo2:1,esponja:1,ressaca:1};for(const k of ['raizes','gelo','eco','cinza','tesouro','cardume','abismo','emaranhado','canto','janelas','ferrao','cristais','neon','geiser','aurora'])prog.vistos['regiao-'+k]=1;for(let r=0;r<8;r++)for(let q=0;q<5;q++)prog.vistos['r'+r+'b'+q]=1;salvaProg();}")
+    pg.evaluate("()=>{fechaCartao();filaCartoes.length=0;prog.max=1000;prog.dia=hoje();prog.vidas=5;prog.viuNovidades='lote-11';prog.leve=true;prog.leveEscolhido=true;aplicaLeve();prog.vistos={tempo:1,quadrado:1,enigma:1,bau:1,cresce2:1,presos:1,bolhas:1,corrente:1,mancha2:1,ninho2:1,perolas2:1,coral2:1,lixo2:1,esponja:1,ressaca:1};for(const k of ['raizes','gelo','eco','cinza','tesouro','cardume','abismo','emaranhado','canto','janelas','ferrao','cristais','neon','geiser','aurora'])prog.vistos['regiao-'+k]=1;for(let r=0;r<8;r++)for(let q=0;q<5;q++)prog.vistos['r'+r+'b'+q]=1;salvaProg();}")
     niveis=pg.evaluate("""([tp,mx])=>{const l=[];for(let i=48;i<900;i++){const f=fase(i);if(f.ressaca&&f.obj.tipo===tp)l.push(i);}const o=[];for(let j=0;j<mx&&l.length;j++)o.push(l[Math.floor(j*l.length/mx)]);return [...new Set(o)];}""",[tipo,mx])
     acc={'COM':[], 'SEM':[]}
     for i in niveis:

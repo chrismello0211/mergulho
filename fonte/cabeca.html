@@ -784,6 +784,23 @@ body.em-segundo-plano *,body.em-segundo-plano *::before,body.em-segundo-plano *:
 #faixa-evento b{font-family:var(--display);overflow:hidden;text-overflow:ellipsis}
 #faixa-evento span{font-size:11px;font-weight:800;padding:1px 7px;border-radius:999px;background:rgba(255,255,255,.25)}
 
+/* ── portal: anel na casa de entrada (lilás, ↓) e na de saída (azul, ↑), por cima das peças ── */
+.marca-casa.portal-entra,.marca-casa.portal-sai{border-radius:26%;pointer-events:none;
+  box-shadow:inset 0 0 0 3px var(--cor-portal),inset 0 0 14px 2px var(--cor-portal),0 0 12px 2px var(--cor-portal);animation:portal-pulsa 1.6s ease-in-out infinite}
+.marca-casa.portal-entra{--cor-portal:rgba(199,156,255,.92)}
+.marca-casa.portal-sai{--cor-portal:rgba(120,220,255,.92)}
+.marca-casa.portal-entra::after,.marca-casa.portal-sai::after{position:absolute;right:3px;top:3px;width:18px;height:18px;border-radius:50%;display:grid;place-items:center;
+  font:900 12px/1 Nunito,sans-serif;color:#fff;box-shadow:0 1px 3px rgba(0,0,0,.5)}
+.marca-casa.portal-entra::after{content:"↓";background:#9B5CFF}
+.marca-casa.portal-sai::after{content:"↑";background:#2EA8E8}
+@keyframes portal-pulsa{0%,100%{opacity:.72}50%{opacity:1}}
+.peca.portal-fantasma{transition:none;z-index:7;pointer-events:none}
+.peca.portal-chega .corpo,.peca.portal-troca .corpo{animation:portal-troca .5s cubic-bezier(.2,1.5,.4,1)}
+@keyframes portal-troca{0%{transform:scale(.1) rotate(-120deg);opacity:0}100%{transform:scale(1) rotate(0);opacity:1}}
+body.leve .marca-casa.portal-entra,body.leve .marca-casa.portal-sai{animation:none}
+.cond-tag.portal-tag{background:rgba(155,92,255,.26);color:#E7D6FF}
+.cartao p.pre-portal{margin-top:8px;padding:8px 10px;border-radius:12px;background:rgba(155,92,255,.16);font-size:12.5px;text-align:left}
+
 /* ── ressaca: a fileira marcada, com a correnteza correndo no sentido em que vai deslizar ── */
 .casa.ressaca::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
   background:linear-gradient(90deg,rgba(90,200,255,0),rgba(90,200,255,.3),rgba(90,200,255,0)),repeating-linear-gradient(90deg,transparent 0 10px,rgba(255,255,255,.24) 10px 14px);
@@ -797,7 +814,7 @@ body.leve .casa.ressaca::before{animation:none}
 .cartao p.pre-ressaca{margin-top:8px;padding:8px 10px;border-radius:12px;background:rgba(90,200,255,.16);font-size:12.5px;text-align:left}
 
 /* ── esponja do fundo e chegada na região ────────────────────── */
-.peca.esponja .corpo{animation:esponja-respira 2.6s ease-in-out infinite}
+.peca.esponja:not(.nasce) .corpo{animation:none}   /* sólida: não mexe nem respira */
 @keyframes esponja-respira{0%,100%{transform:scale(1) rotate(-1deg)}50%{transform:scale(1.06) rotate(1.5deg)}}
 .regiao-cena{position:relative;height:108px;margin:-6px 0 8px;border-radius:18px;overflow:hidden;box-shadow:inset 0 0 0 2px rgba(255,255,255,.35)}
 .regiao-cena svg{position:absolute;inset:0;width:100%;height:100%}
@@ -872,7 +889,9 @@ body.relogio-urgente #movimentos{animation:relogio-pulsa .5s ease-in-out infinit
 @keyframes pisca-alvo{0%,100%{opacity:1}50%{opacity:.25}}
 #objetivo{cursor:pointer}
 /* ── novidades ───────────────────────────────────────────────── */
-.novidades{margin:10px 0 4px;text-align:left}
+.novidades{margin:10px 0 4px;text-align:left;max-height:46vh;overflow-y:auto;overscroll-behavior:contain}
+.nov-data{margin:12px 0 2px;font-family:var(--display);font-size:13px;opacity:.9}
+.nov-novo{display:inline-block;margin-right:7px;padding:1px 8px;border-radius:999px;background:#FF6A3D;color:#fff;font:900 10px/1.6 Nunito,sans-serif;letter-spacing:.06em;vertical-align:1px}
 .novidade{display:flex;gap:10px;align-items:flex-start;padding:8px 10px;margin:6px 0;border-radius:14px;background:rgba(10,108,122,.08)}
 .novidade .ic-nov{font-size:22px;line-height:1.1}
 .novidade b{display:block;font-size:14px}.novidade small{display:block;font-size:12.5px;opacity:.8;line-height:1.35}

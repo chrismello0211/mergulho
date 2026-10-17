@@ -22,6 +22,7 @@ function preparaEspeciaisDaFase() {
   QUADRADO_ATIVO = !!f.quadrado && !J.desafio;   /* toda fase passa por aqui ao começar */
   J.ressaca = (!J.desafio && f.ressaca) || 0; J.ressacaIn = J.ressaca; J.ressacaDir = (J.fase % 2) ? 1 : -1; J.ressacaUltima = -1; J.ressacaLinha = -1;
   if (J.ressaca) escolheLinhaRessaca();
+  J.portal = (!J.desafio && f.portal) || null; J.portalViagens = 0;
   J.cond = J.desafio ? null : condicaoDa(J.fase); J.corVez = null; J.moedasFundo = null; J.moedasPegas = 0;
   if (J.cond === 'brinde') {
     let n = 0;
@@ -193,6 +194,7 @@ function pintaExtra() {
     (J.corVez != null ? ' <svg class="ic" viewBox="0 0 100 100"><use href="#s' + J.corVez + '"/></svg>' : '') +
     (J.moedasFundo ? ' · ' + J.moedasPegas + '/4' : '') + '</div>');
   if (J.ressaca) tags.push('<div class="cond-tag ressaca-tag' + (J.ressacaIn <= 1 ? ' ja' : '') + '">🌊 Ressaca em ' + J.ressacaIn + '</div>');
+  if (J.portal) tags.push('<div class="cond-tag portal-tag">🌀 Portal</div>');
   if (tags.length) o.insertAdjacentHTML('beforeend', '<div class="cond-linha">' + tags.join('') + '</div>');
   const velho = o.querySelector('.extra-obj'); if (velho) velho.remove();
   if (!f.obj.extra) return;
@@ -962,23 +964,51 @@ async function recebeVidas() {
 /* quem do cardume pediu vida: aparece assim que você abre o jogo,
    com o botão de mandar ali mesmo, e o ícone do app ganha o número */
 /* o que mudou nesta versão: aparece uma vez para cada pessoa */
-const NOVIDADES = [
-  ['🌊', 'Ressaca', 'Em algumas fases, a cada poucas jogadas uma fileira inteira desliza uma casa. A fileira marcada avisa qual é a próxima, e o painel conta quanto falta. Dá pra planejar, e a maré às vezes junta peças por você.'],
-  ['🔧', 'Brecha fechada', 'Disparar um especial tocando nele agora também conta pra ninhos, regras de região e esponja. Antes era jogada de graça.']
+/* As novidades ficam guardadas por atualização (lote), da mais nova pra mais antiga. Ao abrir, a pessoa
+   vê TODAS as que ainda não viu (até 6), não só a última: quem pulou uma versão não perde nada. O botão
+   Novidades guarda as últimas 8. Pra publicar novidade nova: acrescente um lote no topo da lista. */
+const NOVIDADES_LOTES = [
+  { id: 'lote-11', data: '16 de outubro', itens: [
+    ['🧽', 'Esponja corrigida', 'Ao arrastar uma esponja (ou uma peça contra ela), a peça ficava um pouco fora do lugar, e o desvio ia somando. Agora a esponja fica parada e qualquer peça fora do lugar volta sozinha.'],
+    ['📚', 'Novidades guardadas', 'O botão Novidades agora guarda as últimas atualizações, e o aviso ao abrir mostra todas as que você ainda não viu.'] ] },
+  { id: 'lote-10', data: '16 de outubro', itens: [
+    ['🌀', 'Portal', 'Em algumas fases, duas casas ficam ligadas: toda vez que a coluna da saída (↑) ganha peça nova, ela é a peça que estava na entrada (↓). Olhe a cor da entrada e planeje o que chega.'] ] },
+  { id: 'lote-9', data: '16 de outubro', itens: [
+    ['🌊', 'Ressaca', 'Em algumas fases, a cada poucas jogadas uma fileira inteira desliza uma casa. A fileira marcada avisa qual é a próxima, e o painel conta quanto falta. Dá pra planejar, e a maré às vezes junta peças por você.'],
+    ['🔧', 'Brecha fechada', 'Disparar um especial tocando nele agora também conta pra ninhos, regras de região e esponja. Antes era jogada de graça.'] ] },
+  { id: 'lote-8', data: '16 de outubro', itens: [
+    ['🧽', 'Esponja do fundo', 'Uma esponja sólida que cresce: se você não estoura uma combinação colada nela, ela se espalha. Seque a quantidade pedida antes das jogadas acabarem.'],
+    ['⏱', 'Contra a Maré mais justo', 'O relógio agora corre durante as animações, e o tempo ficou mais curto. Tocar rápido sem pensar não rende mais jogadas de graça.'],
+    ['🗺️', 'Chegada nas regiões', 'Ao entrar numa região nova, o cenário aparece inteiro no aviso, com a regra dela.'] ] },
+  { id: 'lote-7', data: '12 de outubro', itens: [
+    ['🗺️', 'Oito regiões novas', 'Floresta de Kelp, Cemitério de Baleias, Cidade Submersa, Jardim de Medusas, Gruta de Cristal, Recife de Neon, Fonte Termal e Mar de Aurora, cada uma com cenário e regra próprios.'],
+    ['⚖️', 'Fases mais equilibradas', 'Fases de lixo, coral, bicho preso e bolhas pediam jogadas demais: agora pedem o que de fato precisam. O bônus das jogadas que sobram ficou mais justo.'],
+    ['🏆', 'Ranking mais justo', 'Cada fase tem um teto de pontos no ranking, pra nenhuma pontuação fora do normal decidir a disputa.'] ] },
+  { id: 'lote-6', data: '3 de outubro', itens: [
+    ['📖', 'Álbum: série 2 e mais desafio', 'Chegaram 24 figurinhas do abismo e do Brasil. Figurinha agora é sorte e mérito: 30% de chance nas fases Difíceis com 3 estrelas, 60% nas Lendárias.'] ] },
+  { id: 'lote-5', data: '2 de outubro', itens: [
+    ['🐙', 'Três mestres novos', 'Peixe-pescador na 700, Polvo-colossal na 800 e Orca-sombria na 900, cada um com golpe próprio.'] ] },
+  { id: 'lote-4', data: '1º de outubro', itens: [
+    ['🗺️', 'Cada região com sua regra', 'Mangue com raízes, Mar Polar que congela, Vulcão que cospe cinza, Ruínas com tesouro e mais. Vale em todas as fases da região.'],
+    ['🧩', 'Enigmas', 'Fases curtas, com especiais prontos e poucas jogadas: a ordem certa faz toda a diferença.'],
+    ['🎉', 'Eventos de fim de semana', 'Todo sábado e domingo uma regra especial vale pra todas as fases, e muda a cada semana.'] ] },
+  { id: 'lote-3', data: '30 de setembro', itens: [
+    ['📖', 'Álbum do fundo do mar', 'Figurinhas de bichos do mar com curiosidades de verdade, nas fases Difíceis e Lendárias e nos mestres. Completar vale 2.000 moedas.'],
+    ['🦈', 'Dois mestres novos', 'Tubarão-martelo na fase 600 e o Leviatã, épico, na 1000, cada um com golpe próprio.'],
+    ['🎲', 'Condições do mar', 'Muitas fases vêm com uma regra extra: especiais de presente, cor que vale o dobro ou moedas escondidas.'],
+    ['🐟', 'Peixe-guia', 'Em algumas fases, quatro peças iguais em quadrado criam um peixe que nada até o que o objetivo pede.'] ] }
 ];
-/* A lista de novidades tem um nome de lote. O cartão só abre sozinho
-   quando o lote muda, e não a cada versão: correção de bug não é
-   novidade. Quem viu o cartão antigo (marcado pela versão) já viu
-   este primeiro lote. Pra publicar novidade nova: troque o lote e a lista. */
-const NOVIDADES_LOTE = 'lote-9', NOVIDADES_DATA = '16 de outubro';
-function viuEsteLote() {
-  const v = prog.viuNovidades || '';
-  return v === NOVIDADES_LOTE || (NOVIDADES_LOTE === 'lote-1' && /^20\d\d\./.test(v));
+const numLote = id => { const m = /^lote-(\d+)$/.exec(String(id || '')); return m ? +m[1] : 0; };
+function lotesNovos() { const visto = numLote(prog.viuNovidades); return NOVIDADES_LOTES.filter(l => numLote(l.id) > visto).slice(0, 6); }
+function htmlLotes(lotes, visto) {
+  return '<div class="novidades">' + lotes.map(l =>
+    '<p class="nov-data">' + (numLote(l.id) > visto ? '<span class="nov-novo">NOVO</span>' : '') + 'Atualização de ' + l.data + '</p>' +
+    l.itens.map(([ic, t1, t2]) => '<div class="novidade"><span class="ic-nov">' + ic + '</span><div><b>' + t1 + '</b><small>' + t2 + '</small></div></div>').join('')).join('') + '</div>';
 }
+function viuEsteLote() { return lotesNovos().length === 0; }
 function mostraNovidades() {
   if (!prog.max || viuEsteLote() || document.getElementById('veu').classList.contains('aberto')) return false;
-  prog.viuNovidades = NOVIDADES_LOTE; salvaProg(); pintaBotaoNovidades();
-  cartaoNovidades();
+  cartaoNovidades(true);
   return true;
 }
 function pintaEventoHome() {
@@ -1010,11 +1040,12 @@ function pintaBotaoNovidades() {
   const b = document.getElementById('bt-novidades');
   if (b) b.classList.toggle('tem-novo', !viuEsteLote());
 }
-function cartaoNovidades() {
-  prog.viuNovidades = NOVIDADES_LOTE; salvaProg(); pintaBotaoNovidades();
-  cartao('<div class="aviso-arte coracao"><span>✨</span></div><p class="aviso-novo">o que mudou</p><h3>Novidades no fundo do mar</h3>' +
-    '<div class="novidades">' + NOVIDADES.map(([ic, t1, t2]) => '<div class="novidade"><span class="ic-nov">' + ic + '</span><div><b>' + t1 + '</b><small>' + t2 + '</small></div></div>').join('') + '</div>' +
-    '<p class="novidades-data">Atualização de ' + NOVIDADES_DATA + '</p>' +
+function cartaoNovidades(soNovas) {
+  const visto = numLote(prog.viuNovidades);
+  const lotes = soNovas ? lotesNovos() : NOVIDADES_LOTES.slice(0, 8);
+  prog.viuNovidades = NOVIDADES_LOTES[0].id; salvaProg(); pintaBotaoNovidades();
+  cartao('<div class="aviso-arte coracao"><span>✨</span></div><p class="aviso-novo">' + (soNovas ? (lotes.length > 1 ? lotes.length + ' atualizações novas' : 'o que mudou') : 'últimas atualizações') + '</p>' +
+    '<h3>Novidades no fundo do mar</h3>' + htmlLotes(lotes, visto) +
     '<div class="bts"><button class="bt" data-ac="fecha">Bora mergulhar</button></div>', true);
 }
 /* pontuações já salvas acima do teto (as do bug das fases de relógio) voltam ao teto,
@@ -2184,7 +2215,7 @@ function retomaPartida(d) {
         presosFeitos: d.pr || 0, bolhasFeitas: d.bo || 0, bolhasFugiram: d.bfg || 0,
         ninhos: d.nin || null, ninhosFeitos: d.ninf || 0,
         perolas: d.per || null, perolasFeitas: d.pef || 0, coral: d.cor || null, coralFeito: d.cof || 0, lixoFeito: d.lxf || 0,
-        tempoRestante: d.tmp != null ? d.tmp : null, regra: d.rg || null, evento: d.ev || null, jogadasRegiao: d.jr || 0, ressaca: d.rs || 0, ressacaIn: d.ri != null ? d.ri : null, ressacaLinha: d.rl != null ? d.rl : -1, ressacaDir: d.rd || 1, ressacaUltima: -1, cond: d.cnd || null, corVez: d.cvz != null ? d.cvz : null, moedasFundo: d.mfd || null, moedasPegas: d.mpg || 0,
+        tempoRestante: d.tmp != null ? d.tmp : null, regra: d.rg || null, evento: d.ev || null, jogadasRegiao: d.jr || 0, ressaca: d.rs || 0, ressacaIn: d.ri != null ? d.ri : null, ressacaLinha: d.rl != null ? d.rl : -1, ressacaDir: d.rd || 1, ressacaUltima: -1, portal: d.pt || null, portalViagens: 0, cond: d.cnd || null, corVez: d.cvz != null ? d.cvz : null, moedasFundo: d.mfd || null, moedasPegas: d.mpg || 0,
         dano: d.dn || 0, contaMestre: d.cm || 0, contaBolha: d.cb || 0, bauParado: d.bpa || 0 };
   TOPO = (d.topo || f.forma || Array(W).fill(0)).slice();
   QUADRADO_ATIVO = !!f.quadrado;
@@ -2198,6 +2229,7 @@ function retomaPartida(d) {
     setTimeout(() => { iniciaRelogio(); pintaRelogio(); }, 400);
   } else if (J.mov > fase(d.f).mov + 20) J.mov = fase(d.f).mov;   /* trava de segurança: nunca mais jogadas que o possível */
   if (J.ressaca) setTimeout(() => { if (!linhaDaRessacaOk(J.ressacaLinha)) escolheLinhaRessaca(); else pintaRessaca(); atualizaHud(); }, 450);
+  if (J.portal) setTimeout(() => { pintaCasasEspeciais(); atualizaHud(); }, 450);
   papel = d.papel;
   uid = 0;
   grid = d.g.map(l => l.map(cod => {
@@ -2335,6 +2367,7 @@ function mostraPreFase() {
     '<div class="pre-linhas"><div class="pre-obj"><small>objetivo</small><b>' + resumoObjetivo(f) + '</b>' + iconesObjetivo(f) + '</div>' +
     '<div><small>' + (tempoDa(J.fase) ? 'segundos' : 'jogadas') + '</small><b class="pre-grande">' + (tempoDa(J.fase) || f.mov) + '</b></div></div>' +
     (['D', 'L'].indexOf(k) >= 0 && (prog.estrelas[J.fase] || 0) < 3 && f.obj.tipo !== 'chefe' ? '<p class="pre-fig">📖 3 estrelas aqui podem render uma figurinha pro álbum (' + (k === 'L' ? '60%' : '30%') + ' de chance)</p>' : '') +
+    (f.portal ? '<p class="pre-portal">🌀 <b>Portal</b> · a peça do fundo da coluna marcada com ↓ vai parar no topo da coluna marcada com ↑, toda vez que ela ganhar peça nova.</p>' : '') +
     (f.ressaca ? '<p class="pre-ressaca">🌊 <b>Ressaca</b> · a cada ' + f.ressaca + ' jogadas uma fileira desliza uma casa. A fileira marcada mostra qual é a próxima.</p>' : '') +
     (f.enigma ? '<p class="pre-enigma">🧩 <b>Enigma</b> · só ' + f.mov + ' jogadas, com especiais já prontos no tabuleiro. Pense antes de mexer.</p>' : '') +
     (regraDa(J.fase) && regraDa(J.fase).id !== 'calma' ? '<p class="pre-regiao">' + regraDa(J.fase).ic + ' <b>' + regraDa(J.fase).nome + '</b> · ' + regraDa(J.fase).texto + '</p>' : '') +
@@ -2351,20 +2384,26 @@ function mostraPreFase() {
 let relogio = null;
 function iniciaRelogio() {
   clearInterval(relogio);
+  let ultimo = performance.now();
   relogio = setInterval(() => {
+    const agora = performance.now(), dt = Math.min(agora - ultimo, 3000); ultimo = agora;
     if (!J || !J.tempoModo || J.fim) { clearInterval(relogio); document.body.classList.remove('relogio-urgente'); return; }
-    /* O relógio corre o tempo todo, inclusive nas animações da jogada. Antes ele parava enquanto
-       as peças caíam, e quem tocava rápido (ou com automatizador) quase não gastava tempo.
-       Só para com cartão aberto ou com o jogo minimizado. */
+    /* O relógio mede tempo de verdade, não conta batidas: se o celular atrasar um tique (aparelho lento
+       ou ocupado), ele desconta tudo o que passou. Corre durante as animações; só para com cartão
+       aberto ou com o jogo minimizado. */
     if (document.hidden || document.getElementById('veu').classList.contains('aberto')) return;
-    J.tempoRestante = Math.max(0, (J.tempoRestante || 0) - 1);
+    J.tempoMs = (J.tempoMs || 0) + dt;
+    const s = Math.floor(J.tempoMs / 1000);
+    if (s < 1) return;
+    J.tempoMs -= s * 1000;
+    J.tempoRestante = Math.max(0, (J.tempoRestante || 0) - s);
     pintaRelogio();
     if (J.tempoRestante <= 10 && J.tempoRestante > 0) { Som.liga(); Som.pop(1); }
     if (J.tempoRestante <= 0) {
       clearInterval(relogio); J.tempoEsgotou = true;
       if (!J.ocupado) { J.mov = 0; confere(); }      /* no meio de uma jogada, o fim da jogada confere */
     }
-  }, 1000);
+  }, 250);
 }
 function pintaRelogio() {
   if (!J || !J.tempoModo) return;
@@ -2393,6 +2432,7 @@ function vigiaTabuleiro(fase, tentativa) {
 function comecaFase() {
   const f = faseAtual();
   if (J.ressaca) { if (!linhaDaRessacaOk(J.ressacaLinha)) escolheLinhaRessaca(); else pintaRessaca(); }   /* a fileira marcada já aparece desde o primeiro toque */
+  if (J.portal) pintaCasasEspeciais();   /* os anéis do portal também */
   if (!J.desafio) vigiaTabuleiro(J.fase, 0);
   J.tempoModo = !J.desafio && tempoDa(J.fase) > 0;
   if (J.tempoModo) { if (J.tempoRestante == null) J.tempoRestante = tempoDa(J.fase); J.mov = capTempo(J.fase); J.tempoEsgotou = false; iniciaRelogio(); setTimeout(pintaRelogio, 30); }
@@ -2421,6 +2461,8 @@ function comecaFase() {
     'Garrafas, latas e sacolas não combinam com nada. Estoure peças coladas nelas para tirar do mar; especial que acerta em cheio também leva. Os mais sujos aguentam dois estouros.'); }
   if (!prog.vistos.esponja && f.obj.tipo === 'esponja') { prog.vistos.esponja = true; salvaProg(); return mostraAviso('Esponja do fundo', '#i-esponja',
     'Uma esponja sólida cresce no tabuleiro: ela não combina e não troca de lugar. Toda jogada em que você não tira nenhuma, ela se espalha para uma peça colada nela. Estoure uma combinação encostada nela, ou use um especial, pra secar. Seque a quantidade pedida antes das jogadas acabarem. Se as esponjas do tabuleiro acabarem, brota mais.'); }
+  if (!prog.vistos.portal && f.portal) { prog.vistos.portal = true; salvaProg(); return mostraAviso('Portal', '#i-portal',
+    'Duas casas estão ligadas: a entrada (↓), no fundo de uma coluna, e a saída (↑), no topo de outra. Toda vez que a coluna da saída ganha peça nova, essa peça é a que estava na entrada, e a entrada ganha uma peça nova no lugar. Dá pra planejar: olhe a cor da entrada e estoure algo na coluna da saída pra ela chegar.'); }
   if (!prog.vistos.ressaca && f.ressaca) { prog.vistos.ressaca = true; salvaProg(); return mostraAviso('Ressaca', '#i-ressaca',
     'Nesta fase, a cada ' + f.ressaca + ' jogadas a maré puxa uma fileira inteira uma casa pro lado, e a peça da ponta volta pelo outro lado. A fileira marcada mostra qual é a próxima, e o painel conta quanto falta. Dá pra usar a ressaca a seu favor: ela pode juntar peças que você não conseguia juntar.'); }
   const rg = regraDa(J.fase);
