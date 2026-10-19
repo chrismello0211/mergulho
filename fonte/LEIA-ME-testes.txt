@@ -1,0 +1,16 @@
+Scripts de teste do Mergulho (Python + Playwright)
+
+Rodar sempre que mexer em regra de jogo, queda, arrasto ou cartões. Eles abrem o index.html montado e jogam de verdade.
+Os caminhos no topo de cada script (/home/claude/mergulho/repo/index.html e /tmp/ba) são do ambiente onde foram escritos: ajuste se rodar em outro lugar.
+
+  estresse-global.py <parte> <total>   joga 24 jogadas em fases de todos os tipos e mestres, conferindo a cada jogada que nenhuma casa fica vazia ou peça fora do lugar. Ex.: três processos, "0 3", "1 3", "2 3".
+  teste-portal.py / teste-ressaca.py     baterias das duas mecânicas (transporte, bloqueios, estresse, salvar e retomar)
+  teste-especiais.py                     quantos especiais cada tipo de fase começa tendo, ciclo e teto dos especiais das regiões
+  teste-arrasto.py                       arrasto com toques reais: nenhuma peça pode ficar deslocada depois de um arrasto que não virou troca; lotes de novidades
+  teste-aviso-modo-leve.py antigo|novo   o aviso de desempenho não pode cobrir o cartão de começar a fase
+  teste-destravador.py                   o destravador só age com jogo parado de verdade, sem cartão aberto
+  teste-relogio.py, teste-especial-tocado.py
+  medir-*.py                             calibragem: jogador automático com e sem a mecânica; medir-enigma.py mede os pontos dos enigmas
+  cacar-travamento.py                    registra por quais etapas cada jogada passa e mostra onde parou, se travar
+
+Dica: rodar no máximo 3 navegadores ao mesmo tempo. Com mais, a máquina engasga e os testes dão alarme falso.

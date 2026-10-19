@@ -1,9 +1,19 @@
 from playwright.sync_api import sync_playwright
+def espera_e_fecha(pg):
+    ocioso=0
+    for _ in range(14):
+        if pg.evaluate("!!document.querySelector('#veu.aberto')"):
+            ocioso=0
+            pg.evaluate("""()=>{const b=document.querySelector('#cartao [data-ac="comeca"]')||document.querySelector('#cartao .bt');if(b)b.click();}""")
+        else:
+            ocioso+=1
+            if ocioso>=3: break
+        pg.wait_for_timeout(350)
 from PIL import Image
 src=open('/home/claude/mergulho/repo/index.html',encoding='utf-8').read()
 A='const espera = ms => new Promise(r => setTimeout(r, ms));'; assert A in src
 open('/tmp/ba/rapido_portal.html','w',encoding='utf-8').write(src.replace(A,'const espera = ms => new Promise(r => setTimeout(r, Math.min(ms, 3)));'))
-INIT="()=>{fechaCartao();filaCartoes.length=0;prog.max=900;prog.dia=hoje();prog.vidas=5;prog.viuNovidades='lote-11';prog.leve=false;aplicaLeve();prog.vistos={tempo:1,quadrado:1,enigma:1,bau:1,cresce2:1,presos:1,bolhas:1,corrente:1,mancha2:1,ninho2:1,perolas2:1,coral2:1,lixo2:1,esponja:1,ressaca:1,portal:%d};for(const k of ['raizes','gelo','eco','cinza','tesouro','cardume','abismo','emaranhado','canto','janelas','ferrao','cristais','neon','geiser','aurora'])prog.vistos['regiao-'+k]=1;for(let r=0;r<8;r++)for(let q=0;q<5;q++)prog.vistos['r'+r+'b'+q]=1;salvaProg();}"
+INIT="()=>{fechaCartao();filaCartoes.length=0;prog.max=900;prog.dia=hoje();prog.vidas=5;prog.viuNovidades='lote-12';prog.leve=false;prog.leveEscolhido=true;aplicaLeve();prog.vistos={tempo:1,quadrado:1,enigma:1,bau:1,cresce2:1,presos:1,bolhas:1,corrente:1,mancha2:1,ninho2:1,perolas2:1,coral2:1,lixo2:1,esponja:1,ressaca:1,portal:%d};for(const k of ['raizes','gelo','eco','cinza','tesouro','cardume','abismo','emaranhado','canto','janelas','ferrao','cristais','neon','geiser','aurora'])prog.vistos['regiao-'+k]=1;for(let r=0;r<8;r++)for(let q=0;q<5;q++)prog.vistos['r'+r+'b'+q]=1;salvaProg();}"
 INV="""const inv=()=>{const p=[];const ids=new Set();for(let r=0;r<H;r++)for(let c=0;c<W;c++){const q=grid[r][c];
   if(temCasa(r,c)&&!q)p.push('vazio '+r+','+c);if(!q)continue;if(ids.has(q.id))p.push('id repetido');ids.add(q.id);if(q.chegou)p.push('chegou preso '+r+','+c);
   const el=els.get(q.id);if(!el){p.push('sem elemento '+r+','+c);continue;}
@@ -15,6 +25,7 @@ def abre(pg,i,cartoes=None):
         if pg.evaluate("!!document.querySelector('#veu.aberto')"):
             if cartoes is not None: cartoes.append(pg.evaluate("()=>document.querySelector('#cartao h3')?.textContent"))
             pg.evaluate("()=>{const b=document.querySelector('[data-ac=\"comeca\"]')||document.querySelector('[data-ac=\"fecha\"]');if(b)b.click();}"); pg.wait_for_timeout(300)
+    espera_e_fecha(pg)
     pg.wait_for_timeout(400)
 erros=[]
 with sync_playwright() as p:

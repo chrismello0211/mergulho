@@ -26,10 +26,10 @@ function preparaEspeciaisDaFase() {
   J.cond = J.desafio ? null : condicaoDa(J.fase); J.corVez = null; J.moedasFundo = null; J.moedasPegas = 0;
   if (J.cond === 'brinde') {
     let n = 0;
-    for (let tent = 0; tent < 80 && n < 3; tent++) {
+    for (let tent = 0; tent < 80 && n < 1; tent++) {
       const r = 2 + sorteia(H - 2), c = sorteia(W), q = grid[r] && grid[r][c];
       if (!q || q.sp || q.bau || q.lixo || q.gaiola || q.bolha) continue;
-      q.sp = [LH, LV, BOMBA][n % 3]; n++;
+      q.sp = [LH, LV, BOMBA][J.fase % 3]; n++;
     }
   }
   if (J.cond === 'corvez') J.corVez = ((J.fase + 5) * 31) % 6;
@@ -42,7 +42,10 @@ function preparaEspeciaisDaFase() {
   if (J.regra === 'emaranhado') { const l = pecasLivres(); if (l.length) l.splice(sorteia(l.length), 1)[0].gaiola = 1; }
   if (J.regra === 'janelas' && J.corVez == null) J.corVez = (J.fase * 5 + 1) % 6;
   if (J.regra === 'cardume') { const l = pecasLivres(); if (l.length) l[sorteia(l.length)].sp = CARDUME; }
-  if (f.enigma) { const l = pecasLivres(); [LH, LV, BOMBA, ARCO].forEach(sp => { if (l.length) l.splice(sorteia(l.length), 1)[0].sp = sp; }); }
+  if (f.enigma) {   /* dois especiais prontos, e o par é sempre o mesmo naquela fase: cada enigma tem a sua cara */
+    const l = pecasLivres(), PARES = [[LH, LV], [LH, BOMBA], [LH, ARCO], [LV, BOMBA], [LV, ARCO], [BOMBA, ARCO]];
+    PARES[J.fase % PARES.length].forEach(sp => { if (l.length) l.splice(sorteia(l.length), 1)[0].sp = sp; });
+  }
   if (J.regra === 'tesouro' || J.evento === 'moedas') {
     J.moedasFundo = J.moedasFundo || Array.from({ length: H }, () => Array(W).fill(0));
     let n = 0;
@@ -968,6 +971,10 @@ async function recebeVidas() {
    vê TODAS as que ainda não viu (até 6), não só a última: quem pulou uma versão não perde nada. O botão
    Novidades guarda as últimas 8. Pra publicar novidade nova: acrescente um lote no topo da lista. */
 const NOVIDADES_LOTES = [
+  { id: 'lote-12', data: '19 de outubro', itens: [
+    ['⚖️', 'Menos especiais de graça', 'Os enigmas começam com 2 especiais (antes eram 4), o Presente do fundo dá 1 (antes eram 3) e aparece menos, e os especiais do Cemitério de Baleias e da Fonte Termal vêm mais devagar. As metas dos enigmas foram refeitas pra serem quebra-cabeças de verdade.'],
+    ['🔧', 'Fase trancada corrigida', 'Em aparelhos lentos, o aviso do "modo leve" podia cobrir o cartão de começar a fase, e a fase ficava sem botão pra iniciar. Agora o aviso espera o cartão fechar.'],
+    ['🛟', 'Rede de segurança', 'Se uma jogada travar por 30 segundos, o jogo agora destrava sozinho e avisa. Cartão aberto não conta: ele só espera você.'] ] },
   { id: 'lote-11', data: '16 de outubro', itens: [
     ['🧽', 'Esponja corrigida', 'Ao arrastar uma esponja (ou uma peça contra ela), a peça ficava um pouco fora do lugar, e o desvio ia somando. Agora a esponja fica parada e qualquer peça fora do lugar volta sozinha.'],
     ['📚', 'Novidades guardadas', 'O botão Novidades agora guarda as últimas atualizações, e o aviso ao abrir mostra todas as que você ainda não viu.'] ] },
@@ -1420,6 +1427,16 @@ function decideLeve() {
   prog.migrouLeve = true;
   salvaProg();
 }
+/* O aviso do modo leve chega sozinho, a qualquer hora. Ele NUNCA pode cobrir outro cartão: antes escrevia por cima do cartão
+   de começar a fase, a pessoa tocava em "Beleza" e ficava com o tabuleiro trancado e sem botão pra começar. Se houver cartão
+   aberto, espera ele fechar. */
+function avisoModoLeve(tentativa) {
+  tentativa = tentativa || 0;
+  if (document.getElementById('veu').classList.contains('aberto')) { if (tentativa < 80) setTimeout(() => avisoModoLeve(tentativa + 1), 1500); return; }
+  cartao('<h3>Liguei o modo leve</h3>' +
+    '<p>O jogo estava engasgando neste aparelho, então tirei desfoque, partícula e brilho pra rodar liso. Dá pra voltar atrás nos ajustes, no botão de engrenagem da tela inicial.</p>' +
+    '<div class="bts"><button class="bt" data-ac="fecha">Beleza</button></div>');
+}
 let olhoFps = null, jaMediu = false;
 function vigiaFps() {
   if (jaMediu || prog.leve) return;
@@ -1439,9 +1456,7 @@ function vigiaFps() {
     if (lento) {
       prog.leve = true; salvaProg(); aplicaLeve();
       faixaTexto('Modo leve');
-      setTimeout(() => cartao('<h3>Liguei o modo leve</h3>' +
-        '<p>O jogo estava engasgando neste aparelho, então tirei desfoque, partícula e brilho pra rodar liso. Dá pra voltar atrás nos ajustes, no botão de engrenagem da tela inicial.</p>' +
-        '<div class="bts"><button class="bt" data-ac="fecha">Beleza</button></div>'), 900);
+      setTimeout(avisoModoLeve, 900);
     }
   };
   olhoFps = requestAnimationFrame(passo);

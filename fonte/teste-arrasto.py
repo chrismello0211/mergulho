@@ -1,6 +1,6 @@
 # Teste do arrasto com toques reais: nenhuma peça pode ficar fora do lugar depois de um arrasto que não virou troca.
 from playwright.sync_api import sync_playwright
-INIT="()=>{fechaCartao();filaCartoes.length=0;prog.max=900;prog.dia=hoje();prog.vidas=5;prog.viuNovidades='lote-11';prog.leve=false;aplicaLeve();prog.vistos={tempo:1,quadrado:1,enigma:1,bau:1,cresce2:1,presos:1,bolhas:1,corrente:1,mancha2:1,ninho2:1,perolas2:1,coral2:1,lixo2:1,esponja:1,ressaca:1,portal:1};for(const k of ['raizes','gelo','eco','cinza','tesouro','cardume','abismo','emaranhado','canto','janelas','ferrao','cristais','neon','geiser','aurora'])prog.vistos['regiao-'+k]=1;for(let r=0;r<8;r++)for(let q=0;q<5;q++)prog.vistos['r'+r+'b'+q]=1;salvaProg();}"
+INIT="()=>{fechaCartao();filaCartoes.length=0;prog.max=900;prog.dia=hoje();prog.vidas=5;prog.viuNovidades='lote-12';prog.leve=false;prog.leveEscolhido=true;aplicaLeve();prog.vistos={tempo:1,quadrado:1,enigma:1,bau:1,cresce2:1,presos:1,bolhas:1,corrente:1,mancha2:1,ninho2:1,perolas2:1,coral2:1,lixo2:1,esponja:1,ressaca:1,portal:1};for(const k of ['raizes','gelo','eco','cinza','tesouro','cardume','abismo','emaranhado','canto','janelas','ferrao','cristais','neon','geiser','aurora'])prog.vistos['regiao-'+k]=1;for(let r=0;r<8;r++)for(let q=0;q<5;q++)prog.vistos['r'+r+'b'+q]=1;salvaProg();}"
 OFF="""()=>{const l=[];for(let r=0;r<H;r++)for(let c=0;c<W;c++){const p=grid[r][c];if(!p)continue;const el=els.get(p.id);if(!el)continue;
   const a=el.getBoundingClientRect(),z=celulasBox.children[r*W+c].getBoundingClientRect();const d=Math.round(Math.hypot(a.left-z.left,a.top-z.top));
   if(d>2)l.push((p.esponja?'ESPONJA':'peça')+' ('+r+','+c+') desvio '+d+'px');}return l;}"""
@@ -38,9 +38,11 @@ with sync_playwright() as p:
     pg.mouse.move(ax,ay); pg.mouse.down(); pg.mouse.move(ax+(bx-ax)*.4,ay+(by-ay)*.4,steps=4); pg.mouse.move(ax+(bx-ax)*.9,ay+(by-ay)*.9,steps=3); pg.mouse.up(); pg.wait_for_timeout(1800)
     confere('troca válida com o dedo (gasta 1 jogada)', [] if m0-pg.evaluate("()=>J.mov")==1 else ['não gastou 1 jogada'])
     confere('sem desvio depois da troca válida', pg.evaluate(OFF))
-    r={v:pg.evaluate("(v)=>{prog.viuNovidades=v;return lotesNovos().map(l=>l.id.replace('lote-','')).join(',')||'nenhuma';}",v) for v in ['lote-11','lote-8','lote-3','','lote-11']}
-    esperado={'lote-11':'11','lote-8':'11,10,9','lote-3':'11,10,9,8,7,6','':'11,10,9,8,7,6','lote-11':'nenhuma'}
-    confere('lotes de novidades por último visto', [] if r==esperado else [r])
+    N=pg.evaluate("()=>numLote(NOVIDADES_LOTES[0].id)")
+    ate=lambda a,b: ','.join(str(x) for x in range(a,b,-1))          # a, a-1, ..., b+1 (as mais novas primeiro)
+    esperado={'lote-%d'%(N-1):str(N),'lote-%d'%(N-3):ate(N,N-3),'lote-3':ate(N,N-6),'':ate(N,N-6),'lote-%d'%N:'nenhuma'}
+    r={v:pg.evaluate("(v)=>{prog.viuNovidades=v;return lotesNovos().map(l=>l.id.replace('lote-','')).join(',')||'nenhuma';}",v) for v in esperado}
+    confere('lotes de novidades por último visto (a mais nova é a %d)'%N, [] if r==esperado else [r])
     confere('erros de página', erros)
     b.close()
 print('\nRESULTADO:', 'TUDO CERTO' if not falhou else 'FALHOU: '+', '.join(falhou))

@@ -640,7 +640,24 @@ function corrigePosicoes() {
   }
   return n;
 }
-setInterval(() => { corrigePosicoes(); if (typeof alinhaMarcas === 'function' && typeof J !== 'undefined' && J && !J.ocupado) alinhaMarcas(); }, 1200);   /* anéis e marcas também se realinham sozinhos */
+let ocupadoDesde = 0, estadoVisto = '';
+setInterval(() => {
+  corrigePosicoes();
+  if (typeof alinhaMarcas === 'function' && typeof J !== 'undefined' && J && !J.ocupado) alinhaMarcas();   /* anéis e marcas também se realinham sozinhos */
+  /* destravador: só vale como travado se o jogo está "ocupado", SEM cartão aberto (cartão é espera legítima) E NADA MUDOU
+     (pontos, jogadas, cascata) por 30 s. Jogo rápido muda o estado a cada jogada, então nunca dispara; uma etapa que parou de verdade, sim. */
+  if (typeof J !== 'undefined' && J && J.ocupado && !J.fim && !document.hidden && !document.getElementById('veu').classList.contains('aberto')) {   /* cartão aberto = o jogo espera a pessoa, não travou */
+    const est = J.pontos + '|' + J.mov + '|' + J.cascata + '|' + (J.ressacaIn || 0) + '|' + (J.esponjasFeitas || 0), agora = performance.now();
+    if (est !== estadoVisto || !ocupadoDesde) { estadoVisto = est; ocupadoDesde = agora; }
+    else if (agora - ocupadoDesde > (window.__limiteTravado || 30000)) {
+      console.error('jogo travado: destravando');
+      window.__destravou = (window.__destravou || 0) + 1; ocupadoDesde = 0; estadoVisto = '';
+      J.ocupado = false;
+      try { reparaTabuleiro(); } catch (e) {}
+      try { faixaTexto('Deu um tranco, mas pode continuar', 2200); } catch (e) {}
+    }
+  } else { ocupadoDesde = 0; estadoVisto = ''; }
+}, 1200);   /* anéis e marcas também se realinham sozinhos */
 
 /* se algo quebrar no meio, nenhuma casa pode ficar vazia */
 function reparaTabuleiro() {
@@ -1128,7 +1145,8 @@ function passoEsponja() {
   J.avisosEsponja = (J.avisosEsponja || 0) + 1;
   if (J.avisosEsponja <= 2) faixaTexto('🧽 A esponja se espalhou! Estoure uma colada nela', 2200);
 }
-const PERIODICAS = { gelo: 5, cinza: 6, emaranhado: 8, canto: 6, ferrao: 6, geiser: 7, janelas: 3 };
+const PERIODICAS = { gelo: 5, cinza: 6, emaranhado: 8, canto: 10, ferrao: 6, geiser: 11, janelas: 3 };
+function contaEspeciais() { let n = 0; for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) if (grid[r][c] && grid[r][c].sp) n++; return n; }
 function passoRegiao() {
   if (!J || J.fim || !PERIODICAS[J.regra]) return;
   J.jogadasRegiao = (J.jogadasRegiao || 0) + 1;
@@ -1142,6 +1160,7 @@ function passoRegiao() {
   const l = [];
   for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) { const q = grid[r][c]; if (q && !q.sp && !q.bau && !q.gaiola && !q.lixo && !q.bolha) l.push(q); }
   if (!l.length) return;
+  if ((J.regra === 'canto' || J.regra === 'geiser') && contaEspeciais() >= 2) return;   /* não empilha especial de graça */
   const q = l[sorteia(l.length)];
   let msg = '';
   if (J.regra === 'gelo') { q.gaiola = 1; msg = '❄️ Uma peça congelou'; }

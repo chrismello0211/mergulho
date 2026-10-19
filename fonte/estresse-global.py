@@ -4,12 +4,22 @@ parte=int(sys.argv[1]); partes=int(sys.argv[2])
 src=open('/home/claude/mergulho/repo/index.html',encoding='utf-8').read()
 A='const espera = ms => new Promise(r => setTimeout(r, ms));'; assert A in src
 open('/tmp/ba/rapido_global%d.html'%parte,'w',encoding='utf-8').write(src.replace(A,'const espera = ms => new Promise(r => setTimeout(r, Math.min(ms, 3)));'))
-INIT="()=>{fechaCartao();filaCartoes.length=0;prog.max=1100;prog.dia=hoje();prog.vidas=5;prog.viuNovidades='lote-11';prog.leve=false;aplicaLeve();prog.vistos={tempo:1,quadrado:1,enigma:1,bau:1,cresce2:1,presos:1,bolhas:1,corrente:1,mancha2:1,ninho2:1,perolas2:1,coral2:1,lixo2:1,esponja:1,ressaca:1,portal:1};for(const k of ['raizes','gelo','eco','cinza','tesouro','cardume','abismo','emaranhado','canto','janelas','ferrao','cristais','neon','geiser','aurora'])prog.vistos['regiao-'+k]=1;for(let r=0;r<8;r++)for(let q=0;q<5;q++)prog.vistos['r'+r+'b'+q]=1;salvaProg();}"
+INIT="()=>{fechaCartao();filaCartoes.length=0;prog.max=1100;prog.dia=hoje();prog.vidas=5;prog.viuNovidades='lote-12';prog.leve=false;prog.leveEscolhido=true;aplicaLeve();prog.vistos={tempo:1,quadrado:1,enigma:1,bau:1,cresce2:1,presos:1,bolhas:1,corrente:1,mancha2:1,ninho2:1,perolas2:1,coral2:1,lixo2:1,esponja:1,ressaca:1,portal:1};for(const k of ['raizes','gelo','eco','cinza','tesouro','cardume','abismo','emaranhado','canto','janelas','ferrao','cristais','neon','geiser','aurora'])prog.vistos['regiao-'+k]=1;for(let r=0;r<8;r++)for(let q=0;q<5;q++)prog.vistos['r'+r+'b'+q]=1;salvaProg();}"
 INV="""const inv=()=>{const p=[];const ids=new Set();for(let r=0;r<H;r++)for(let c=0;c<W;c++){const q=grid[r][c];
   if(temCasa(r,c)&&!q)p.push('vazio '+r+','+c);if(!q)continue;if(ids.has(q.id))p.push('id repetido');ids.add(q.id);if(q.chegou)p.push('chegou preso');
   const el=els.get(q.id);if(!el){p.push('sem elemento '+r+','+c);continue;}
   const m=/translate\\(([-\\d.]+)px,\\s*([-\\d.]+)px\\)/.exec(el.style.transform);
   if(!m||Math.abs(+m[1]-c*CEL)>1||Math.abs(+m[2]-r*CEL)>1)p.push('fora do lugar '+r+','+c);}return p;};"""
+def fecha_cartoes(pg):
+    ocioso=0
+    for _ in range(14):
+        if pg.evaluate("!!document.querySelector('#veu.aberto')"):
+            ocioso=0
+            pg.evaluate("""()=>{const b=document.querySelector('#cartao [data-ac="comeca"]')||document.querySelector('#cartao .bt');if(b)b.click();}""")
+        else:
+            ocioso+=1
+            if ocioso>=3: break
+        pg.wait_for_timeout(350)
 erros=[]
 with sync_playwright() as p:
     b=p.chromium.launch(); pg=b.new_page(viewport={'width':393,'height':852},has_touch=True,is_mobile=True)
@@ -30,11 +40,9 @@ with sync_playwright() as p:
     tj=0; tf=0
     for i,rot in meus:
         pg.evaluate("(i)=>{fechaCartao();limpaPartida();abreFase(i,true);}", i); pg.wait_for_timeout(450)
-        for _ in range(5):
-            if pg.evaluate("!!document.querySelector('#veu.aberto')"): pg.evaluate("()=>{const b=document.querySelector('[data-ac=\"comeca\"]')||document.querySelector('[data-ac=\"fecha\"]');if(b)b.click();}"); pg.wait_for_timeout(250)
-        pg.wait_for_timeout(250)
+        fecha_cartoes(pg)
         r=pg.evaluate("async()=>{"+INV+"""window.faltaObjetivo=()=>99;J.mov=9999;if(J.tempoModo)J.tempoRestante=99999;const falhas=[];let m=0;
-          for(m=1;m<=30&&!J.fim;m++){for(let k=0;k<300&&J.ocupado;k++)await new Promise(r=>setTimeout(r,8));const j=achaJogada();if(!j)break;
+          for(m=1;m<=24&&!J.fim;m++){for(let k=0;k<300&&J.ocupado;k++)await new Promise(r=>setTimeout(r,8));const j=achaJogada();if(!j)break;
             await tentaTroca({r:j[0],c:j[1]},{r:j[2],c:j[3]});for(let k=0;k<400&&J.ocupado;k++)await new Promise(r=>setTimeout(r,8));
             const pr=inv();if(pr.length)falhas.push('jogada '+m+': '+pr.slice(0,2).join(' | '));}
           await new Promise(r=>setTimeout(r,1100));

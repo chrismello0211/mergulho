@@ -1550,14 +1550,14 @@ body.leve .peca.esp-peixe .capa{animation:peixe-nada 1.4s ease-in-out infinite !
    MERGULHO · combinar 3 da beira da praia até 4.000 metros
    ═══════════════════════════════════════════════════════════════ */
 
-const VERSAO_JOGO = '2026.12.15';
+const VERSAO_JOGO = '2026.12.18';
 const W = 7, H = 8, TIPOS = 6;
 const NADA = 0, LH = 1, LV = 2, BOMBA = 3, ARCO = 4, ONDA = 5, ONDAV = 6, CARDUME = 7, PEIXE = 8;
 /* fases com o quadrado ligado: 4 peças iguais em 2x2 viram um peixe-guia */
 let QUADRADO_ATIVO = false;
 /* condições do mar: uma regra extra por fase, pra nenhuma fase ser igual à anterior */
 const CONDICOES = {
-  brinde: { ic: '🎁', nome: 'Presente do fundo', texto: 'A fase já começa com especiais prontos no tabuleiro.' },
+  brinde: { ic: '🎁', nome: 'Presente do fundo', texto: 'A fase já começa com um especial pronto no tabuleiro.' },
   corvez: { ic: '✨', nome: 'Cor da vez', texto: 'Uma das peças vale o dobro de pontos nesta fase.' },
   moedas: { ic: '🪙', nome: 'Moedas no fundo', texto: 'Algumas casas escondem moedas de verdade: estoure em cima pra pegar.' }
 };
@@ -1583,12 +1583,12 @@ const REGRAS_REGIAO = {
   'Sargaço':        { id: 'cardume',ic: '🐟', nome: 'Cardume do sargaço', texto: 'Toda fase começa com um especial de cardume pronto.' },
   'Fossa':          { id: 'abismo', ic: '🌑', nome: 'Pressão do abismo', texto: 'Especiais valem o dobro de pontos aqui embaixo.' },
   'Floresta de Kelp':     { id: 'emaranhado', ic: '🌿', nome: 'Emaranhado de algas', texto: 'Uma peça começa presa nas algas e, a cada 8 jogadas, outra se enrosca. Estoure do lado pra soltar.' },
-  'Cemitério de Baleias': { id: 'canto',      ic: '🐋', nome: 'Canto de baleia',     texto: 'A cada 6 jogadas o canto ecoa e uma peça vira especial de cardume.' },
+  'Cemitério de Baleias': { id: 'canto',      ic: '🐋', nome: 'Canto de baleia',     texto: 'A cada 10 jogadas o canto ecoa e uma peça vira especial de cardume (só se houver menos de 2 especiais no tabuleiro).' },
   'Cidade Submersa':      { id: 'janelas',    ic: '🏙️', nome: 'Luzes da cidade',     texto: 'A cor que vale o dobro muda a cada 3 jogadas. Fique de olho no painel.' },
   'Jardim de Medusas':    { id: 'ferrao',     ic: '🪼', nome: 'Ferrão de medusa',    texto: 'A cada 6 jogadas uma peça é paralisada, e na vez seguinte uma vira entulho. Estoure do lado pra livrar.' },
   'Gruta de Cristal':     { id: 'cristais',   ic: '💎', nome: 'Eco de cristal',      texto: 'Jogada que estoura 5 peças ou mais devolve 1 jogada (até 3 por fase).' },
   'Recife de Neon':       { id: 'neon',       ic: '🌈', nome: 'Reta final neon',     texto: 'Nas últimas 5 jogadas, tudo vale o dobro de pontos.' },
-  'Fonte Termal':         { id: 'geiser',     ic: '♨️', nome: 'Gêiser',              texto: 'A cada 7 jogadas o gêiser transforma uma peça em bolha especial.' },
+  'Fonte Termal':         { id: 'geiser',     ic: '♨️', nome: 'Gêiser',              texto: 'A cada 11 jogadas o gêiser transforma uma peça em bolha especial (só se houver menos de 2 especiais no tabuleiro).' },
   'Mar de Aurora':        { id: 'aurora',     ic: '🌌', nome: 'Aurora',              texto: 'Cascata de 3 ou mais rende 2 moedas.' }
 };
 const regraDa = i => { if (i < 30 || (i + 1) % 100 === 0) return null; const a = ambiente(i); return (a && a.reg && REGRAS_REGIAO[a.reg.nome]) || null; };
@@ -1614,7 +1614,7 @@ const eventoHoje = () => { const d = new Date(), dia = d.getDay(); if (dia !== 0
 const tetoDaFase = i => { try { const m = fase(+i).marcas; return m && m[2] ? m[2] * 4 : Infinity; } catch (e) { return Infinity; } };
 /* teto de jogadas numa fase de relógio: ninguém precisa de mais que isso pra tocar rápido */
 const capTempo = i => Math.max(30, Math.round(fase(i).mov * 2.6));
-const condicaoDa = i => { if (i < 30 || (i + 1) % 100 === 0) return null; const h = ((i + 17) * 2654435761 >>> 0) % 100; return h < 22 ? 'brinde' : h < 40 ? 'corvez' : h < 55 ? 'moedas' : null; };
+const condicaoDa = i => { if (i < 30 || (i + 1) % 100 === 0) return null; const h = ((i + 17) * 2654435761 >>> 0) % 100; return h < 14 ? 'brinde' : h < 22 ? null : h < 40 ? 'corvez' : h < 55 ? 'moedas' : null; };
 
 const $ = s => document.querySelector(s);
 /* todo sorteio do jogo passa por aqui: no desafio da semana a gente
@@ -1992,8 +1992,8 @@ function fase(i) {
   const f = faseBruta(i);
   if (i >= BASE.length && !f.enigmaFeito && enigmaDa0(f, i)) {
     f.enigmaFeito = true; f.enigma = true;
-    f.mov = Math.max(6, Math.round(f.mov * .38));
-    f.marcas = f.marcas.map(m => Math.round(m * .5 / 100) * 100);
+    f.mov = Math.min(8, Math.max(6, Math.round(f.mov * .4)));
+    f.marcas = enigmaMarcas(i);
   }
   /* fase de relógio: dá pra fazer bem mais jogadas que o normal, então a meta sobe junto */
   if (i >= BASE.length && !f.tempoFeito && tempoDe(f, i) > 0) {
@@ -2023,6 +2023,15 @@ function fase(i) {
   }
   return f;
 }
+/* Metas do enigma, MEDIDAS (antes eram metade das de uma fase normal, um palpite que dava 3 estrelas em 100% das partidas).
+   Com 2 especiais prontos e 6 a 8 jogadas, um jogador que sempre escolhe a ação que limpa mais peças faz mediana de ~11.700
+   pontos e raramente passa de 17.000. A 1ª estrela fica no que ele faz 80% das vezes, a 2ª no que faz perto de metade e a 3ª
+   só no que faz uma vez em cada sete: exige planejar. Sobe um pouco com a profundidade e nas regiões que dobram pontos. */
+const enigmaMarcas = i => {
+  const dif = Math.max(0, Math.min(1, (i - 44) / 450)), reg = regraDa(i), id = reg && reg.id;
+  const k = (1 + .15 * dif) * (id === 'abismo' ? 1.5 : id === 'neon' ? 1.7 : id === 'eco' ? 1.2 : 1);
+  return [6400, 11700, 17900].map(m => Math.round(m * k / 100) * 100);
+};
 const enigmaDa0 = (f, i) => !((i + 1) % 100 === 0) && i >= 44 && f.obj && f.obj.tipo === 'pontos' && ((i + 11) * 2654435761 >>> 0) % 100 < 65;
 const expedicao = i => Math.floor(i / CICLO) + 1;
 
@@ -4289,7 +4298,24 @@ function corrigePosicoes() {
   }
   return n;
 }
-setInterval(() => { corrigePosicoes(); if (typeof alinhaMarcas === 'function' && typeof J !== 'undefined' && J && !J.ocupado) alinhaMarcas(); }, 1200);   /* anéis e marcas também se realinham sozinhos */
+let ocupadoDesde = 0, estadoVisto = '';
+setInterval(() => {
+  corrigePosicoes();
+  if (typeof alinhaMarcas === 'function' && typeof J !== 'undefined' && J && !J.ocupado) alinhaMarcas();   /* anéis e marcas também se realinham sozinhos */
+  /* destravador: só vale como travado se o jogo está "ocupado", SEM cartão aberto (cartão é espera legítima) E NADA MUDOU
+     (pontos, jogadas, cascata) por 30 s. Jogo rápido muda o estado a cada jogada, então nunca dispara; uma etapa que parou de verdade, sim. */
+  if (typeof J !== 'undefined' && J && J.ocupado && !J.fim && !document.hidden && !document.getElementById('veu').classList.contains('aberto')) {   /* cartão aberto = o jogo espera a pessoa, não travou */
+    const est = J.pontos + '|' + J.mov + '|' + J.cascata + '|' + (J.ressacaIn || 0) + '|' + (J.esponjasFeitas || 0), agora = performance.now();
+    if (est !== estadoVisto || !ocupadoDesde) { estadoVisto = est; ocupadoDesde = agora; }
+    else if (agora - ocupadoDesde > (window.__limiteTravado || 30000)) {
+      console.error('jogo travado: destravando');
+      window.__destravou = (window.__destravou || 0) + 1; ocupadoDesde = 0; estadoVisto = '';
+      J.ocupado = false;
+      try { reparaTabuleiro(); } catch (e) {}
+      try { faixaTexto('Deu um tranco, mas pode continuar', 2200); } catch (e) {}
+    }
+  } else { ocupadoDesde = 0; estadoVisto = ''; }
+}, 1200);   /* anéis e marcas também se realinham sozinhos */
 
 /* se algo quebrar no meio, nenhuma casa pode ficar vazia */
 function reparaTabuleiro() {
@@ -4777,7 +4803,8 @@ function passoEsponja() {
   J.avisosEsponja = (J.avisosEsponja || 0) + 1;
   if (J.avisosEsponja <= 2) faixaTexto('🧽 A esponja se espalhou! Estoure uma colada nela', 2200);
 }
-const PERIODICAS = { gelo: 5, cinza: 6, emaranhado: 8, canto: 6, ferrao: 6, geiser: 7, janelas: 3 };
+const PERIODICAS = { gelo: 5, cinza: 6, emaranhado: 8, canto: 10, ferrao: 6, geiser: 11, janelas: 3 };
+function contaEspeciais() { let n = 0; for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) if (grid[r][c] && grid[r][c].sp) n++; return n; }
 function passoRegiao() {
   if (!J || J.fim || !PERIODICAS[J.regra]) return;
   J.jogadasRegiao = (J.jogadasRegiao || 0) + 1;
@@ -4791,6 +4818,7 @@ function passoRegiao() {
   const l = [];
   for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) { const q = grid[r][c]; if (q && !q.sp && !q.bau && !q.gaiola && !q.lixo && !q.bolha) l.push(q); }
   if (!l.length) return;
+  if ((J.regra === 'canto' || J.regra === 'geiser') && contaEspeciais() >= 2) return;   /* não empilha especial de graça */
   const q = l[sorteia(l.length)];
   let msg = '';
   if (J.regra === 'gelo') { q.gaiola = 1; msg = '❄️ Uma peça congelou'; }
@@ -5194,10 +5222,10 @@ function preparaEspeciaisDaFase() {
   J.cond = J.desafio ? null : condicaoDa(J.fase); J.corVez = null; J.moedasFundo = null; J.moedasPegas = 0;
   if (J.cond === 'brinde') {
     let n = 0;
-    for (let tent = 0; tent < 80 && n < 3; tent++) {
+    for (let tent = 0; tent < 80 && n < 1; tent++) {
       const r = 2 + sorteia(H - 2), c = sorteia(W), q = grid[r] && grid[r][c];
       if (!q || q.sp || q.bau || q.lixo || q.gaiola || q.bolha) continue;
-      q.sp = [LH, LV, BOMBA][n % 3]; n++;
+      q.sp = [LH, LV, BOMBA][J.fase % 3]; n++;
     }
   }
   if (J.cond === 'corvez') J.corVez = ((J.fase + 5) * 31) % 6;
@@ -5210,7 +5238,10 @@ function preparaEspeciaisDaFase() {
   if (J.regra === 'emaranhado') { const l = pecasLivres(); if (l.length) l.splice(sorteia(l.length), 1)[0].gaiola = 1; }
   if (J.regra === 'janelas' && J.corVez == null) J.corVez = (J.fase * 5 + 1) % 6;
   if (J.regra === 'cardume') { const l = pecasLivres(); if (l.length) l[sorteia(l.length)].sp = CARDUME; }
-  if (f.enigma) { const l = pecasLivres(); [LH, LV, BOMBA, ARCO].forEach(sp => { if (l.length) l.splice(sorteia(l.length), 1)[0].sp = sp; }); }
+  if (f.enigma) {   /* dois especiais prontos, e o par é sempre o mesmo naquela fase: cada enigma tem a sua cara */
+    const l = pecasLivres(), PARES = [[LH, LV], [LH, BOMBA], [LH, ARCO], [LV, BOMBA], [LV, ARCO], [BOMBA, ARCO]];
+    PARES[J.fase % PARES.length].forEach(sp => { if (l.length) l.splice(sorteia(l.length), 1)[0].sp = sp; });
+  }
   if (J.regra === 'tesouro' || J.evento === 'moedas') {
     J.moedasFundo = J.moedasFundo || Array.from({ length: H }, () => Array(W).fill(0));
     let n = 0;
@@ -6136,6 +6167,10 @@ async function recebeVidas() {
    vê TODAS as que ainda não viu (até 6), não só a última: quem pulou uma versão não perde nada. O botão
    Novidades guarda as últimas 8. Pra publicar novidade nova: acrescente um lote no topo da lista. */
 const NOVIDADES_LOTES = [
+  { id: 'lote-12', data: '19 de outubro', itens: [
+    ['⚖️', 'Menos especiais de graça', 'Os enigmas começam com 2 especiais (antes eram 4), o Presente do fundo dá 1 (antes eram 3) e aparece menos, e os especiais do Cemitério de Baleias e da Fonte Termal vêm mais devagar. As metas dos enigmas foram refeitas pra serem quebra-cabeças de verdade.'],
+    ['🔧', 'Fase trancada corrigida', 'Em aparelhos lentos, o aviso do "modo leve" podia cobrir o cartão de começar a fase, e a fase ficava sem botão pra iniciar. Agora o aviso espera o cartão fechar.'],
+    ['🛟', 'Rede de segurança', 'Se uma jogada travar por 30 segundos, o jogo agora destrava sozinho e avisa. Cartão aberto não conta: ele só espera você.'] ] },
   { id: 'lote-11', data: '16 de outubro', itens: [
     ['🧽', 'Esponja corrigida', 'Ao arrastar uma esponja (ou uma peça contra ela), a peça ficava um pouco fora do lugar, e o desvio ia somando. Agora a esponja fica parada e qualquer peça fora do lugar volta sozinha.'],
     ['📚', 'Novidades guardadas', 'O botão Novidades agora guarda as últimas atualizações, e o aviso ao abrir mostra todas as que você ainda não viu.'] ] },
@@ -6588,6 +6623,16 @@ function decideLeve() {
   prog.migrouLeve = true;
   salvaProg();
 }
+/* O aviso do modo leve chega sozinho, a qualquer hora. Ele NUNCA pode cobrir outro cartão: antes escrevia por cima do cartão
+   de começar a fase, a pessoa tocava em "Beleza" e ficava com o tabuleiro trancado e sem botão pra começar. Se houver cartão
+   aberto, espera ele fechar. */
+function avisoModoLeve(tentativa) {
+  tentativa = tentativa || 0;
+  if (document.getElementById('veu').classList.contains('aberto')) { if (tentativa < 80) setTimeout(() => avisoModoLeve(tentativa + 1), 1500); return; }
+  cartao('<h3>Liguei o modo leve</h3>' +
+    '<p>O jogo estava engasgando neste aparelho, então tirei desfoque, partícula e brilho pra rodar liso. Dá pra voltar atrás nos ajustes, no botão de engrenagem da tela inicial.</p>' +
+    '<div class="bts"><button class="bt" data-ac="fecha">Beleza</button></div>');
+}
 let olhoFps = null, jaMediu = false;
 function vigiaFps() {
   if (jaMediu || prog.leve) return;
@@ -6607,9 +6652,7 @@ function vigiaFps() {
     if (lento) {
       prog.leve = true; salvaProg(); aplicaLeve();
       faixaTexto('Modo leve');
-      setTimeout(() => cartao('<h3>Liguei o modo leve</h3>' +
-        '<p>O jogo estava engasgando neste aparelho, então tirei desfoque, partícula e brilho pra rodar liso. Dá pra voltar atrás nos ajustes, no botão de engrenagem da tela inicial.</p>' +
-        '<div class="bts"><button class="bt" data-ac="fecha">Beleza</button></div>'), 900);
+      setTimeout(avisoModoLeve, 900);
     }
   };
   olhoFps = requestAnimationFrame(passo);

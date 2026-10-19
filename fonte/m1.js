@@ -2,14 +2,14 @@
    MERGULHO · combinar 3 da beira da praia até 4.000 metros
    ═══════════════════════════════════════════════════════════════ */
 
-const VERSAO_JOGO = '2026.12.15';
+const VERSAO_JOGO = '2026.12.18';
 const W = 7, H = 8, TIPOS = 6;
 const NADA = 0, LH = 1, LV = 2, BOMBA = 3, ARCO = 4, ONDA = 5, ONDAV = 6, CARDUME = 7, PEIXE = 8;
 /* fases com o quadrado ligado: 4 peças iguais em 2x2 viram um peixe-guia */
 let QUADRADO_ATIVO = false;
 /* condições do mar: uma regra extra por fase, pra nenhuma fase ser igual à anterior */
 const CONDICOES = {
-  brinde: { ic: '🎁', nome: 'Presente do fundo', texto: 'A fase já começa com especiais prontos no tabuleiro.' },
+  brinde: { ic: '🎁', nome: 'Presente do fundo', texto: 'A fase já começa com um especial pronto no tabuleiro.' },
   corvez: { ic: '✨', nome: 'Cor da vez', texto: 'Uma das peças vale o dobro de pontos nesta fase.' },
   moedas: { ic: '🪙', nome: 'Moedas no fundo', texto: 'Algumas casas escondem moedas de verdade: estoure em cima pra pegar.' }
 };
@@ -35,12 +35,12 @@ const REGRAS_REGIAO = {
   'Sargaço':        { id: 'cardume',ic: '🐟', nome: 'Cardume do sargaço', texto: 'Toda fase começa com um especial de cardume pronto.' },
   'Fossa':          { id: 'abismo', ic: '🌑', nome: 'Pressão do abismo', texto: 'Especiais valem o dobro de pontos aqui embaixo.' },
   'Floresta de Kelp':     { id: 'emaranhado', ic: '🌿', nome: 'Emaranhado de algas', texto: 'Uma peça começa presa nas algas e, a cada 8 jogadas, outra se enrosca. Estoure do lado pra soltar.' },
-  'Cemitério de Baleias': { id: 'canto',      ic: '🐋', nome: 'Canto de baleia',     texto: 'A cada 6 jogadas o canto ecoa e uma peça vira especial de cardume.' },
+  'Cemitério de Baleias': { id: 'canto',      ic: '🐋', nome: 'Canto de baleia',     texto: 'A cada 10 jogadas o canto ecoa e uma peça vira especial de cardume (só se houver menos de 2 especiais no tabuleiro).' },
   'Cidade Submersa':      { id: 'janelas',    ic: '🏙️', nome: 'Luzes da cidade',     texto: 'A cor que vale o dobro muda a cada 3 jogadas. Fique de olho no painel.' },
   'Jardim de Medusas':    { id: 'ferrao',     ic: '🪼', nome: 'Ferrão de medusa',    texto: 'A cada 6 jogadas uma peça é paralisada, e na vez seguinte uma vira entulho. Estoure do lado pra livrar.' },
   'Gruta de Cristal':     { id: 'cristais',   ic: '💎', nome: 'Eco de cristal',      texto: 'Jogada que estoura 5 peças ou mais devolve 1 jogada (até 3 por fase).' },
   'Recife de Neon':       { id: 'neon',       ic: '🌈', nome: 'Reta final neon',     texto: 'Nas últimas 5 jogadas, tudo vale o dobro de pontos.' },
-  'Fonte Termal':         { id: 'geiser',     ic: '♨️', nome: 'Gêiser',              texto: 'A cada 7 jogadas o gêiser transforma uma peça em bolha especial.' },
+  'Fonte Termal':         { id: 'geiser',     ic: '♨️', nome: 'Gêiser',              texto: 'A cada 11 jogadas o gêiser transforma uma peça em bolha especial (só se houver menos de 2 especiais no tabuleiro).' },
   'Mar de Aurora':        { id: 'aurora',     ic: '🌌', nome: 'Aurora',              texto: 'Cascata de 3 ou mais rende 2 moedas.' }
 };
 const regraDa = i => { if (i < 30 || (i + 1) % 100 === 0) return null; const a = ambiente(i); return (a && a.reg && REGRAS_REGIAO[a.reg.nome]) || null; };
@@ -66,7 +66,7 @@ const eventoHoje = () => { const d = new Date(), dia = d.getDay(); if (dia !== 0
 const tetoDaFase = i => { try { const m = fase(+i).marcas; return m && m[2] ? m[2] * 4 : Infinity; } catch (e) { return Infinity; } };
 /* teto de jogadas numa fase de relógio: ninguém precisa de mais que isso pra tocar rápido */
 const capTempo = i => Math.max(30, Math.round(fase(i).mov * 2.6));
-const condicaoDa = i => { if (i < 30 || (i + 1) % 100 === 0) return null; const h = ((i + 17) * 2654435761 >>> 0) % 100; return h < 22 ? 'brinde' : h < 40 ? 'corvez' : h < 55 ? 'moedas' : null; };
+const condicaoDa = i => { if (i < 30 || (i + 1) % 100 === 0) return null; const h = ((i + 17) * 2654435761 >>> 0) % 100; return h < 14 ? 'brinde' : h < 22 ? null : h < 40 ? 'corvez' : h < 55 ? 'moedas' : null; };
 
 const $ = s => document.querySelector(s);
 /* todo sorteio do jogo passa por aqui: no desafio da semana a gente
@@ -444,8 +444,8 @@ function fase(i) {
   const f = faseBruta(i);
   if (i >= BASE.length && !f.enigmaFeito && enigmaDa0(f, i)) {
     f.enigmaFeito = true; f.enigma = true;
-    f.mov = Math.max(6, Math.round(f.mov * .38));
-    f.marcas = f.marcas.map(m => Math.round(m * .5 / 100) * 100);
+    f.mov = Math.min(8, Math.max(6, Math.round(f.mov * .4)));
+    f.marcas = enigmaMarcas(i);
   }
   /* fase de relógio: dá pra fazer bem mais jogadas que o normal, então a meta sobe junto */
   if (i >= BASE.length && !f.tempoFeito && tempoDe(f, i) > 0) {
@@ -475,6 +475,15 @@ function fase(i) {
   }
   return f;
 }
+/* Metas do enigma, MEDIDAS (antes eram metade das de uma fase normal, um palpite que dava 3 estrelas em 100% das partidas).
+   Com 2 especiais prontos e 6 a 8 jogadas, um jogador que sempre escolhe a ação que limpa mais peças faz mediana de ~11.700
+   pontos e raramente passa de 17.000. A 1ª estrela fica no que ele faz 80% das vezes, a 2ª no que faz perto de metade e a 3ª
+   só no que faz uma vez em cada sete: exige planejar. Sobe um pouco com a profundidade e nas regiões que dobram pontos. */
+const enigmaMarcas = i => {
+  const dif = Math.max(0, Math.min(1, (i - 44) / 450)), reg = regraDa(i), id = reg && reg.id;
+  const k = (1 + .15 * dif) * (id === 'abismo' ? 1.5 : id === 'neon' ? 1.7 : id === 'eco' ? 1.2 : 1);
+  return [6400, 11700, 17900].map(m => Math.round(m * k / 100) * 100);
+};
 const enigmaDa0 = (f, i) => !((i + 1) % 100 === 0) && i >= 44 && f.obj && f.obj.tipo === 'pontos' && ((i + 11) * 2654435761 >>> 0) % 100 < 65;
 const expedicao = i => Math.floor(i / CICLO) + 1;
 
