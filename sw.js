@@ -1,6 +1,6 @@
 /* Mergulho: service worker
    Troque VERSAO a cada publicação: o cache velho é apagado sozinho. */
-const VERSAO = 'v2026.12.18';
+const VERSAO = 'v2026.12.20';
 const CACHE = 'mergulho-' + VERSAO;
 
 const ARQUIVOS = [
@@ -86,4 +86,24 @@ self.addEventListener('fetch', e => {
 /* permite forçar a atualização a partir da página */
 self.addEventListener('message', e => {
   if (e.data === 'atualiza-agora') self.skipWaiting();
+});
+
+/* ── notificações: o Firebase Cloud Messaging entrega aqui, e quem mostra o aviso é este código.
+   (sem o SDK do Firebase no service worker, então nunca aparece aviso duplicado) */
+self.addEventListener('push', e => {
+  let d = {};
+  try { d = e.data ? e.data.json() : {}; } catch (err) { d = { data: { corpo: e.data ? e.data.text() : '' } }; }
+  const n = d.notification || {}, x = d.data || {};
+  const titulo = n.title || x.titulo || 'Mergulho';
+  e.waitUntil(self.registration.showNotification(titulo, {
+    body: n.body || x.corpo || '', icon: './icones/icone-192.png', badge: './icones/icone-192.png',
+    tag: x.tipo || n.tag || 'mergulho', renotify: true, data: { url: './' }
+  }));
+});
+self.addEventListener('notificationclick', e => {
+  e.notification.close();
+  e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(lista => {
+    for (const c of lista) if ('focus' in c) return c.focus();
+    return self.clients.openWindow((e.notification.data && e.notification.data.url) || './');
+  }));
 });

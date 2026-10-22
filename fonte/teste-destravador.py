@@ -1,6 +1,6 @@
 # O destravador: só dispara se o jogo ficar ocupado SEM nenhuma mudança de estado por 30 s (aqui encurtado pra 4 s só no teste).
 from playwright.sync_api import sync_playwright
-INIT="()=>{fechaCartao();filaCartoes.length=0;prog.max=900;prog.dia=hoje();prog.vidas=5;prog.viuNovidades='lote-12';prog.leve=false;prog.leveEscolhido=true;aplicaLeve();prog.vistos={tempo:1,quadrado:1,enigma:1,esponja:1,ressaca:1,portal:1};for(let r=0;r<8;r++)for(let q=0;q<5;q++)prog.vistos['r'+r+'b'+q]=1;salvaProg();}"
+INIT="()=>{fechaCartao();filaCartoes.length=0;prog.max=900;prog.dia=hoje();prog.vidas=5;prog.viuNovidades='lote-99';prog.leve=false;prog.leveEscolhido=true;aplicaLeve();prog.vistos={tempo:1,quadrado:1,enigma:1,esponja:1,ressaca:1,portal:1};for(let r=0;r<8;r++)for(let q=0;q<5;q++)prog.vistos['r'+r+'b'+q]=1;salvaProg();}"
 falhou=[]
 def ok(nome,cond,extra=''):
     print(('OK   ' if cond else 'FALHA'),nome,extra)

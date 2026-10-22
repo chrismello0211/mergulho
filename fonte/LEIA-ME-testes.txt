@@ -10,6 +10,11 @@ Os caminhos no topo de cada script (/home/claude/mergulho/repo/index.html e /tmp
   teste-aviso-modo-leve.py antigo|novo   o aviso de desempenho não pode cobrir o cartão de começar a fase
   teste-destravador.py                   o destravador só age com jogo parado de verdade, sem cartão aberto
   teste-relogio.py, teste-especial-tocado.py
+  teste-bau.py <index.html>             o baú do dia não pode ser pego de novo fechando o app antes da nuvem salvar; sincronização em celular novo e em dois aparelhos
+  teste-album.py                         série 3 (Brilhantes), chances por série, bônus de completar, figurinha garantida no enigma
+  teste-avisos.py                        notificações do lado do jogo, com Firebase e permissão simulados
+  node teste-sw.js (na pasta do jogo)    o service worker mostra o aviso e abre o jogo
+  cd funcoes/functions && npm test       as funções do servidor rodando com o Firebase simulado (83 verificações)
   medir-*.py                             calibragem: jogador automático com e sem a mecânica; medir-enigma.py mede os pontos dos enigmas
   cacar-travamento.py                    registra por quais etapas cada jogada passa e mostra onde parou, se travar
 

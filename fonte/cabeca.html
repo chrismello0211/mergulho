@@ -14,7 +14,11 @@
    ═══════════════════════════════════════════════════════════════ */
 window.MERGULHO_NUVEM = {
   chave: 'AIzaSyC4SBDOddZ2yTDbmD7kZwjxNEZ9gy_uxeg',
-  banco: 'https://mergulho-c6230-default-rtdb.firebaseio.com'
+  banco: 'https://mergulho-c6230-default-rtdb.firebaseio.com',
+  /* notificações (Firebase Cloud Messaging). Enquanto remetente, app e vapid estiverem vazios, o botão nem aparece.
+     remetente = messagingSenderId e app = appId (Configurações do projeto → Geral → app da Web);
+     vapid = Configurações do projeto → Cloud Messaging → Certificados push da Web → par de chaves (a pública) */
+  projeto: 'mergulho-c6230', remetente: '', app: '', vapid: ''
 };
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -783,6 +787,18 @@ body.em-segundo-plano *,body.em-segundo-plano *::before,body.em-segundo-plano *:
 @media (max-width:340px){ .linha-extras.tres #faixa-evento b{display:none} }
 #faixa-evento b{font-family:var(--display);overflow:hidden;text-overflow:ellipsis}
 #faixa-evento span{font-size:11px;font-weight:800;padding:1px 7px;border-radius:999px;background:rgba(255,255,255,.25)}
+
+/* ── notificações ── */
+.aviso-msg{margin:8px 0 10px;padding:9px 11px;border-radius:12px;background:rgba(90,200,255,.14);font-size:13px;text-align:left}
+
+/* ── série 3 · brilhantes: dourado com um reflexo que passa ── */
+.fig-brilho{display:inline-grid;place-items:center;position:relative;filter:drop-shadow(0 0 4px rgba(255,215,106,.95)) drop-shadow(0 0 10px rgba(255,190,60,.55)) saturate(1.35)}
+.fig.brilhante{background:linear-gradient(135deg,rgba(255,214,102,.28),rgba(140,90,10,.35));box-shadow:inset 0 0 0 2px rgba(255,214,102,.75);position:relative;overflow:hidden}
+.fig.brilhante::after{content:"";position:absolute;inset:-40%;background:linear-gradient(115deg,transparent 40%,rgba(255,255,255,.55) 50%,transparent 60%);transform:translateX(-60%);animation:fig-brilha 3.2s ease-in-out infinite;pointer-events:none}
+.fig.vazia.brilhante{background:rgba(255,214,102,.08);box-shadow:inset 0 0 0 2px rgba(255,214,102,.3)}
+.fig.vazia.brilhante::after{display:none}
+@keyframes fig-brilha{0%,55%{transform:translateX(-60%)}100%{transform:translateX(60%)}}
+body.leve .fig.brilhante::after{display:none}
 
 /* ── portal: anel na casa de entrada (lilás, ↓) e na de saída (azul, ↑), por cima das peças ── */
 .marca-casa.portal-entra,.marca-casa.portal-sai{border-radius:26%;pointer-events:none;

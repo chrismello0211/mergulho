@@ -22,7 +22,11 @@
    ═══════════════════════════════════════════════════════════════ */
 window.MERGULHO_NUVEM = {
   chave: 'AIzaSyC4SBDOddZ2yTDbmD7kZwjxNEZ9gy_uxeg',
-  banco: 'https://mergulho-c6230-default-rtdb.firebaseio.com'
+  banco: 'https://mergulho-c6230-default-rtdb.firebaseio.com',
+  /* notificações (Firebase Cloud Messaging). Enquanto remetente, app e vapid estiverem vazios, o botão nem aparece.
+     remetente = messagingSenderId e app = appId (Configurações do projeto → Geral → app da Web);
+     vapid = Configurações do projeto → Cloud Messaging → Certificados push da Web → par de chaves (a pública) */
+  projeto: 'mergulho-c6230', remetente: '', app: '', vapid: ''
 };
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -792,6 +796,18 @@ body.em-segundo-plano *,body.em-segundo-plano *::before,body.em-segundo-plano *:
 #faixa-evento b{font-family:var(--display);overflow:hidden;text-overflow:ellipsis}
 #faixa-evento span{font-size:11px;font-weight:800;padding:1px 7px;border-radius:999px;background:rgba(255,255,255,.25)}
 
+/* ── notificações ── */
+.aviso-msg{margin:8px 0 10px;padding:9px 11px;border-radius:12px;background:rgba(90,200,255,.14);font-size:13px;text-align:left}
+
+/* ── série 3 · brilhantes: dourado com um reflexo que passa ── */
+.fig-brilho{display:inline-grid;place-items:center;position:relative;filter:drop-shadow(0 0 4px rgba(255,215,106,.95)) drop-shadow(0 0 10px rgba(255,190,60,.55)) saturate(1.35)}
+.fig.brilhante{background:linear-gradient(135deg,rgba(255,214,102,.28),rgba(140,90,10,.35));box-shadow:inset 0 0 0 2px rgba(255,214,102,.75);position:relative;overflow:hidden}
+.fig.brilhante::after{content:"";position:absolute;inset:-40%;background:linear-gradient(115deg,transparent 40%,rgba(255,255,255,.55) 50%,transparent 60%);transform:translateX(-60%);animation:fig-brilha 3.2s ease-in-out infinite;pointer-events:none}
+.fig.vazia.brilhante{background:rgba(255,214,102,.08);box-shadow:inset 0 0 0 2px rgba(255,214,102,.3)}
+.fig.vazia.brilhante::after{display:none}
+@keyframes fig-brilha{0%,55%{transform:translateX(-60%)}100%{transform:translateX(60%)}}
+body.leve .fig.brilhante::after{display:none}
+
 /* ── portal: anel na casa de entrada (lilás, ↓) e na de saída (azul, ↑), por cima das peças ── */
 .marca-casa.portal-entra,.marca-casa.portal-sai{border-radius:26%;pointer-events:none;
   box-shadow:inset 0 0 0 3px var(--cor-portal),inset 0 0 14px 2px var(--cor-portal),0 0 12px 2px var(--cor-portal);animation:portal-pulsa 1.6s ease-in-out infinite}
@@ -1550,7 +1566,7 @@ body.leve .peca.esp-peixe .capa{animation:peixe-nada 1.4s ease-in-out infinite !
    MERGULHO · combinar 3 da beira da praia até 4.000 metros
    ═══════════════════════════════════════════════════════════════ */
 
-const VERSAO_JOGO = '2026.12.18';
+const VERSAO_JOGO = '2026.12.20';
 const W = 7, H = 8, TIPOS = 6;
 const NADA = 0, LH = 1, LV = 2, BOMBA = 3, ARCO = 4, ONDA = 5, ONDAV = 6, CARDUME = 7, PEIXE = 8;
 /* fases com o quadrado ligado: 4 peças iguais em 2x2 viram um peixe-guia */
@@ -5660,13 +5676,14 @@ async function venceu() {
   const tinha3 = estrelasAntes >= 3;
   /* figurinha é conquista: só fase Difícil ou Lendária com 3 estrelas pela
      primeira vez (ou mestre derrotado, que dá a lendária) */
-  const valeFig = ['D', 'L'].indexOf(classeDaFase(J.fase)) >= 0;
+  const enigma3 = !!faseAtual().enigma;      /* enigma resolvido com 3 estrelas pela 1ª vez: figurinha garantida */
+  const valeFig = ['D', 'L'].indexOf(classeDaFase(J.fase)) >= 0 || enigma3;
   let sorteioFig = false;
   if (!J.desafio && !eraMestre && e >= 3 && !tinha3 && valeFig) {
-    /* Difícil 30%, Lendária 60%; depois de 12 tentativas sem nada, vem garantida */
-    const chance = classeDaFase(J.fase) === 'L' ? .6 : .3;
+    /* séries 1 e 2: Difícil 30%, Lendária 60%, garantia em 12 tentativas; série 3 (Brilhantes): 12%, 25%, garantia em 25 */
+    const chance = chanceFig(classeDaFase(J.fase));
     prog.semFig = (prog.semFig || 0) + 1;
-    sorteioFig = Math.random() < chance || prog.semFig >= 12;
+    sorteioFig = enigma3 || Math.random() < chance || prog.semFig >= garantiaFig();
     if (sorteioFig) prog.semFig = 0;
     salvaProg();
   }
@@ -5839,32 +5856,47 @@ const ALBUM2 = [
   ['⭐','Coroa-de-espinhos','Uma estrela-do-mar que come coral e pode devastar um recife inteiro.',280],
   ['🪨','Peixe-pedra','O peixe mais venenoso do mundo, e parece uma pedra no fundo.',0]
 ];
-const ALBUM_TOTAL = () => ALBUM.length + ALBUM2.length + MESTRES.length;
-const daSerie = id => id[0] === 'd' ? ALBUM2[+id.slice(1)] : ALBUM[+id.slice(1)];
+/* Série 3 · Brilhantes: a versão dourada de cada figurinha das séries 1 e 2. Só abre depois de completar as duas e é bem
+   mais difícil: 12% nas fases Difíceis, 25% nas Lendárias, garantia só depois de 25 tentativas. Completar vale 5.000. */
+const BRILHANTES = () => ALBUM.map((_, k) => 'bc' + k).concat(ALBUM2.map((_, k) => 'bd' + k));
+const TOTAL_BASE = () => ALBUM.length + ALBUM2.length + MESTRES.length;           /* séries 1 e 2 + lendárias */
+const ALBUM_TOTAL = () => TOTAL_BASE() + ALBUM.length + ALBUM2.length;
+const contaBase = () => (prog.album || []).filter(x => x[0] !== 'b').length;
+const daSerie = id => { if (id[0] === 'b') id = id.slice(1); return id[0] === 'd' ? ALBUM2[+id.slice(1)] : ALBUM[+id.slice(1)]; };
 const temFigurinha = id => (prog.album || []).indexOf(id) >= 0;
+/* de qual série sai a próxima figurinha comum (0: tudo completo) */
+function proximaSerie() {
+  if (ALBUM.some((_, k) => !temFigurinha('c' + k))) return 1;
+  if (ALBUM2.some((_, k) => !temFigurinha('d' + k))) return 2;
+  if (BRILHANTES().some(x => !temFigurinha(x))) return 3;
+  return 0;
+}
+const chanceFig = classe => proximaSerie() === 3 ? (classe === 'L' ? .25 : .12) : (classe === 'L' ? .6 : .3);
+const garantiaFig = () => proximaSerie() === 3 ? 25 : 12;
 function ganhaFigurinha(lendaria) {
   prog.album = prog.album || [];
   let id = null;
   if (lendaria != null) id = 'm' + lendaria;
   else {
-    /* termina a primeira série antes de abrir a segunda */
-    let faltam = ALBUM.map((_, k) => 'c' + k).filter(x => !temFigurinha(x));
-    if (!faltam.length) faltam = ALBUM2.map((_, k) => 'd' + k).filter(x => !temFigurinha(x));
+    const s = proximaSerie();
+    const lista = s === 1 ? ALBUM.map((_, k) => 'c' + k) : s === 2 ? ALBUM2.map((_, k) => 'd' + k) : s === 3 ? BRILHANTES() : [];
+    const faltam = lista.filter(x => !temFigurinha(x));
     if (faltam.length) id = faltam[Math.floor(Math.random() * faltam.length)];
   }
   if (!id || temFigurinha(id)) return null;
   prog.album.push(id);
-  if (prog.album.length >= ALBUM_TOTAL() && !prog.albumCompleto) { prog.albumCompleto = true; prog.moedas += 2000; }
+  if (contaBase() >= TOTAL_BASE() && !prog.albumCompleto) { prog.albumCompleto = true; prog.moedas += 2000; }
+  if (BRILHANTES().every(temFigurinha) && !prog.brilhoCompleto) { prog.brilhoCompleto = true; prog.moedas += 5000; }
   salvaProg();
   return id;
 }
 function desenhoFigurinha(id, grande) {
   if (id[0] === 'm') return '<span class="fig-arte">' + desenhaMestre(+id.slice(1)) + '</span>';
-  const d = daSerie(id);
-  return '<span class="fig-arte fig-emoji' + (grande ? ' grande' : '') + '"' + (d[3] ? ' style="filter:hue-rotate(' + d[3] + 'deg)"' : '') + '>' + d[0] + '</span>';
+  const d = daSerie(id), emoji = '<span class="fig-arte fig-emoji' + (grande ? ' grande' : '') + '"' + (d[3] ? ' style="filter:hue-rotate(' + d[3] + 'deg)"' : '') + '>' + d[0] + '</span>';
+  return id[0] === 'b' ? '<span class="fig-brilho">' + emoji + '</span>' : emoji;
 }
-const nomeFigurinha = id => id[0] === 'm' ? MESTRES[+id.slice(1)].nome : daSerie(id)[1];
-const textoFigurinha = id => id[0] === 'm' ? MESTRES[+id.slice(1)].fala : daSerie(id)[2];
+const nomeFigurinha = id => id[0] === 'm' ? MESTRES[+id.slice(1)].nome : daSerie(id)[1] + (id[0] === 'b' ? ' ✨' : '');
+const textoFigurinha = id => id[0] === 'm' ? MESTRES[+id.slice(1)].fala : (id[0] === 'b' ? 'Versão brilhante. ' : '') + daSerie(id)[2];
 /* Quem venceu mestres antes do álbum existir recebe as lendárias deles:
    olha as fases de mestre que já têm estrela e entrega o que faltar. */
 function resgataLendarias() {
@@ -5878,7 +5910,7 @@ function resgataLendarias() {
   }
   if (!novas.length) return [];
   novas.forEach(id => prog.album.push(id));
-  if (prog.album.length >= ALBUM_TOTAL() && !prog.albumCompleto) { prog.albumCompleto = true; prog.moedas += 2000; }
+  if (contaBase() >= TOTAL_BASE() && !prog.albumCompleto) { prog.albumCompleto = true; prog.moedas += 2000; }
   salvaProg(); salvaNaNuvemDepois();
   return novas;
 }
@@ -5893,18 +5925,18 @@ function avisaResgate(novas) {
 }
 function mostraAlbum() {
   resgataLendarias();
-  const s1 = ALBUM.map((_, k) => 'c' + k), s2 = ALBUM2.map((_, k) => 'd' + k), lend = MESTRES.map((_, k) => 'm' + k);
+  const s1 = ALBUM.map((_, k) => 'c' + k), s2 = ALBUM2.map((_, k) => 'd' + k), lend = MESTRES.map((_, k) => 'm' + k), s3 = BRILHANTES();
   const conta = l => l.filter(temFigurinha).length + '/' + l.length;
   const grade = (titulo, l) => '<p class="album-serie">' + titulo + ' · ' + conta(l) + '</p><div class="album-grade">' + l.map(id => temFigurinha(id)
-      ? '<button class="fig' + (id[0] === 'm' ? ' lendaria' : '') + '" data-ac="figurinha" data-id="' + id + '">' + desenhoFigurinha(id) + '<small>' + nomeFigurinha(id) + '</small></button>'
-      : '<div class="fig vazia' + (id[0] === 'm' ? ' lendaria' : '') + '"><span class="fig-arte">?</span><small>' + (id[0] === 'm' ? 'Lendária' : '???') + '</small></div>').join('') + '</div>';
-  const todos = s1.concat(s2, lend);
+      ? '<button class="fig' + (id[0] === 'm' ? ' lendaria' : id[0] === 'b' ? ' brilhante' : '') + '" data-ac="figurinha" data-id="' + id + '">' + desenhoFigurinha(id) + '<small>' + nomeFigurinha(id) + '</small></button>'
+      : '<div class="fig vazia' + (id[0] === 'm' ? ' lendaria' : id[0] === 'b' ? ' brilhante' : '') + '"><span class="fig-arte">?</span><small>' + (id[0] === 'm' ? 'Lendária' : id[0] === 'b' ? 'Brilhante' : '???') + '</small></div>').join('') + '</div>';
+  const todos = s1.concat(s2, lend, s3);
   const n = (prog.album || []).length;
   cartao('<h3>Álbum do fundo do mar</h3>' +
-    '<p class="album-conta">' + n + ' de ' + ALBUM_TOTAL() + ' figurinhas' + (prog.albumCompleto ? ' · completo! 🏆' : ' · completar vale 2.000 moedas') + '</p>' +
+    '<p class="album-conta">' + n + ' de ' + ALBUM_TOTAL() + ' figurinhas' + (prog.brilhoCompleto ? ' · completo! 🏆' : prog.albumCompleto ? ' · séries 1 e 2 completas ✓ · as Brilhantes valem 5.000 moedas' : ' · completar as séries 1 e 2 vale 2.000 moedas') + '</p>' +
     '<div class="album-barra"><i style="width:' + Math.round(n / ALBUM_TOTAL() * 100) + '%"></i></div>' +
-    '<div class="album-rola">' + grade('Série 1 · Costeira', s1) + grade('Série 2 · Abismo', s2) + grade('Lendárias', lend) + '</div>' +
-    '<p class="album-dica">3 estrelas pela primeira vez numa fase Difícil têm 30% de chance de dar figurinha; numa Lendária, 60%. Depois de 12 tentativas sem nada, a próxima é garantida. As lendárias vêm dos mestres.</p>' +
+    '<div class="album-rola">' + grade('Série 1 · Costeira', s1) + grade('Série 2 · Abismo', s2) + grade('Lendárias', lend) + grade('Série 3 · Brilhantes ✨', s3) + '</div>' +
+    '<p class="album-dica">3 estrelas pela primeira vez numa fase Difícil têm 30% de chance de dar figurinha; numa Lendária, 60%. Depois de 12 tentativas sem nada, a próxima é garantida. As lendárias vêm dos mestres, e enigma com 3 estrelas pela primeira vez dá figurinha garantida. Completas as séries 1 e 2, abre a série 3, das Brilhantes: 12% nas Difíceis, 25% nas Lendárias, garantia só depois de 25 tentativas.</p>' +
     '<div class="bts"><button class="bt" data-ac="fecha">Fechar</button></div>', true);
 }
 function mostraFigurinha(id) {
@@ -6118,6 +6150,125 @@ function atualizaVidas() {
 }
 const proximaVida = () => { atualizaVidas(); return prog.vidas >= VIDAS_MAX ? 0 : Math.max(0, VIDA_MS - (Date.now() - prog.vidaMarca)); };
 const mmss = ms => { const t = Math.ceil(ms / 1000); return Math.floor(t / 60) + ':' + String(t % 60).padStart(2, '0'); };
+/* ═══ NOTIFICAÇÕES ═════════════════════════════════════════════════
+   Avisos no celular mesmo com o jogo fechado, pelo Firebase Cloud Messaging. Cada pessoa liga nos Ajustes (o navegador só
+   deixa pedir permissão depois de um toque) e escolhe quais quer. O aparelho guarda o seu "endereço" (token) em
+   /mergulho/avisos/<uid>/aparelhos e publica ali a hora em que as vidas enchem e o dia do último baú; quem envia é o
+   servidor (pasta funcoes/). No iPhone só funciona com o jogo instalado na tela de início (iOS 16.4 ou mais novo).
+   Sem a configuração no cabeca.html (remetente, app e vapid), nada disso aparece. */
+const TIPOS_AVISO = [
+  { k: 'pedidos', nome: 'Pedidos de vida', texto: 'Quando alguém do seu cardume pedir vida.' },
+  { k: 'recebida', nome: 'Vida recebida', texto: 'Quando alguém te mandar uma vida.' },
+  { k: 'vidas', nome: 'Vidas cheias', texto: 'Quando suas vidas recarregarem todas.' },
+  { k: 'bau', nome: 'Baú do dia', texto: 'Um lembrete às 19h, se você ainda não pegou o de hoje.' },
+  { k: 'evento', nome: 'Evento de fim de semana', texto: 'No sábado de manhã, quando o evento começa.' }
+];
+const SDK_FIREBASE = 'https://www.gstatic.com/firebasejs/10.12.2/';
+const Avisos = {
+  ultimaVida: null, ultimoPerfil: '',
+  get configurado() { const c = Conta.cfg || {}; return !!(Conta.ligada && c.projeto && c.remetente && c.app && c.vapid); },
+  get suportado() { return 'Notification' in window && 'serviceWorker' in navigator && 'PushManager' in window; },
+  get iphone() { return /iPhone|iPad|iPod/.test(navigator.userAgent); },
+  get iphoneSemInstalar() { return this.iphone && !(navigator.standalone || (window.matchMedia && matchMedia('(display-mode: standalone)').matches)); },
+  get ligado() { return !!(prog.avisos && prog.avisos.ligado) && this.suportado && Notification.permission === 'granted'; },
+  tipos() { const t = (prog.avisos && prog.avisos.tipos) || {}, r = {}; TIPOS_AVISO.forEach(x => r[x.k] = t[x.k] !== false); return r; },
+  script(src) { return new Promise((ok, erro) => { const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = erro; document.head.appendChild(s); }); },
+  async carregaSdk() {
+    if (!(window.firebase && firebase.initializeApp)) await this.script(SDK_FIREBASE + 'firebase-app-compat.js');
+    if (!firebase.messaging) await this.script(SDK_FIREBASE + 'firebase-messaging-compat.js');
+  },
+  async token() {
+    await this.carregaSdk();
+    const c = Conta.cfg;
+    if (!firebase.apps.length) firebase.initializeApp({ apiKey: c.chave, authDomain: c.projeto + '.firebaseapp.com', databaseURL: c.banco, projectId: c.projeto, messagingSenderId: c.remetente, appId: c.app });
+    const reg = await navigator.serviceWorker.ready;
+    return await firebase.messaging().getToken({ vapidKey: c.vapid, serviceWorkerRegistration: reg });
+  },
+  chave(tk) { let h = 0; for (let i = 0; i < tk.length; i++) h = (Math.imul(h, 31) + tk.charCodeAt(i)) >>> 0; return 'a' + h.toString(36) + tk.length.toString(36); },
+  base() { return '/mergulho/avisos/' + Conta.sessao.uid; },
+  async registra(tk) {
+    prog.avisos.token = tk; prog.avisos.chave = this.chave(tk); salvaProg();
+    const ok = await Ranking.manda(this.base() + '/aparelhos/' + prog.avisos.chave,
+      { token: tk, quando: Date.now(), plataforma: this.iphone ? 'ios' : /Android/.test(navigator.userAgent) ? 'android' : 'outro' });
+    this.ultimoPerfil = '';
+    return ok && await this.publicaPerfil();
+  },
+  /* o que o servidor precisa saber: nome, cardume e quais avisos a pessoa quer (só grava quando muda) */
+  async publicaPerfil() {
+    if (!this.ligado || !Ranking.ligado) return false;
+    const perfil = { nome: Ranking.nome(), cardume: prog.cardume || '', tipos: this.tipos() }, txt = JSON.stringify(perfil);
+    if (txt === this.ultimoPerfil) return true;
+    const ok = await Ranking.manda(this.base() + '/perfil', perfil);
+    if (ok) this.ultimoPerfil = txt;
+    return ok;
+  },
+  /* a hora em que as vidas ficam cheias: o servidor avisa nessa hora (0 = já estão cheias). Só grava quando muda. */
+  publicaVidas() {
+    if (!this.ligado || !Ranking.ligado) return;
+    const quando = prog.vidas >= VIDAS_MAX ? 0 : Math.round((Date.now() + proximaVida() + (VIDAS_MAX - prog.vidas - 1) * VIDA_MS) / 1000) * 1000;
+    if (this.ultimaVida !== null && Math.abs(this.ultimaVida - quando) < 60000) return;
+    this.ultimaVida = quando;
+    Ranking.manda(this.base() + '/vidasCheiasEm', quando);
+  },
+  publicaBau() { if (this.ligado && Ranking.ligado) Ranking.manda(this.base() + '/bauDia', prog.dia || ''); },
+  async liga() {
+    if (!this.configurado) return 'naoconfig';
+    if (this.iphoneSemInstalar) return 'instalar';
+    if (!this.suportado) return 'semsuporte';
+    if (!Conta.dentro) return 'conta';
+    let perm = Notification.permission;
+    if (perm !== 'granted') { try { perm = await Notification.requestPermission(); } catch (e) { perm = 'denied'; } }
+    if (perm !== 'granted') return 'negado';
+    prog.avisos = Object.assign({ tipos: {} }, prog.avisos || {}, { ligado: true }); salvaProg();
+    let tk = null;
+    try { tk = await this.token(); } catch (e) { console.warn('endereço de aviso:', e); }
+    if (!tk) { prog.avisos.ligado = false; salvaProg(); return 'token'; }
+    const ok = await this.registra(tk);
+    this.ultimaVida = null; this.publicaVidas(); this.publicaBau();
+    return ok ? 'ok' : 'rede';
+  },
+  async desliga() {
+    if (prog.avisos && prog.avisos.chave && Ranking.ligado) await Ranking.manda(this.base() + '/aparelhos/' + prog.avisos.chave, null);
+    prog.avisos = Object.assign({}, prog.avisos || {}, { ligado: false }); salvaProg();
+  },
+  async mudaTipo(k) { const t = this.tipos(); t[k] = !t[k]; prog.avisos.tipos = t; salvaProg(); await this.publicaPerfil(); },
+  /* ao abrir: o navegador às vezes renova o endereço; uma vez por dia confere e regrava */
+  async renova() {
+    if (!this.ligado || !this.configurado || !Conta.dentro) return;
+    if (prog.avisos.renovado !== hoje()) {
+      try { const tk = await this.token(); if (tk && tk !== prog.avisos.token) await this.registra(tk); prog.avisos.renovado = hoje(); salvaProg(); } catch (e) {}
+    }
+    await this.publicaPerfil(); this.publicaVidas(); this.publicaBau();
+  }
+};
+const RECADOS_AVISO = {
+  ok: 'Pronto! Os avisos estão ligados neste aparelho.',
+  negado: 'O aparelho não deixou. Pra liberar, vá nos ajustes do celular, em Notificações, e permita o Mergulho.',
+  instalar: 'No iPhone, os avisos só funcionam com o jogo instalado. Toque em Compartilhar, depois em <b>Adicionar à Tela de Início</b>, e abra o jogo por lá.',
+  semsuporte: 'Este navegador não recebe notificações. No Android, use o Chrome; no iPhone, instale o jogo na tela de início.',
+  conta: 'Pra receber avisos, primeiro guarde seu progresso numa conta (Ajustes, Progresso).',
+  token: 'Não consegui registrar este aparelho agora. Tente de novo daqui a pouco.',
+  rede: 'Sem internet agora. Tente de novo daqui a pouco.',
+  naoconfig: 'Os avisos ainda não foram configurados.'
+};
+function mostraAvisos(msg) {
+  const lig = Avisos.ligado, t = Avisos.tipos();
+  cartao('<h3>Notificações</h3>' + (msg ? '<p class="aviso-msg">' + msg + '</p>' : '') +
+    (lig
+      ? '<p>Escolha quais avisos quer receber neste celular:</p>' +
+        TIPOS_AVISO.map(a => '<div class="ajuste"><div class="txt"><b>' + a.nome + '</b><small>' + a.texto + '</small></div>' +
+          '<button class="chave' + (t[a.k] ? ' on' : '') + '" data-ac="tipo-aviso" data-k="' + a.k + '" role="switch" aria-checked="' + t[a.k] + '" aria-label="' + a.nome + '"><span></span></button></div>').join('') +
+        '<div class="bts"><button class="bt" data-ac="fecha">Pronto</button><button class="bt-texto" data-ac="desliga-avisos">Desligar neste aparelho</button></div>'
+      : '<p>Receba um aviso no celular quando alguém do cardume pedir vida, quando te mandarem uma, quando suas vidas encherem, pra não esquecer o baú do dia e quando começar o evento do fim de semana.</p>' +
+        (Avisos.iphoneSemInstalar && !msg ? '<p class="aviso-msg">' + RECADOS_AVISO.instalar + '</p>' : '') +
+        '<div class="bts"><button class="bt" data-ac="liga-avisos">Ligar notificações</button><button class="bt-texto" data-ac="fecha">Agora não</button></div>'), true);
+}
+async function ligaAvisos(botao) {
+  if (botao) { botao.disabled = true; botao.textContent = 'Ligando...'; }
+  const r = await Avisos.liga();
+  mostraAvisos(RECADOS_AVISO[r] || RECADOS_AVISO.token);
+}
+
 function gastaVida() {
   atualizaVidas();
   if (prog.vidas >= VIDAS_MAX) prog.vidaMarca = Date.now();
@@ -6126,6 +6277,7 @@ function gastaVida() {
 }
 function pintaVidas() {
   atualizaVidas();
+  try { Avisos.publicaVidas(); } catch (e) {}
   const t = proximaVida();
   document.querySelectorAll('.pilula-vidas').forEach(el => {
     el.innerHTML = '<b>❤ ' + prog.vidas + ((prog.vidasAmigos || 0) > 0 ? '<i>+' + prog.vidasAmigos + '</i>' : '') + '</b><small>' + (prog.vidas < VIDAS_MAX ? mmss(t) : 'cheio') + '</small>';
@@ -6167,6 +6319,11 @@ async function recebeVidas() {
    vê TODAS as que ainda não viu (até 6), não só a última: quem pulou uma versão não perde nada. O botão
    Novidades guarda as últimas 8. Pra publicar novidade nova: acrescente um lote no topo da lista. */
 const NOVIDADES_LOTES = [
+  { id: 'lote-13', data: '22 de outubro', itens: [
+    ['✨', 'Série 3: Brilhantes', 'Quem completa as séries 1 e 2 abre a versão dourada de cada figurinha: 48 novas e bem mais difíceis (12% de chance nas fases Difíceis, 25% nas Lendárias). Completar vale 5.000 moedas.'],
+    ['🧩', 'Enigma vale figurinha', 'Resolver um enigma com 3 estrelas pela primeira vez dá uma figurinha garantida.'],
+    ...((window.MERGULHO_NUVEM || {}).vapid ? [['🔔', 'Notificações', 'Dá pra receber aviso no celular quando alguém do cardume pedir vida, quando te mandarem uma, quando as vidas encherem e mais. Ligue em Ajustes. No iPhone, só com o jogo instalado na tela de início.']] : []),
+    ['🔒', 'Baú do dia corrigido', 'Fechar o jogo logo depois de pegar o baú fazia ele voltar como se fosse outro dia. Agora o baú pego fica pego, e moeda ou poder gasto não volta mais da nuvem.'] ] },
   { id: 'lote-12', data: '19 de outubro', itens: [
     ['⚖️', 'Menos especiais de graça', 'Os enigmas começam com 2 especiais (antes eram 4), o Presente do fundo dá 1 (antes eram 3) e aparece menos, e os especiais do Cemitério de Baleias e da Fonte Termal vêm mais devagar. As metas dos enigmas foram refeitas pra serem quebra-cabeças de verdade.'],
     ['🔧', 'Fase trancada corrigida', 'Em aparelhos lentos, o aviso do "modo leve" podia cobrir o cartão de começar a fase, e a fase ficava sem botão pra iniciar. Agora o aviso espera o cartão fechar.'],
@@ -6466,7 +6623,8 @@ function pegaBau() {
   prog.dia = hoje();
   salvaProg();
   pintaMoedas(); pintaPoderes();
-  salvaNaNuvemDepois();
+  if (Conta.ligada && Conta.dentro) Conta.salva();   /* na hora, sem esperar */
+  try { Avisos.publicaBau(); } catch (e) {}
   Som.liga(); Som.vitoria();
   pintaSemanaHome();
   if (d.todos) fogos();
@@ -6671,6 +6829,8 @@ function mostraAjustes() {
       '<div class="ajuste"><div class="txt"><b>' + a.nome + '</b><small>' + a.texto + '</small></div>' +
       '<button class="chave' + (valorAjuste(a.k) ? ' on' : '') + '" data-ac="mudar" data-k="' + a.k + '" ' +
       'role="switch" aria-checked="' + valorAjuste(a.k) + '" aria-label="' + a.nome + '"><span></span></button></div>').join('') +
+    (Avisos.configurado ? '<div class="ajuste"><div class="txt"><b>Notificações</b><small>' + (Avisos.ligado ? 'ligadas neste aparelho' : 'pedidos de vida, vidas cheias e mais') + '</small></div>' +
+      '<button class="bt-compra" data-ac="avisos">' + (Avisos.ligado ? 'Escolher' : 'Ligar') + '</button></div>' : '') +
     '<div class="ajuste"><div class="txt"><b>Código de presente</b><small>se alguém te passar um</small></div>' +
       '<button class="bt-compra" data-ac="codigo">Usar</button></div>' +
     '<div class="ajuste"><div class="txt"><b>Seu nome no ranking</b><small>' + (prog.apelido || 'ainda sem nome') + '</small></div>' +
@@ -6761,7 +6921,7 @@ const Conta = {
     try {
       const r = await fetch(this.cfg.banco + '/mergulho/jogadores/' + this.sessao.uid + '.json?auth=' + t,
         { method: 'PUT', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ quando: Date.now(), versao: VERSAO_JOGO, prog: prog }) });
+          body: JSON.stringify({ quando: Date.now(), versao: VERSAO_JOGO, aparelho: idAparelho(), prog: prog }) });
       return r.ok;
     } catch (e) { return false; }
   },
@@ -6772,7 +6932,8 @@ const Conta = {
     try {
       const r = await fetch(this.cfg.banco + '/mergulho/jogadores/' + this.sessao.uid + '.json?auth=' + t);
       const d = await r.json();
-      return d && d.prog ? d.prog : null;
+      if (d && d.prog) { d.prog.__aparelho = d.aparelho || null; return d.prog; }
+      return null;
     } catch (e) { return null; }
   },
   /* junta os dois lados e deixa tudo igual nos dois */
@@ -6788,7 +6949,7 @@ let salvarPendente = null;
 function salvaNaNuvemDepois() {
   if (!Conta.ligada || !Conta.dentro) return;
   clearTimeout(salvarPendente);
-  salvarPendente = setTimeout(() => Conta.salva(), 1500);
+  salvarPendente = setTimeout(() => { Conta.salva(); try { Avisos.publicaPerfil(); } catch (e) {} }, 1500);
 }
 const RECADOS = {
   EMAIL_EXISTS: 'Esse e-mail já tem conta. Tente entrar.',
@@ -6805,36 +6966,46 @@ const recado = e => {
   return RECADOS[m] || 'Não consegui agora. Veja a internet e tente de novo.';
 };
 
+/* id deste aparelho: fica fora do prog (que vai pra nuvem) e marca de onde veio cada cópia salva */
+function idAparelho() {
+  let id = null;
+  try { id = localStorage.getItem(CHAVE + '-aparelho'); if (!id) { id = Math.random().toString(36).slice(2, 10) + Date.now().toString(36); localStorage.setItem(CHAVE + '-aparelho', id); } } catch (e) {}
+  return id || 'sem-id';
+}
+/* Junta a cópia da nuvem (a) com a deste aparelho (b).
+   Antes, tudo o que não tinha regra própria vinha da nuvem, e moedas e poderes valiam o maior dos dois. Se o app fechasse
+   antes de a nuvem receber a última gravação, a cópia velha "desfazia" o baú do dia (dava pra pegar de novo, já no dia
+   seguinte da semana) e devolvia moeda e poder gastos.
+   Agora: o progresso que só anda pra frente soma os dois lados; recursos (moedas, poderes, vidas) e ajustes vêm inteiros de
+   um lado só, deste aparelho se a nuvem é cópia dele mesmo, ou de quem avançou mais se veio de outro aparelho; e o baú do
+   dia segue sempre o lado que pegou por último, então nunca dá pra pegar duas vezes no mesmo dia. */
 function juntaProg(a, b) {
-  if (!b) return a;
-  const r = JSON.parse(JSON.stringify(a));
+  if (!b) { const s = JSON.parse(JSON.stringify(a)); delete s.__aparelho; return s; }
+  const mesmoAparelho = !!a.__aparelho && a.__aparelho === idAparelho();
+  const vence = mesmoAparelho ? b : ((a.max || 0) > (b.max || 0) ? a : b);
+  const r = JSON.parse(JSON.stringify(vence));
+  delete r.__aparelho;
   r.max = Math.max(a.max || 0, b.max || 0);
-  r.moedas = Math.max(a.moedas || 0, b.moedas || 0);
   r.estrelas = Object.assign({}, b.estrelas || {});
   for (const k in (a.estrelas || {})) r.estrelas[k] = Math.max(a.estrelas[k] || 0, r.estrelas[k] || 0);
-  r.poderes = {};
-  ['arpao', 'troca', 'giro', 'isca', 'folego'].forEach(k => r.poderes[k] = Math.max((a.poderes || {})[k] || 0, (b.poderes || {})[k] || 0));
-  r.vistos = Object.assign({}, b.vistos || {}, a.vistos || {});
+  r.vistos = Object.assign({}, a.vistos || {}, b.vistos || {});
   const da = a.desafio || {}, db = b.desafio || {};
   r.desafio = { semana: (da.melhor || 0) >= (db.melhor || 0) ? da.semana : db.semana,
                 melhor: Math.max(da.melhor || 0, db.melhor || 0), nome: da.nome || db.nome || '' };
-  r.apelido = a.apelido || b.apelido || '';
+  r.apelido = b.apelido || a.apelido || '';
   r.mestres = 0;   /* recalculado a partir das estrelas das fases de mestre */
-  r.seq = (a.dia || '') >= (b.dia || '') ? (a.seq || 0) : (b.seq || 0);
+  const bau = (a.dia || '') > (b.dia || '') ? a : b;          /* o baú do dia segue quem pegou por último */
+  r.dia = bau.dia; r.seq = bau.seq || 0; r.semanas = bau.semanas || 0;
   r.melhorSeq = Math.max(a.melhorSeq || 0, b.melhorSeq || 0);
-  r.semanas = Math.max(a.semanas || 0, b.semanas || 0);
-  r.album = Array.from(new Set([].concat(a.album || [], b.album || [])));
+  r.album = Array.from(new Set([].concat(b.album || [], a.album || [])));
   r.albumCompleto = !!(a.albumCompleto || b.albumCompleto);
-  r.vidas = a.vidas != null ? a.vidas : b.vidas;
-  r.vidasAmigos = Math.max(a.vidasAmigos || 0, b.vidasAmigos || 0);
-  r.enviadas = Object.assign({}, b.enviadas || {}, a.enviadas || {});
-  r.recebidas = a.recebidas || b.recebidas;
-  r.vidaMarca = a.vidaMarca || b.vidaMarca;
+  r.brilhoCompleto = !!(a.brilhoCompleto || b.brilhoCompleto);
+  r.enviadas = Object.assign({}, a.enviadas || {}, b.enviadas || {});
   r.codigos = Array.from(new Set([].concat(a.codigos || [], b.codigos || [])));
-  r.cardume = a.cardume || b.cardume || '';
+  r.cardume = b.cardume || a.cardume || '';
   r.melhores = Object.assign({}, b.melhores || {});
   for (const k in (a.melhores || {})) r.melhores[k] = Math.max(a.melhores[k] || 0, r.melhores[k] || 0);
-  r.email = a.email || b.email || '';
+  r.email = b.email || a.email || '';
   return r;
 }
 function aplicaProg(novo) { prog = juntaProg(novo, prog); salvaProg(); pintaMoedas(); pintaPoderes(); pintaBotaoSom(); aplicaLeve(); }
@@ -7577,7 +7748,7 @@ function mostraPreFase() {
     '<p class="pre-texto">' + C.texto + '</p>' +
     '<div class="pre-linhas"><div class="pre-obj"><small>objetivo</small><b>' + resumoObjetivo(f) + '</b>' + iconesObjetivo(f) + '</div>' +
     '<div><small>' + (tempoDa(J.fase) ? 'segundos' : 'jogadas') + '</small><b class="pre-grande">' + (tempoDa(J.fase) || f.mov) + '</b></div></div>' +
-    (['D', 'L'].indexOf(k) >= 0 && (prog.estrelas[J.fase] || 0) < 3 && f.obj.tipo !== 'chefe' ? '<p class="pre-fig">📖 3 estrelas aqui podem render uma figurinha pro álbum (' + (k === 'L' ? '60%' : '30%') + ' de chance)</p>' : '') +
+    ((['D', 'L'].indexOf(k) >= 0 || f.enigma) && (prog.estrelas[J.fase] || 0) < 3 && f.obj.tipo !== 'chefe' && proximaSerie() ? '<p class="pre-fig">📖 ' + (f.enigma ? '3 estrelas neste enigma dão uma figurinha garantida pro álbum' : '3 estrelas aqui podem render uma figurinha' + (proximaSerie() === 3 ? ' brilhante' : '') + ' pro álbum (' + Math.round(chanceFig(k) * 100) + '% de chance)') + '</p>' : '') +
     (f.portal ? '<p class="pre-portal">🌀 <b>Portal</b> · a peça do fundo da coluna marcada com ↓ vai parar no topo da coluna marcada com ↑, toda vez que ela ganhar peça nova.</p>' : '') +
     (f.ressaca ? '<p class="pre-ressaca">🌊 <b>Ressaca</b> · a cada ' + f.ressaca + ' jogadas uma fileira desliza uma casa. A fileira marcada mostra qual é a próxima.</p>' : '') +
     (f.enigma ? '<p class="pre-enigma">🧩 <b>Enigma</b> · só ' + f.mov + ' jogadas, com especiais já prontos no tabuleiro. Pense antes de mexer.</p>' : '') +
@@ -7752,6 +7923,7 @@ function iniciar() {
   Conta.carrega();
   addEventListener('orientationchange', () => setTimeout(encaixaInicio, 250));
   if (Conta.ligada && Conta.dentro) Conta.sincroniza();
+  setTimeout(() => { try { Avisos.renova(); } catch (e) {} }, 4000);
   decideLeve();
   aplicaLeve();
   document.getElementById('versao').textContent = 'v' + VERSAO_JOGO;
@@ -7852,6 +8024,10 @@ function iniciar() {
     else if (ac === 'rank') mostraRanking();
     else if (ac === 'apelido') pedeApelido();
     else if (ac === 'codigo') mostraCodigo();
+    else if (ac === 'avisos') mostraAvisos();
+    else if (ac === 'liga-avisos') ligaAvisos(b);
+    else if (ac === 'desliga-avisos') Avisos.desliga().then(() => mostraAvisos('Desliguei os avisos neste aparelho.'));
+    else if (ac === 'tipo-aviso') Avisos.mudaTipo(b.dataset.k).then(() => mostraAvisos());
     else if (ac === 'usacodigo') usaCodigo();
     else if (ac === 'aba') mostraRanking(b.dataset.id);
     else if (ac === 'ordem') { ordemRank = b.dataset.id; mostraRanking(); }

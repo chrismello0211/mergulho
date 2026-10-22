@@ -4,7 +4,7 @@ import sys
 from playwright.sync_api import sync_playwright
 modo=sys.argv[1]
 AVISO_ANTIGO="""()=>cartao('<h3>Liguei o modo leve</h3><p>aviso</p><div class="bts"><button class="bt" data-ac="fecha">Beleza</button></div>')"""
-INIT="()=>{fechaCartao();filaCartoes.length=0;prog.max=900;prog.dia=hoje();prog.vidas=5;prog.viuNovidades='lote-12';prog.leve=false;prog.leveEscolhido=true;aplicaLeve();prog.vistos={tempo:1,quadrado:1,enigma:1,esponja:1,ressaca:1,portal:1};for(let r=0;r<8;r++)for(let q=0;q<5;q++)prog.vistos['r'+r+'b'+q]=1;salvaProg();}"
+INIT="()=>{fechaCartao();filaCartoes.length=0;prog.max=900;prog.dia=hoje();prog.vidas=5;prog.viuNovidades='lote-99';prog.leve=false;prog.leveEscolhido=true;aplicaLeve();prog.vistos={tempo:1,quadrado:1,enigma:1,esponja:1,ressaca:1,portal:1};for(let r=0;r<8;r++)for(let q=0;q<5;q++)prog.vistos['r'+r+'b'+q]=1;salvaProg();}"
 falhou=[]
 def ok(nome,cond,extra=''):
     print(('OK   ' if cond else 'FALHA'),nome,extra)
