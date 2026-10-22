@@ -1,5 +1,7 @@
 # Notificações do Mergulho
 
+**Situação (22/10/2026):** app da Web registrado, chave VAPID gerada e configurada no jogo, e as 5 funções publicadas (2ª geração, Node.js 22, us-central1). Falta só a regra `avisos` no banco (passo 3).
+
 Três passos. Só o primeiro é no console do Firebase; o resto é copiar e colar no terminal.
 
 ## 1. Três valores do console (projeto mergulho-c6230)
@@ -10,7 +12,7 @@ Três passos. Só o primeiro é no console do Firebase; o resto é copiar e cola
 Enquanto os três estiverem vazios, o jogo funciona igual e o botão de Notificações nem aparece.
 
 ## 2. Publicar as funções (uma vez só)
-Precisa do Node 20 no computador.
+Precisa do Node 22 (ou mais novo) no computador. As funções rodam no Node.js 22 (o 20 foi desativado pelo Google em 30/10/2026).
 
     npm install -g firebase-tools
     firebase login

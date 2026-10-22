@@ -29,9 +29,11 @@ def roda(ua=None):
 import json,time
 # ── 1) aparelho Android/computador
 b,pg,gravou,erros=roda()
+pg.evaluate("()=>{window.__cfgReal=Object.assign({},Conta.cfg);Conta.cfg.remetente='';Conta.cfg.app='';Conta.cfg.vapid='';}")
 pg.evaluate("()=>mostraAjustes()"); pg.wait_for_timeout(300)
 ok('sem configuração, o botão de Notificações nem aparece',not pg.evaluate("()=>[...document.querySelectorAll('#cartao .ajuste b')].some(e=>e.textContent==='Notificações')"))
-ok('e a novidade 🔔 também não',not pg.evaluate("()=>NOVIDADES_LOTES[0].itens.some(i=>i[1]==='Notificações')"))
+ok('com o jogo configurado, a novidade 🔔 aparece',pg.evaluate("()=>NOVIDADES_LOTES[0].itens.some(i=>i[1]==='Notificações')"))
+ok('a configuração real do jogo tem os três valores do console',pg.evaluate("()=>window.__cfgReal.remetente==='773921687330'&&window.__cfgReal.app==='1:773921687330:web:53ca7b337a70b3ff98877b'&&window.__cfgReal.vapid.length===87"))
 pg.evaluate(CONFIG); pg.evaluate("()=>{fechaCartao();mostraAjustes();}"); pg.wait_for_timeout(300)
 ok('com configuração, aparece nos Ajustes',pg.evaluate("()=>[...document.querySelectorAll('#cartao .ajuste b')].some(e=>e.textContent==='Notificações')"))
 pg.click('#cartao [data-ac="avisos"]'); pg.wait_for_timeout(300)
